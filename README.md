@@ -1,8 +1,8 @@
-# Pluton
+# Bermake
 
 An open-source polygonal 3D modeler with CAD-like precision, aimed at architectural 3D modeling.
 
-Pluton is a long-horizon project inspired by Blender's development model, intended as a free alternative to SketchUp Pro.
+Bermake is a long-horizon project inspired by Blender's development model, intended as a free alternative to SketchUp Pro.
 
 ## Status
 
@@ -27,7 +27,7 @@ triangles wound inside-out, which the new back-face default had made visible. v0
 texture is projected onto every face painted with it at a real-world size, tiling rather than
 stretching, tinted by the material's base colour, with its alpha making cutouts genuinely
 see-through in the same sorted translucent pass. A face can override the projection with its
-own offset, scale and rotation, independently per side, and the `.pluton` container now
+own offset, scale and rotation, independently per side, and the `.berm` container now
 embeds texture images and a thumbnail. Texture add, assign, and placement (including a
 direct drag on the face) are all undoable. Still missing: imported per-corner UVs and the
 accompanying OBJ `vt`/`.mtl` round-trip (`#80`) and glTF texture import, both deferred to
@@ -65,7 +65,7 @@ sorted second pass, and an undoable Materials editor with drag-to-paint; four fa
 per-tag colour; and Scenes, saved camera + tag visibility + style, recalled with an animated
 camera tween.
 
-**File I/O** — a versioned native `.pluton` format (zip container, atomic writes, component
+**File I/O** — a versioned native `.berm` format (zip container, atomic writes, component
 sharing preserved by identity), plus OBJ and glTF/GLB import and export. glTF goes through
 Assimp and handles Draco-compressed meshes, reconstructing real instancing on import.
 
@@ -125,7 +125,7 @@ extension bundles no runtime DLLs.
 ## Running
 
 ```bash
-pluton
+bermake
 ```
 
 ## Tests
@@ -148,7 +148,7 @@ without the MSVC environment the build silently does nothing.
 Lint, at the versions CI pins:
 
 ```bash
-ruff check python/pluton && ruff format --check python/pluton
+ruff check python/bermake && ruff format --check python/bermake
 ```
 
 CI runs the full build and both suites on windows-2022 and ubuntu-24.04, plus the lint gate,

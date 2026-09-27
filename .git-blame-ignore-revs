@@ -10,3 +10,9 @@ c869e2fc58899b79276ad86d9e42f17cde4d6061
 
 # style(m7.1): add .clang-format and sweep the C++ tree
 12094d7da6ceb6149aed5707c525c4a395c7d8d6
+
+# refactor(cpp): rename Pluton to Bermake in the C++ tree
+32aac99ae5b6bcc9f3ca9efe5c8cf1c634fd6eae
+
+# refactor(python): rename pluton package to bermake, sweep importers and build config
+81a18f5bd23b24c2617ee9b893cc9697657ac273
