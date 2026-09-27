@@ -174,6 +174,11 @@ Bermake's development is organized into **6 Phases**. Phases 1–5 form a linear
 
 Version numbers are directional anchors, not commitments.
 
+A note on `.berm` before the milestones below: the native file extension was
+`.pluton` through v0.13.0 and became `.berm` at v0.14.0, when the project
+renamed to Bermake. Entries below that describe earlier milestones name the
+format's current identity rather than the name it carried at the time.
+
 ### Phase 1 — Foundation *(v0.0 → v0.1)*
 
 **End state:** A toy version of SketchUp's core push/pull innovation works. Proof that the technology stack is sound.
