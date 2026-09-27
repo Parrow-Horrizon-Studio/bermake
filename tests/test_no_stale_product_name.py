@@ -14,8 +14,16 @@ of which contains the old module path, and all 150 do currently raise on a stric
 utf-8 decode, so the guard would pass either way today. Depending on that is
 wrong twice over: bytecode is not shipped source, and a single .pyc that happened
 to decode would turn this guard into a false positive nobody could explain. The
-real scope with the exclusion is around 220 files, comfortably above the
+real scope with the exclusion is around 224 files, comfortably above the
 threshold.
+
+The Python half of the scope is derived from tool.scikit-build.wheel.packages
+in pyproject.toml rather than hardcoded, because that config is the definition
+of what ships in the wheel; a hardcoded list would silently stop matching a
+newly added package. cpp and four root packaging/build/lint files are added
+explicitly, since they are not covered by the wheel packages list but a stale
+reference in any of them is a real regression (this milestone nearly shipped
+exactly that in a workflow's lint path). See _shipped_roots().
 
 One shipped file is meant to contain the retired name: the old-document
 detection in bermake_file.py has to compare against the literal old format
@@ -28,7 +36,6 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-SHIPPED = (ROOT / "python" / "bermake", ROOT / "cpp")
 
 # The only shipped file that is meant to contain the retired name, and the exact
 # number of times. The loader has to recognise a document written by the old
@@ -44,9 +51,45 @@ INTENDED = {
 }
 
 
+def _shipped_roots() -> list[Path]:
+    """The trees and files that ship, derived rather than hardcoded.
+
+    The Python packages come from the packaging config, because
+    tool.scikit-build.wheel.packages IS the definition of what goes into the
+    wheel. A hardcoded list cannot notice a newly added package, so the guard's
+    coverage would quietly stop matching the thing it guards. Reading the config
+    means a new package is covered the day it is added.
+
+    cpp is explicit because it is compiled in rather than packaged as a tree, and
+    the four root files are explicit because a build target or a lint path
+    reverting to the old name is a real regression this milestone nearly shipped.
+    """
+    import tomllib
+
+    config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    packages = config["tool"]["scikit-build"]["wheel"]["packages"]
+
+    roots = [ROOT / p for p in packages]
+    roots.append(ROOT / "cpp")
+    roots.extend(
+        ROOT / name
+        for name in (
+            "pyproject.toml",
+            "CMakeLists.txt",
+            "vcpkg.json",
+            ".github/workflows/build.yml",
+        )
+    )
+    return roots
+
+
 def _text_files():
-    for tree in SHIPPED:
-        for path in tree.rglob("*"):
+    for root in _shipped_roots():
+        if root.is_file():
+            candidates = [root]
+        else:
+            candidates = root.rglob("*")
+        for path in candidates:
             if not path.is_file():
                 continue
             if "__pycache__" in path.parts:
