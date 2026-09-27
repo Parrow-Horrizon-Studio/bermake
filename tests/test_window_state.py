@@ -5,11 +5,11 @@ from __future__ import annotations
 from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QMainWindow, QToolBar
 
-from pluton.ui import window_state
+from bermake.ui import window_state
 
 
 def _settings(tmp_path) -> QSettings:
-    return QSettings(str(tmp_path / "pluton_test.ini"), QSettings.Format.IniFormat)
+    return QSettings(str(tmp_path / "bermake_test.ini"), QSettings.Format.IniFormat)
 
 
 def _window(qtbot) -> QMainWindow:
@@ -149,7 +149,7 @@ def test_dock_visibility_and_floating_state_survive_a_round_trip(qtbot, tmp_path
     main_window._properties_dock.setFloating(True)
     window_state.save_window_state(main_window, settings)
 
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     restored = MainWindow()
     qtbot.addWidget(restored)

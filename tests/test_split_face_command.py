@@ -1,8 +1,8 @@
 """SplitFaceCommand: undo, redo, and id preservation (M7.6a)."""
 
 import numpy as np
-from pluton.commands.scene_commands import SplitFaceCommand
-from pluton.scene.scene import Scene
+from bermake.commands.scene_commands import SplitFaceCommand
+from bermake.scene.scene import Scene
 
 
 def _quad_with_chord():

@@ -1,5 +1,5 @@
 import numpy as np
-from pluton.model.model import Model
+from bermake.model.model import Model
 
 
 def test_traverse_root_only():

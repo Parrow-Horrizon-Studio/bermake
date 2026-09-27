@@ -1,4 +1,4 @@
-from pluton.selection import Selection
+from bermake.selection import Selection
 
 
 def test_selection_tracks_instances():

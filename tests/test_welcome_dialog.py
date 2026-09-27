@@ -1,12 +1,12 @@
 """The welcome dialog: the accept sequence, and that dismissal changes nothing."""
 
 import pytest
-from pluton.document import DocumentSettings
-from pluton.templates import template_for_key
-from pluton.ui import preferences
-from pluton.ui.welcome_dialog import WelcomeDialog, apply_template
-from pluton.units import UnitSystem
-from pluton.viewport.environment import PLAIN_WHITE, SKY_AND_GROUND
+from bermake.document import DocumentSettings
+from bermake.templates import template_for_key
+from bermake.ui import preferences
+from bermake.ui.welcome_dialog import WelcomeDialog, apply_template
+from bermake.units import UnitSystem
+from bermake.viewport.environment import PLAIN_WHITE, SKY_AND_GROUND
 from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QApplication
 
@@ -92,7 +92,7 @@ def test_the_checkbox_starts_ticked_when_nothing_is_stored(app, settings):
 
 def test_the_checkbox_starts_unticked_when_the_stored_preference_says_so(app, settings):
     """Review finding: the checkbox never read the stored preference, so
-    reopening the dialog from Help > Welcome to Pluton after unticking it
+    reopening the dialog from Help > Welcome to Bermake after unticking it
     showed ticked regardless, and accepting from there silently reversed the
     user's choice back to True.
     """
@@ -118,8 +118,8 @@ def test_escape_leaves_the_document_alone(app, monkeypatch):
     compares the live document and settings store against a before snapshot
     rather than against a hardcoded default.
     """
-    from pluton.ui.main_window import MainWindow
-    from pluton.ui.welcome_dialog import WelcomeDialog as Dialog
+    from bermake.ui.main_window import MainWindow
+    from bermake.ui.welcome_dialog import WelcomeDialog as Dialog
 
     window = MainWindow()
     before_units = window._doc.units
@@ -147,7 +147,7 @@ def test_open_is_reported_rather_than_performed(app, settings):
 
 
 def test_every_template_appears_in_the_grid(app, settings):
-    from pluton.templates import TEMPLATES
+    from bermake.templates import TEMPLATES
 
     dialog = WelcomeDialog(settings)
     assert len(dialog._template_buttons) == len(TEMPLATES)
@@ -259,8 +259,8 @@ def test_accepting_the_dialog_writes_both_preferences(app, monkeypatch):
     pytest, and the convention this dialog establishes is that application logic
     never execs. MainWindow is the one exception, so the patch goes there.
     """
-    from pluton.ui.main_window import MainWindow
-    from pluton.ui.welcome_dialog import WelcomeDialog as Dialog
+    from bermake.ui.main_window import MainWindow
+    from bermake.ui.welcome_dialog import WelcomeDialog as Dialog
 
     window = MainWindow()
 
@@ -279,8 +279,8 @@ def test_accepting_the_dialog_writes_both_preferences(app, monkeypatch):
 
 def test_accepting_the_dialog_applies_the_template_to_the_live_document(app, monkeypatch):
     """The startup path end to end: template units reach DocumentSettings."""
-    from pluton.ui.main_window import MainWindow
-    from pluton.ui.welcome_dialog import WelcomeDialog as Dialog
+    from bermake.ui.main_window import MainWindow
+    from bermake.ui.welcome_dialog import WelcomeDialog as Dialog
 
     window = MainWindow()
 

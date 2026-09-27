@@ -1,4 +1,4 @@
-"""Tests for pluton.selection_ops: pure selection derivations.
+"""Tests for bermake.selection_ops: pure selection derivations.
 
 Every test here builds a bare Scene and calls the function directly. No
 widget, no QApplication, no Model unless the function under test needs one.
@@ -20,7 +20,7 @@ def _quad_pair():
     Returns (scene, ids) where ids is a dict of the named vertices, the two
     face ids and the shared edge id.
     """
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     a = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -47,7 +47,7 @@ def _quad_pair():
 
 
 def test_bounding_edges_returns_all_four_edges_of_a_quad():
-    from pluton.selection_ops import bounding_edges
+    from bermake.selection_ops import bounding_edges
 
     scene, ids = _quad_pair()
     got = bounding_edges(scene, {ids["left"]})
@@ -56,7 +56,7 @@ def test_bounding_edges_returns_all_four_edges_of_a_quad():
 
 
 def test_bounding_edges_unions_two_faces_and_counts_the_shared_edge_once():
-    from pluton.selection_ops import bounding_edges
+    from bermake.selection_ops import bounding_edges
 
     scene, ids = _quad_pair()
     got = bounding_edges(scene, {ids["left"], ids["right"]})
@@ -65,7 +65,7 @@ def test_bounding_edges_unions_two_faces_and_counts_the_shared_edge_once():
 
 
 def test_bounding_edges_skips_a_dead_face_id():
-    from pluton.selection_ops import bounding_edges
+    from bermake.selection_ops import bounding_edges
 
     scene, ids = _quad_pair()
     got = bounding_edges(scene, {ids["left"], 9999})
@@ -73,7 +73,7 @@ def test_bounding_edges_skips_a_dead_face_id():
 
 
 def test_adjacent_faces_of_the_shared_edge_is_both_quads():
-    from pluton.selection_ops import adjacent_faces
+    from bermake.selection_ops import adjacent_faces
 
     scene, ids = _quad_pair()
     got = adjacent_faces(scene, {ids["shared"]})
@@ -81,7 +81,7 @@ def test_adjacent_faces_of_the_shared_edge_is_both_quads():
 
 
 def test_adjacent_faces_drops_the_none_side_of_a_boundary_edge():
-    from pluton.selection_ops import adjacent_faces
+    from bermake.selection_ops import adjacent_faces
 
     scene, ids = _quad_pair()
     outer = scene.edge_between(ids["a"], ids["b"])
@@ -90,8 +90,8 @@ def test_adjacent_faces_drops_the_none_side_of_a_boundary_edge():
 
 
 def test_adjacent_faces_of_a_naked_edge_is_empty():
-    from pluton.scene import Scene
-    from pluton.selection_ops import adjacent_faces
+    from bermake.scene import Scene
+    from bermake.selection_ops import adjacent_faces
 
     scene = Scene()
     p = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -101,14 +101,14 @@ def test_adjacent_faces_of_a_naked_edge_is_empty():
 
 
 def test_adjacent_faces_skips_a_dead_edge_id():
-    from pluton.selection_ops import adjacent_faces
+    from bermake.selection_ops import adjacent_faces
 
     scene, ids = _quad_pair()
     assert adjacent_faces(scene, {ids["shared"], 9999}) == {ids["left"], ids["right"]}
 
 
 def test_incident_edges_of_the_shared_corner_finds_every_touching_edge():
-    from pluton.selection_ops import incident_edges
+    from bermake.selection_ops import incident_edges
 
     scene, ids = _quad_pair()
     got = incident_edges(scene, {ids["b"]})
@@ -118,7 +118,7 @@ def test_incident_edges_of_the_shared_corner_finds_every_touching_edge():
 
 
 def test_incident_edges_of_no_vertices_is_empty():
-    from pluton.selection_ops import incident_edges
+    from bermake.selection_ops import incident_edges
 
     scene, _ids = _quad_pair()
     assert incident_edges(scene, set()) == set()
@@ -129,7 +129,7 @@ def test_neighbour_queries_return_a_plain_set_of_ints(fn_name):
     """Callers union these into Selection sets, which hold ints. A numpy
     integer would compare equal but hash into a set that later fails an
     `id in selection.edges` check against a plain int in some code paths."""
-    import pluton.selection_ops as ops
+    import bermake.selection_ops as ops
 
     scene, ids = _quad_pair()
     seed = {
@@ -148,7 +148,7 @@ def _two_islands():
     Returns (scene, ids) with both face ids, a vertex of each, and the loose
     edge's id.
     """
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     a = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -170,7 +170,7 @@ def _two_islands():
 
 
 def test_flood_from_one_quad_reaches_its_own_face_and_edges_only():
-    from pluton.selection_ops import connected_component
+    from bermake.selection_ops import connected_component
 
     scene, ids = _two_islands()
     verts, edges, faces = connected_component(scene, {ids["a"]})
@@ -181,7 +181,7 @@ def test_flood_from_one_quad_reaches_its_own_face_and_edges_only():
 
 
 def test_flood_does_not_jump_to_a_disjoint_island():
-    from pluton.selection_ops import connected_component
+    from bermake.selection_ops import connected_component
 
     scene, ids = _two_islands()
     _verts, _edges, faces = connected_component(scene, {ids["a"]})
@@ -189,7 +189,7 @@ def test_flood_does_not_jump_to_a_disjoint_island():
 
 
 def test_flood_crosses_a_shared_edge_between_two_quads():
-    from pluton.selection_ops import connected_component
+    from bermake.selection_ops import connected_component
 
     scene, ids = _quad_pair()
     _verts, _edges, faces = connected_component(scene, {ids["a"]})
@@ -199,8 +199,8 @@ def test_flood_crosses_a_shared_edge_between_two_quads():
 def test_flood_crosses_a_single_shared_corner():
     """Connectivity is through shared VERTICES, not shared edges (spec 2.4).
     Two quads meeting at one corner are one component."""
-    from pluton.scene import Scene
-    from pluton.selection_ops import connected_component
+    from bermake.scene import Scene
+    from bermake.selection_ops import connected_component
 
     scene = Scene()
     a = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -219,7 +219,7 @@ def test_flood_crosses_a_single_shared_corner():
 
 
 def test_flood_includes_a_loose_edge_hanging_off_a_face():
-    from pluton.selection_ops import connected_component
+    from bermake.selection_ops import connected_component
 
     scene, ids = _quad_pair()
     tip = scene.add_vertex(np.array([0.0, -1.0, 0.0], dtype=np.float32))
@@ -231,7 +231,7 @@ def test_flood_includes_a_loose_edge_hanging_off_a_face():
 def test_flood_result_does_not_depend_on_which_kind_seeded_it():
     """Spec section 4 property 2: seeding from a face's vertex, from an
     endpoint of one of its edges, and from a far corner all agree."""
-    from pluton.selection_ops import connected_component
+    from bermake.selection_ops import connected_component
 
     scene, ids = _quad_pair()
     from_a = connected_component(scene, {ids["a"]})
@@ -241,14 +241,14 @@ def test_flood_result_does_not_depend_on_which_kind_seeded_it():
 
 
 def test_flood_from_no_seed_is_three_empty_sets():
-    from pluton.selection_ops import connected_component
+    from bermake.selection_ops import connected_component
 
     scene, _ids = _quad_pair()
     assert connected_component(scene, set()) == (set(), set(), set())
 
 
 def test_flood_skips_a_dead_seed_id():
-    from pluton.selection_ops import connected_component
+    from bermake.selection_ops import connected_component
 
     scene, ids = _quad_pair()
     verts, _edges, faces = connected_component(scene, {ids["a"], 9999})
@@ -257,7 +257,7 @@ def test_flood_skips_a_dead_seed_id():
 
 
 def test_grow_adds_the_face_across_a_shared_edge():
-    from pluton.selection_ops import grow
+    from bermake.selection_ops import grow
 
     scene, ids = _quad_pair()
     _edges, faces, _verts = grow(scene, edges=set(), faces={ids["left"]}, vertices=set())
@@ -266,7 +266,7 @@ def test_grow_adds_the_face_across_a_shared_edge():
 
 def test_grow_does_not_turn_a_face_selection_into_edges():
     """Spec D10: kinds do not bleed. Growing faces yields faces."""
-    from pluton.selection_ops import grow
+    from bermake.selection_ops import grow
 
     scene, ids = _quad_pair()
     edges, _faces, verts = grow(scene, edges=set(), faces={ids["left"]}, vertices=set())
@@ -275,7 +275,7 @@ def test_grow_does_not_turn_a_face_selection_into_edges():
 
 
 def test_grow_adds_edges_sharing_a_vertex():
-    from pluton.selection_ops import grow
+    from bermake.selection_ops import grow
 
     scene, ids = _quad_pair()
     ab = scene.edge_between(ids["a"], ids["b"])
@@ -297,7 +297,7 @@ def _nine_quad_grid():
     (sharing an edge) is real, unlike a diagonal pair that only shares a
     corner.
     """
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     verts = {}
@@ -338,7 +338,7 @@ def test_shrink_inverts_grow_on_an_interior_region():
       shape, so the center is interior and is kept.
     - Net: grow(center) -> shrink -> {center}, the original seed.
     """
-    from pluton.selection_ops import grow, shrink
+    from bermake.selection_ops import grow, shrink
 
     scene, ids = _nine_quad_grid()
     center = ids["center"]
@@ -350,7 +350,7 @@ def test_shrink_inverts_grow_on_an_interior_region():
 
 
 def test_shrink_removes_a_face_whose_neighbour_is_not_selected():
-    from pluton.selection_ops import shrink
+    from bermake.selection_ops import shrink
 
     scene, ids = _quad_pair()
     _e, faces, _v = shrink(scene, edges=set(), faces={ids["left"]}, vertices=set())
@@ -358,7 +358,7 @@ def test_shrink_removes_a_face_whose_neighbour_is_not_selected():
 
 
 def test_shrink_keeps_a_face_whose_every_neighbour_is_selected():
-    from pluton.selection_ops import shrink
+    from bermake.selection_ops import shrink
 
     scene, ids = _quad_pair()
     _e, faces, _v = shrink(scene, edges=set(), faces={ids["left"], ids["right"]}, vertices=set())
@@ -367,8 +367,8 @@ def test_shrink_keeps_a_face_whose_every_neighbour_is_selected():
 
 def test_same_material_matches_on_either_side():
     """Spec D8: a user cannot see which side dictionary the paint came from."""
-    from pluton.scene.scene import Side
-    from pluton.selection_ops import same_material
+    from bermake.scene.scene import Side
+    from bermake.selection_ops import same_material
 
     scene, ids = _quad_pair()
     scene.set_face_material(ids["left"], 7, Side.FRONT)
@@ -379,14 +379,14 @@ def test_same_material_matches_on_either_side():
 def test_same_material_of_an_unpainted_face_finds_the_other_unpainted_faces():
     """Material 0 is Default, which is a real answer rather than a null: two
     unpainted faces do share a material."""
-    from pluton.selection_ops import same_material
+    from bermake.selection_ops import same_material
 
     scene, ids = _quad_pair()
     assert same_material(scene, {ids["left"]}) == {ids["left"], ids["right"]}
 
 
 def test_same_material_of_no_seed_is_empty():
-    from pluton.selection_ops import same_material
+    from bermake.selection_ops import same_material
 
     scene, _ids = _quad_pair()
     assert same_material(scene, set()) == set()
@@ -397,8 +397,8 @@ def test_same_material_does_not_pull_in_an_unpainted_face():
     material on either side. A face painted on one side only must not match
     every unpainted face in the model -- that would make "All with Same
     Material" select the whole document off one wall."""
-    from pluton.scene.scene import Side
-    from pluton.selection_ops import same_material
+    from bermake.scene.scene import Side
+    from bermake.selection_ops import same_material
 
     scene, ids = _quad_pair()
     scene.set_face_material(ids["left"], 7, Side.FRONT)
@@ -412,8 +412,8 @@ def test_same_material_of_a_mixed_seed_matches_both_families():
     matching itself. A global pool (drop Default from the whole seed set
     once ANY seed face has a real material) would silently exclude the
     unpainted seed from its own result -- that was the bug this test pins."""
-    from pluton.scene.scene import Side
-    from pluton.selection_ops import same_material
+    from bermake.scene.scene import Side
+    from bermake.selection_ops import same_material
 
     scene, ids = _quad_pair()
     scene.set_face_material(ids["left"], 7, Side.FRONT)
@@ -423,9 +423,9 @@ def test_same_material_of_a_mixed_seed_matches_both_families():
 
 
 def test_invert_returns_everything_not_selected():
-    from pluton.model.model import Model
-    from pluton.selection import Selection
-    from pluton.selection_ops import invert
+    from bermake.model.model import Model
+    from bermake.selection import Selection
+    from bermake.selection_ops import invert
 
     model = Model()
     scene = model.active_scene
@@ -441,9 +441,9 @@ def test_invert_returns_everything_not_selected():
 
 
 def test_invert_leaves_vertices_alone_when_the_mode_is_off():
-    from pluton.model.model import Model
-    from pluton.selection import Selection
-    from pluton.selection_ops import invert
+    from bermake.model.model import Model
+    from bermake.selection import Selection
+    from bermake.selection_ops import invert
 
     model = Model()
     scene = model.active_scene
@@ -453,9 +453,9 @@ def test_invert_leaves_vertices_alone_when_the_mode_is_off():
 
 
 def test_invert_includes_vertices_when_the_mode_is_on():
-    from pluton.model.model import Model
-    from pluton.selection import Selection
-    from pluton.selection_ops import invert
+    from bermake.model.model import Model
+    from bermake.selection import Selection
+    from bermake.selection_ops import invert
 
     model = Model()
     scene = model.active_scene
@@ -468,9 +468,9 @@ def test_invert_includes_vertices_when_the_mode_is_on():
 
 
 def test_invert_twice_returns_the_original_selection():
-    from pluton.model.model import Model
-    from pluton.selection import Selection
-    from pluton.selection_ops import invert
+    from bermake.model.model import Model
+    from bermake.selection import Selection
+    from bermake.selection_ops import invert
 
     model = Model()
     scene = model.active_scene
@@ -493,8 +493,8 @@ def test_invert_excludes_a_tag_hidden_instance_from_the_universe(model_factory, 
     test_select_all_excludes_hidden_tag_instances, whose fixture this
     mirrors). A hidden instance must never appear on either side of invert:
     not selected, and not "everything else" either."""
-    from pluton.selection import Selection
-    from pluton.selection_ops import invert
+    from bermake.selection import Selection
+    from bermake.selection_ops import invert
 
     model = model_factory()
     scene = model.active_context.mesh
@@ -519,7 +519,7 @@ def test_same_tag_matches_instances_sharing_a_tag(model_factory, group_factory):
     hold no such idiom (it never builds a Model), so this instead follows
     test_model_queries.py's model_factory/group_factory fixtures, which are
     the established way elsewhere in this suite to get a real Instance."""
-    from pluton.selection_ops import same_tag
+    from bermake.selection_ops import same_tag
 
     model = model_factory()
     scene = model.active_context.mesh
@@ -542,7 +542,7 @@ def test_same_tag_matches_instances_sharing_a_tag(model_factory, group_factory):
 
 
 def test_same_tag_does_not_match_a_differently_tagged_instance(model_factory, group_factory):
-    from pluton.selection_ops import same_tag
+    from bermake.selection_ops import same_tag
 
     model = model_factory()
     scene = model.active_context.mesh
@@ -566,7 +566,7 @@ def test_same_tag_does_not_match_a_differently_tagged_instance(model_factory, gr
 
 
 def test_same_tag_of_no_seed_is_empty(model_factory, group_factory):
-    from pluton.selection_ops import same_tag
+    from bermake.selection_ops import same_tag
 
     model = model_factory()
     scene = model.active_context.mesh
@@ -594,7 +594,7 @@ def test_same_tag_of_no_seed_is_empty(model_factory, group_factory):
 def test_same_material_skips_a_dead_face_id():
     """The regression this group exists for: a dead seed must contribute
     nothing, not Default. Before the fix this returned both faces."""
-    from pluton.selection_ops import same_material
+    from bermake.selection_ops import same_material
 
     scene, _ids = _quad_pair()
     assert same_material(scene, {9999}) == set()
@@ -603,8 +603,8 @@ def test_same_material_skips_a_dead_face_id():
 def test_same_material_skips_a_dead_id_beside_a_live_one():
     """A dead id riding along with a live seed must not widen the result
     either: the live seed is painted, so the answer is its own family."""
-    from pluton.scene.scene import Side
-    from pluton.selection_ops import same_material
+    from bermake.scene.scene import Side
+    from bermake.selection_ops import same_material
 
     scene, ids = _quad_pair()
     scene.set_face_material(ids["left"], 7, Side.FRONT)
@@ -612,7 +612,7 @@ def test_same_material_skips_a_dead_id_beside_a_live_one():
 
 
 def test_grow_skips_dead_ids_of_every_kind():
-    from pluton.selection_ops import grow
+    from bermake.selection_ops import grow
 
     scene, ids = _quad_pair()
     ab = scene.edge_between(ids["a"], ids["b"])
@@ -630,7 +630,7 @@ def test_grow_skips_dead_ids_of_every_kind():
 
 
 def test_shrink_skips_dead_ids_of_every_kind():
-    from pluton.selection_ops import shrink
+    from bermake.selection_ops import shrink
 
     scene, ids = _quad_pair()
     ab = scene.edge_between(ids["a"], ids["b"])
@@ -646,7 +646,7 @@ def test_shrink_does_not_keep_an_edge_only_because_a_dead_neighbour_is_absent():
     """A dead id in the selection must not make a boundary edge look
     interior. Every edge of this quad pair has a live neighbour outside the
     seed, so nothing survives the erosion."""
-    from pluton.selection_ops import shrink
+    from bermake.selection_ops import shrink
 
     scene, ids = _quad_pair()
     ab = scene.edge_between(ids["a"], ids["b"])
@@ -655,7 +655,7 @@ def test_shrink_does_not_keep_an_edge_only_because_a_dead_neighbour_is_absent():
 
 
 def test_same_tag_skips_a_dead_instance_id(model_factory, group_factory):
-    from pluton.selection_ops import same_tag
+    from bermake.selection_ops import same_tag
 
     model = model_factory()
     scene = model.active_context.mesh
@@ -670,9 +670,9 @@ def test_same_tag_skips_a_dead_instance_id(model_factory, group_factory):
 
 
 def test_invert_skips_a_dead_id_in_the_selection():
-    from pluton.model.model import Model
-    from pluton.selection import Selection
-    from pluton.selection_ops import invert
+    from bermake.model.model import Model
+    from bermake.selection import Selection
+    from bermake.selection_ops import invert
 
     model = Model()
     scene = model.active_context.mesh

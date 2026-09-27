@@ -12,7 +12,7 @@ one instance level is involved.
 from __future__ import annotations
 
 import numpy as np
-from pluton.model.model import Model
+from bermake.model.model import Model
 
 
 def test_normal_is_correct_under_non_uniform_scale():

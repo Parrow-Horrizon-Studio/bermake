@@ -16,14 +16,14 @@ import pytest
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
 
-from pluton.commands.command_stack import CommandStack
-from pluton.commands.instance_commands import CreateInstanceCommand
-from pluton.geometry.transforms import mat_translate
-from pluton.model.model import Model
-from pluton.selection import Selection
-from pluton.tools.move_tool import MoveTool
-from pluton.tools.tool import ToolContext
-from pluton.viewport.snap_engine import SnapKind
+from bermake.commands.command_stack import CommandStack
+from bermake.commands.instance_commands import CreateInstanceCommand
+from bermake.geometry.transforms import mat_translate
+from bermake.model.model import Model
+from bermake.selection import Selection
+from bermake.tools.move_tool import MoveTool
+from bermake.tools.tool import ToolContext
+from bermake.viewport.snap_engine import SnapKind
 
 
 # ---------------------------------------------------------------------------
@@ -234,7 +234,7 @@ def test_move_copy_zero_delta_does_not_crash(qtbot):
 def test_move_copy_keeps_a_co_selected_annotation_selected(qtbot):
     """Move-copy replaced the whole Selection, silently dropping a co-selected
     annotation instead of copying, moving, or reporting it (#96)."""
-    from pluton.model.annotation import Dimension
+    from bermake.model.annotation import Dimension
 
     m, inst = _make_model_with_component()
     ann = Dimension(0, (0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 0.2, 0.0))

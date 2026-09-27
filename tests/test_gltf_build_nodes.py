@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.io.gltf_import import build_gltf_into_model
-from pluton.io.gltf_scene import GltfMesh, GltfNode, GltfSceneData
-from pluton.model.model import Model
+from bermake.io.gltf_import import build_gltf_into_model
+from bermake.io.gltf_scene import GltfMesh, GltfNode, GltfSceneData
+from bermake.model.model import Model
 
 TRI = ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
 UP = ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))  # vertex 2 is at glTF +Y
@@ -59,7 +59,7 @@ def test_axis_yup_to_zup_puts_up_vertex_on_z():
     w = world_of[id(meshdef)]
     up_local = np.array([0.0, 1.0, 0.0, 1.0])          # glTF +Y
     world = w @ up_local
-    assert np.allclose(world[:3], [0.0, 0.0, 1.0], atol=1e-6)  # -> Pluton +Z
+    assert np.allclose(world[:3], [0.0, 0.0, 1.0], atol=1e-6)  # -> Bermake +Z
 
 
 def test_summary_counts():

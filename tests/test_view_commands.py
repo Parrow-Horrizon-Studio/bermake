@@ -1,14 +1,14 @@
-from pluton.commands.command_stack import CommandStack
-from pluton.commands.view_commands import (
+from bermake.commands.command_stack import CommandStack
+from bermake.commands.view_commands import (
     CreateViewCommand,
     DeleteViewCommand,
     RenameViewCommand,
     ReorderViewCommand,
     UpdateViewCommand,
 )
-from pluton.io.document_codec import CameraState
-from pluton.model.model import Model
-from pluton.views.saved_view import SavedView
+from bermake.io.document_codec import CameraState
+from bermake.model.model import Model
+from bermake.views.saved_view import SavedView
 
 
 def _view(vid, name="V", fov=45.0):

@@ -1,7 +1,7 @@
 """Face split carries the parent's face-keyed sidecars onto both children (M7.6a)."""
 
 import numpy as np
-from pluton.scene.scene import Scene, Side, TexturePlacement
+from bermake.scene.scene import Scene, Side, TexturePlacement
 
 
 def _quad_with_chord():

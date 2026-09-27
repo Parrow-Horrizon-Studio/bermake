@@ -4,19 +4,19 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pluton._core import make_box
-from pluton.model.model import Model
-from pluton.scene.mesh_builder import build_mesh_into_scene
-from pluton.scene.scene import Scene, Side, TexturePlacement
-from pluton.viewport import scene_renderer
-from pluton.viewport.scene_renderer import (
+from bermake._core import make_box
+from bermake.model.model import Model
+from bermake.scene.mesh_builder import build_mesh_into_scene
+from bermake.scene.scene import Scene, Side, TexturePlacement
+from bermake.viewport import scene_renderer
+from bermake.viewport.scene_renderer import (
     _FACE_VERTEX_FLOATS,
     _DefBuffers,
     SceneRenderer,
     build_face_uvs,
     uv_material_key,
 )
-from pluton.viewport.uv_projection import project_corners
+from bermake.viewport.uv_projection import project_corners
 
 
 def _boxed():

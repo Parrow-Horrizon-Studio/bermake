@@ -1,6 +1,6 @@
 """Loop-and-UV arithmetic for carrying stored UVs across an edge split."""
 
-from pluton.scene.uv_transfer import transfer_uvs_across_split
+from bermake.scene.uv_transfer import transfer_uvs_across_split
 
 
 def test_inserted_uv_is_lerped_at_the_split_parameter():

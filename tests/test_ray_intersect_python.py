@@ -5,7 +5,7 @@ import pytest
 
 
 def _make_ground_rect():
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
 
     mesh = HalfEdgeMesh()
     v0 = mesh.add_vertex(0.0, 0.0, 0.0)
@@ -21,7 +21,7 @@ def _make_ground_rect():
 
 
 def test_ray_intersect_mesh_hit_returns_face_id_t_and_point():
-    from pluton._core import ray_intersect_mesh
+    from bermake._core import ray_intersect_mesh
 
     mesh, f = _make_ground_rect()
     hit = ray_intersect_mesh(mesh, [0.5, 0.5, 5.0], [0.0, 0.0, -1.0])
@@ -32,7 +32,7 @@ def test_ray_intersect_mesh_hit_returns_face_id_t_and_point():
 
 
 def test_ray_intersect_mesh_miss_returns_none():
-    from pluton._core import ray_intersect_mesh
+    from bermake._core import ray_intersect_mesh
 
     mesh, _ = _make_ground_rect()
     hit = ray_intersect_mesh(mesh, [5.0, 5.0, 5.0], [0.0, 0.0, -1.0])
@@ -40,7 +40,7 @@ def test_ray_intersect_mesh_miss_returns_none():
 
 
 def test_ray_intersect_mesh_empty_mesh_returns_none():
-    from pluton._core import HalfEdgeMesh, ray_intersect_mesh
+    from bermake._core import HalfEdgeMesh, ray_intersect_mesh
 
     mesh = HalfEdgeMesh()
     hit = ray_intersect_mesh(mesh, [0.0, 0.0, 5.0], [0.0, 0.0, -1.0])
@@ -52,7 +52,7 @@ def test_ray_intersect_mesh_accepts_numpy_arrays():
 
     nanobind's stl/array converter accepts numpy ndarrays without explicit
     list conversion — this exercises the code path PushPullTool will use."""
-    from pluton._core import ray_intersect_mesh
+    from bermake._core import ray_intersect_mesh
 
     mesh, f = _make_ground_rect()
     origin = np.array([0.5, 0.5, 5.0], dtype=np.float32)

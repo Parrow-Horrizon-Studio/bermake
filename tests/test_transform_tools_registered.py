@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pluton.tools import MoveTool, RotateTool, ScaleTool
+from bermake.tools import MoveTool, RotateTool, ScaleTool
 
 
 def test_tool_shortcuts():
@@ -15,7 +15,7 @@ def test_tool_shortcuts():
 
 
 def test_main_window_registers_transform_tools(qtbot):
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
     win = MainWindow()
     qtbot.addWidget(win)
     assert win._tool_manager.activate_by_shortcut("M")

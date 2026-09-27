@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pluton.scene.scene import Scene, Side
+from bermake.scene.scene import Scene, Side
 
 
 def _quad(scene, z=0.0):

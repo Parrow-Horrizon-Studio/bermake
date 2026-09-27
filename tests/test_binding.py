@@ -2,7 +2,7 @@
 
 import re
 
-from pluton import __version__, _core, version
+from bermake import __version__, _core, version
 
 
 def test_core_version_returns_string():

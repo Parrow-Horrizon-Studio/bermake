@@ -2,8 +2,8 @@
 
 import numpy as np
 
-from pluton.scene.scene import Scene, Side, TexturePlacement
-from pluton.viewport.scene_renderer import build_face_uvs, build_face_uvs_both_sides
+from bermake.scene.scene import Scene, Side, TexturePlacement
+from bermake.viewport.scene_renderer import build_face_uvs, build_face_uvs_both_sides
 
 
 def _quad(scene, z=0.0):

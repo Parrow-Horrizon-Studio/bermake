@@ -2,7 +2,7 @@
 
 Issue #110, kernel half. Two independent implementations of the same quantity
 now exist: `Scene.face_normal` in Python (Newell's method over the whole loop,
-`_newell_normal` in python/pluton/scene/scene.py) and `Face::normal` in the
+`_newell_normal` in python/bermake/scene/scene.py) and `Face::normal` in the
 C++ kernel, read back through `face_triangle_buffer`. Cross-checking them
 against each other is the strongest guard available, because it is the exact
 check that would have caught the reopened bug: the kernel used to estimate the
@@ -11,7 +11,7 @@ normal from the loop's first three vertices and substitute a hardcoded
 
 Why the kernel's copy is the one that shows: the renderer reads it out of
 `face_triangle_buffer` for lighting, and since M7.5b `_face_uv_geometry` in
-python/pluton/viewport/scene_renderer.py reads the very same block to build
+python/bermake/viewport/scene_renderer.py reads the very same block to build
 each face's TEXTURE PROJECTION BASIS. A wall answering `(0, 0, 1)` is textured
 as a floor.
 
@@ -28,7 +28,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from pluton.scene import Scene
+from bermake.scene import Scene
 
 # Two unit vectors that should be identical, compared as a dot product: +1, not
 # merely |1|. The sign is the whole point — lighting, picking, coplanarity,

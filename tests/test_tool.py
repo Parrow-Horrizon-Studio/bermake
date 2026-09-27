@@ -7,7 +7,7 @@ import pytest
 
 
 def test_tool_overlay_face_fill_defaults_to_empty_list_and_ghost_rgba():
-    from pluton.tools.tool import ToolOverlay
+    from bermake.tools.tool import ToolOverlay
 
     overlay = ToolOverlay(
         rubber_band_segments=np.zeros((0, 3), dtype=np.float32),
@@ -20,7 +20,7 @@ def test_tool_overlay_face_fill_defaults_to_empty_list_and_ghost_rgba():
 
 
 def test_tool_overlay_accepts_explicit_face_fill_polygons():
-    from pluton.tools.tool import ToolOverlay
+    from bermake.tools.tool import ToolOverlay
 
     poly = np.array(
         [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0]],
@@ -40,7 +40,7 @@ def test_tool_overlay_accepts_explicit_face_fill_polygons():
 
 
 def test_tool_context_camera_and_widget_size_provider_default_to_none():
-    from pluton.tools.tool import ToolContext
+    from bermake.tools.tool import ToolContext
 
     ctx = ToolContext(scene=object())
     assert ctx.camera is None
@@ -48,7 +48,7 @@ def test_tool_context_camera_and_widget_size_provider_default_to_none():
 
 
 def test_tool_context_can_carry_camera_and_widget_size_provider():
-    from pluton.tools.tool import ToolContext
+    from bermake.tools.tool import ToolContext
 
     fake_camera = object()
     sizer = lambda: (640, 480)
@@ -65,7 +65,7 @@ def test_tool_context_can_carry_camera_and_widget_size_provider():
 
 def test_tool_status_text_default_is_none():
     """Existing M2 / M3a tools that don't override status_text should return None."""
-    from pluton.tools import RectangleTool
+    from bermake.tools import RectangleTool
 
     tool = RectangleTool()
     assert tool.status_text is None

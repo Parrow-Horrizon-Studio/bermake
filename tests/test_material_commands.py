@@ -4,15 +4,15 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pluton.commands.material_commands import (
+from bermake.commands.material_commands import (
     AddMaterialCommand,
     DeleteMaterialCommand,
     EditMaterialCommand,
     PaintFaceCommand,
 )
-from pluton.model.material import MaterialLibrary
-from pluton.model.model import Model
-from pluton.scene.scene import Scene, Side
+from bermake.model.material import MaterialLibrary
+from bermake.model.model import Model
+from bermake.scene.scene import Scene, Side
 
 
 def _square(scene, z=0.0):

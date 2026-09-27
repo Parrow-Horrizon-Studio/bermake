@@ -1,6 +1,6 @@
 """image_paths: the shared write-side sanitizer and the sibling-read size ceiling."""
 
-from pluton.io.image_paths import _MAX_IMAGE_BYTES, read_sibling_image_bytes, sanitize_filename_stem
+from bermake.io.image_paths import _MAX_IMAGE_BYTES, read_sibling_image_bytes, sanitize_filename_stem
 
 FAKE_PNG = b"\x89PNG\r\n\x1a\n-fake-bytes"
 
@@ -97,14 +97,14 @@ def test_a_sibling_image_over_the_size_ceiling_is_refused(tmp_path, monkeypatch)
     unbounded sibling read would undo that budget for one file the guard
     never looks at. The ceiling is monkeypatched down rather than writing a
     real oversized file to keep the test fast."""
-    monkeypatch.setattr("pluton.io.image_paths._MAX_IMAGE_BYTES", 4)
+    monkeypatch.setattr("bermake.io.image_paths._MAX_IMAGE_BYTES", 4)
     big = tmp_path / "huge.png"
     big.write_bytes(b"x" * 5)
     assert read_sibling_image_bytes(tmp_path, "huge.png") is None
 
 
 def test_a_sibling_image_exactly_at_the_ceiling_is_read(tmp_path, monkeypatch):
-    monkeypatch.setattr("pluton.io.image_paths._MAX_IMAGE_BYTES", 5)
+    monkeypatch.setattr("bermake.io.image_paths._MAX_IMAGE_BYTES", 5)
     exact = tmp_path / "exact.png"
     exact.write_bytes(b"x" * 5)
     assert read_sibling_image_bytes(tmp_path, "exact.png") == b"x" * 5

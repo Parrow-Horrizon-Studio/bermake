@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.scene.scene import Scene, Side
+from bermake.scene.scene import Scene, Side
 
 
 def _square(scene, z=0.0):

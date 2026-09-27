@@ -4,8 +4,8 @@ from dataclasses import FrozenInstanceError
 from pathlib import Path
 
 import pytest
-from pluton.io.errors import PlutonIOError
-from pluton.io.gltf_scene import GltfMaterial, GltfMesh, GltfNode, GltfSceneData
+from bermake.io.errors import BermakeIOError
+from bermake.io.gltf_scene import GltfMaterial, GltfMesh, GltfNode, GltfSceneData
 
 DATA = Path(__file__).parent / "data" / "gltf"
 
@@ -17,7 +17,7 @@ def test_ir_dataclasses_are_frozen():
 
 
 def test_read_gltf_scene_populates_ir():
-    from pluton.io.gltf_import import read_gltf_scene
+    from bermake.io.gltf_import import read_gltf_scene
 
     scene = read_gltf_scene(str(DATA / "plain_box.glb"))
     assert isinstance(scene, GltfSceneData)
@@ -29,8 +29,8 @@ def test_read_gltf_scene_populates_ir():
     assert len(scene.nodes[0].transform) == 16
 
 
-def test_read_missing_file_raises_pluton_error():
-    from pluton.io.gltf_import import read_gltf_scene
+def test_read_missing_file_raises_bermake_error():
+    from bermake.io.gltf_import import read_gltf_scene
 
-    with pytest.raises((PlutonIOError, OSError)):
+    with pytest.raises((BermakeIOError, OSError)):
         read_gltf_scene(str(DATA / "does_not_exist.glb"))

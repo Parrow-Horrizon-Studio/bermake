@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pluton._core as core
+import bermake._core as core
 import pytest
 
 DATA = Path(__file__).parent / "data" / "gltf"

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pluton.viewport.render_style import (
+from bermake.viewport.render_style import (
     _DIELECTRIC_F0,
     _MAX_SHININESS,
     _MIN_SHININESS,
@@ -45,7 +45,7 @@ def test_dielectric_default_stays_consistent_with_the_renderer_hand_tuned_defaul
     "painted dielectric faces and the hand-tuned default look like the same
     family of material" has quietly broken, and this test catches it.
     """
-    from pluton.viewport.scene_renderer import _MATERIAL_SHININESS, _MATERIAL_SPECULAR
+    from bermake.viewport.scene_renderer import _MATERIAL_SHININESS, _MATERIAL_SPECULAR
 
     assert _DIELECTRIC_F0 < _MATERIAL_SPECULAR[0]
     assert _MIN_SHININESS <= _MATERIAL_SHININESS <= _MAX_SHININESS

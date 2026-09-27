@@ -7,7 +7,7 @@ import numpy as np
 
 
 def test_tool_default_on_mouse_release_is_noop():
-    from pluton.tools.tool import Tool, ToolOverlay
+    from bermake.tools.tool import Tool, ToolOverlay
 
     class _Min(Tool):
         @property
@@ -32,7 +32,7 @@ def test_tool_default_on_mouse_release_is_noop():
 
 
 def test_tool_overlay_box_rect_defaults_none():
-    from pluton.tools.tool import ToolOverlay
+    from bermake.tools.tool import ToolOverlay
 
     o = ToolOverlay(
         rubber_band_segments=np.zeros((0, 3), dtype=np.float32),
@@ -44,7 +44,7 @@ def test_tool_overlay_box_rect_defaults_none():
 
 
 def test_tool_context_has_selection_field():
-    from pluton.tools.tool import ToolContext
+    from bermake.tools.tool import ToolContext
 
     ctx = ToolContext(scene=object())
     assert ctx.selection is None
@@ -56,8 +56,8 @@ def test_viewport_forwards_lmb_release_to_active_tool(qtbot):
     from PySide6.QtCore import QEvent, QPointF, Qt
     from PySide6.QtGui import QMouseEvent
 
-    from pluton.model import Model
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.model import Model
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     calls = []
 

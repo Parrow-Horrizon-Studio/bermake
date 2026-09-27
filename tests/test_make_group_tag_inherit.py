@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.commands.group_commands import MakeComponentCommand, MakeGroupCommand
-from pluton.model.model import Model
+from bermake.commands.group_commands import MakeComponentCommand, MakeGroupCommand
+from bermake.model.model import Model
 
 
 def _model_with_face():

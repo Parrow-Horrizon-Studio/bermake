@@ -8,7 +8,7 @@ from PySide6.QtGui import QKeyEvent
 
 
 def _snap(world):  # noqa: ANN001
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
 
     return SnapResult(
         kind=SnapKind.GRID,
@@ -20,8 +20,8 @@ def _snap(world):  # noqa: ANN001
 
 
 def _make_tool(scene, stack=None):  # noqa: ANN001
-    from pluton.tools import ToolContext
-    from pluton.tools.arc_tool import ArcTool
+    from bermake.tools import ToolContext
+    from bermake.tools.arc_tool import ArcTool
 
     tool = ArcTool()
     tool.activate(ToolContext(scene=scene, command_stack=stack))
@@ -29,7 +29,7 @@ def _make_tool(scene, stack=None):  # noqa: ANN001
 
 
 def test_arc_three_clicks_make_open_curve_no_face():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)
@@ -42,7 +42,7 @@ def test_arc_three_clicks_make_open_curve_no_face():
 
 
 def test_arc_points_lie_on_expected_circle():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)
@@ -55,8 +55,8 @@ def test_arc_points_lie_on_expected_circle():
 
 
 def test_arc_commit_is_atomically_undoable():
-    from pluton.commands import CommandStack
-    from pluton.scene import Scene
+    from bermake.commands import CommandStack
+    from bermake.scene import Scene
 
     scene = Scene()
     stack = CommandStack()
@@ -72,7 +72,7 @@ def test_arc_commit_is_atomically_undoable():
 
 
 def test_arc_esc_after_two_clicks_cancels_cleanly():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)
@@ -85,7 +85,7 @@ def test_arc_esc_after_two_clicks_cancels_cleanly():
 
 
 def test_arc_degenerate_end_ignored():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)
@@ -96,7 +96,7 @@ def test_arc_degenerate_end_ignored():
 
 
 def test_arc_overlay_shows_chord_in_placing_end():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)
@@ -107,7 +107,7 @@ def test_arc_overlay_shows_chord_in_placing_end():
 
 
 def test_arc_esc_after_one_click_cancels():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)
@@ -120,7 +120,7 @@ def test_arc_esc_after_one_click_cancels():
 
 
 def test_arc_flat_bulge_commits_straight_two_vertex_segment():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)

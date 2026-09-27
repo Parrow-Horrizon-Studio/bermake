@@ -14,7 +14,7 @@ import numpy as np
 
 
 def _camera_at_default():
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.aspect = 1280.0 / 800.0
@@ -28,8 +28,8 @@ def _screen_of(cam, world):
 
 
 def test_cursor_on_guide_line_yields_on_guide():
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     eng = SnapEngine()
     scene = Scene()
@@ -45,8 +45,8 @@ def test_cursor_on_guide_line_yields_on_guide():
 
 
 def test_cursor_on_guide_point_yields_guide_point():
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     eng = SnapEngine()
     scene = Scene()
@@ -59,8 +59,8 @@ def test_cursor_on_guide_point_yields_guide_point():
 
 
 def test_guide_point_beats_on_edge_but_loses_to_endpoint():
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     cam = _camera_at_default()
 
@@ -105,8 +105,8 @@ def test_on_edge_beats_on_guide_when_only_those_two_compete():
     is neither the segment's midpoint nor either endpoint, ruling out
     MIDPOINT and ENDPOINT too.
     """
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     cam = _camera_at_default()
     cursor = _screen_of(cam, [4.0, 0.0, 0.0])
@@ -156,8 +156,8 @@ def test_midpoint_beats_guide_point_when_both_compete():
     GUIDE_POINT reordering the way INTERSECTION masked ON_EDGE/ON_GUIDE in
     the fix-round-1 tests.
     """
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     eng = SnapEngine()
     scene = Scene()
@@ -186,9 +186,9 @@ def test_on_guide_beats_perpendicular_when_only_those_two_compete():
     but it ranks below both ON_GUIDE and PERPENDICULAR and stays there
     regardless of their relative order, so it cannot mask this pair either.
     """
-    from pluton.scene import Scene
-    from pluton.viewport.inference import Acquired, AcquiredKind
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.inference import Acquired, AcquiredKind
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     eng = SnapEngine()
     scene = Scene()
@@ -222,8 +222,8 @@ def test_on_guide_beats_perpendicular_when_only_those_two_compete():
 
 
 def test_guide_crossing_scene_edge_yields_intersection_not_on_guide():
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     cam = _camera_at_default()
     origin = np.array([0.0, 0.0, 0.0], dtype=np.float64)
@@ -261,8 +261,8 @@ def test_guide_crossing_scene_edge_yields_intersection_not_on_guide():
 
 
 def test_two_guides_crossing_yields_intersection():
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     eng = SnapEngine()
     scene = Scene()
@@ -279,9 +279,9 @@ def test_two_guides_crossing_yields_intersection():
 def test_hidden_guides_never_reach_the_snap_engine(qtbot):
     """Task 7 made a hidden guide unpickable; a hidden guide that still snaps
     is the same trap with nothing on screen to explain the cursor jump."""
-    from pluton.model.annotation import Guide, GuidePoint
-    from pluton.model.model import Model
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.model.annotation import Guide, GuidePoint
+    from bermake.model.model import Model
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     model = Model()
     model.active_context.annotations.append(Guide(1, (0.0, 0.0, 0.0), (1.0, 0.0, 0.0)))
@@ -303,8 +303,8 @@ def test_hidden_guides_never_reach_the_snap_engine(qtbot):
     # And driven all the way through the engine: with guides hidden, no
     # ON_GUIDE/GUIDE_POINT candidate is produced even when the cursor sits
     # right on top of one.
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     cam = _camera_at_default()
     cursor = _screen_of(cam, [3.0, 0.0, 0.0])
@@ -321,10 +321,10 @@ def test_gather_guides_transforms_correctly_in_a_rotated_translated_context(qtbo
     the model root, so a rotated + translated active context is the only
     setup that can catch a wrong conversion. Directions transform by the
     linear block only; points (the origin) transform by the full matrix."""
-    from pluton.geometry.transforms import mat_rotate, mat_translate
-    from pluton.model.annotation import Guide
-    from pluton.model.model import Model
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.geometry.transforms import mat_rotate, mat_translate
+    from bermake.model.annotation import Guide
+    from bermake.model.model import Model
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     model = Model()
     grp_def = model.new_definition("Grp", is_group=True)
@@ -383,10 +383,10 @@ def test_gather_guides_direction_uses_the_vector_convention_under_nonuniform_sca
     difference, not just a magnitude difference an allclose on a normalised
     vector could miss.
     """
-    from pluton.geometry.transforms import mat_rotate, mat_scale, mat_translate
-    from pluton.model.annotation import Guide
-    from pluton.model.model import Model
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.geometry.transforms import mat_rotate, mat_scale, mat_translate
+    from bermake.model.annotation import Guide
+    from bermake.model.model import Model
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     model = Model()
     grp_def = model.new_definition("Grp", is_group=True)
@@ -420,7 +420,7 @@ def _rotated_scaled_context(model):
     BEFORE the rotation (right-most factor) so it acts on the group's own
     local axes.
     """
-    from pluton.geometry.transforms import mat_rotate, mat_scale, mat_translate
+    from bermake.geometry.transforms import mat_rotate, mat_scale, mat_translate
 
     wt = (
         mat_translate([5.0, 0.0, 0.0])
@@ -443,9 +443,9 @@ def test_edge_direction_is_world_space_in_a_rotated_scaled_context(qtbot):
     Perpendicular and the Down-arrow edge lock all point the wrong way
     inside any rotated context.
     """
-    from pluton.model.model import Model
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.model.model import Model
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     model = Model()
     grp_def, _wt = _rotated_scaled_context(model)
@@ -479,8 +479,8 @@ def test_the_gesture_plane_normal_uses_the_inverse_transpose(qtbot):
     not perpendicular to the face any more, and Perpendicular resolves
     inside that plane.
     """
-    from pluton.model.model import Model
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.model.model import Model
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     model = Model()
     _grp_def, _wt = _rotated_scaled_context(model)

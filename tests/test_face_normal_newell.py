@@ -22,7 +22,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from pluton.scene import Scene
+from bermake.scene import Scene
 
 # Tolerance on a dot product of two unit vectors that should be identical.
 _PARALLEL = 1.0 - 1e-5

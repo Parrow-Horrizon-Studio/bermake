@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from pluton.tools.opening_tool import DoorWindowTool
-from pluton.ui.opening_options_bar import OpeningOptionsBar
-from pluton.units import Units
+from bermake.tools.opening_tool import DoorWindowTool
+from bermake.ui.opening_options_bar import OpeningOptionsBar
+from bermake.units import Units
 
 
 def test_fields_update_tool(qtbot):

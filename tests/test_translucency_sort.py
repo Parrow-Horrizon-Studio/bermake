@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pluton.viewport.translucency import (
+from bermake.viewport.translucency import (
     order_back_to_front,
     transform_points,
     triangle_centroids,

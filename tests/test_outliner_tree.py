@@ -5,8 +5,8 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QAbstractItemView
 
-from pluton.model.model_queries import OutlinerRow
-from pluton.ui.outliner_tree import OutlinerTree
+from bermake.model.model_queries import OutlinerRow
+from bermake.ui.outliner_tree import OutlinerTree
 
 
 def _row(instance_id, depth=0, label="Group", **kwargs):

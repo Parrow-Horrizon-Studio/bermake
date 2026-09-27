@@ -28,11 +28,11 @@ here ever touches real GL.
 
 from __future__ import annotations
 
-from pluton.model.texture import TextureLibrary
-from pluton.viewport import scene_renderer as sr
-from pluton.viewport.camera import Camera
-from pluton.viewport.scene_renderer import _ENVIRONMENT_UNIFORMS, _LINE_UNIFORMS, SceneRenderer
-from pluton.viewport.texture_cache import TextureCache
+from bermake.model.texture import TextureLibrary
+from bermake.viewport import scene_renderer as sr
+from bermake.viewport.camera import Camera
+from bermake.viewport.scene_renderer import _ENVIRONMENT_UNIFORMS, _LINE_UNIFORMS, SceneRenderer
+from bermake.viewport.texture_cache import TextureCache
 
 
 class _RecordingGL:

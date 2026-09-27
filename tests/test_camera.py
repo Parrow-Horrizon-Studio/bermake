@@ -7,7 +7,7 @@ import math
 import numpy as np
 import pytest
 
-from pluton.viewport.camera import Camera
+from bermake.viewport.camera import Camera
 
 
 # --- Defaults --------------------------------------------------------------
@@ -135,7 +135,7 @@ def test_zoom_toward_cursor_moves_position_and_target_together():
     orbit pivot drift along the cursor ray — matching SketchUp's behavior and
     the preference established during M2 visual verification.
     """
-    from pluton.viewport.camera import _normalize
+    from bermake.viewport.camera import _normalize
 
     c = Camera()
     pos_before = c.position.copy()
@@ -165,7 +165,7 @@ def test_zoom_toward_cursor_moves_position_and_target_together():
 
 
 def test_ray_from_screen_returns_origin_and_unit_direction():
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.aspect = 1.0
@@ -182,7 +182,7 @@ def test_ray_from_screen_returns_origin_and_unit_direction():
 
 
 def test_ray_intersect_ground_for_centre_cursor():
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.aspect = 1.0
@@ -196,7 +196,7 @@ def test_ray_intersect_ground_for_centre_cursor():
 
 def test_ray_intersect_ground_returns_none_when_ray_parallel_or_above():
     """Cursor placed so the ray goes upward (away from ground) yields None."""
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     # Pose the camera above the ground looking up (away from z=0).
@@ -213,7 +213,7 @@ def test_ray_intersect_ground_returns_none_when_ray_parallel_or_above():
 def test_world_to_screen_roundtrips_with_ray_from_screen():
     """A world point projected to screen, then turned back into a ray, yields a
     ray that passes through the original point."""
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.aspect = 1280.0 / 800.0
@@ -231,7 +231,7 @@ def test_world_to_screen_roundtrips_with_ray_from_screen():
 
 
 def test_world_to_screen_center_of_target_is_screen_center():
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.aspect = 1.0
@@ -240,7 +240,7 @@ def test_world_to_screen_center_of_target_is_screen_center():
 
 
 def test_world_to_screen_behind_camera_returns_none():
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.position = np.array([0.0, 0.0, 5.0], dtype=np.float32)

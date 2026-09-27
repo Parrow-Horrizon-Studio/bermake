@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from pluton.commands.scene_commands import ClearSceneCommand
-from pluton.ui.main_window import MainWindow
+from bermake.commands.scene_commands import ClearSceneCommand
+from bermake.ui.main_window import MainWindow
 
 
 @pytest.fixture(scope="module")
@@ -22,10 +22,10 @@ def _draw_something(win):
 def test_command_execution_marks_dirty_and_titles(app):
     win = MainWindow()
     assert win._doc_controller.dirty is False
-    assert win.windowTitle() == "Untitled — Pluton"
+    assert win.windowTitle() == "Untitled — Bermake"
     win._command_stack.execute(ClearSceneCommand(), win._model.active_scene)
     assert win._doc_controller.dirty is True
-    assert win.windowTitle() == "Untitled* — Pluton"
+    assert win.windowTitle() == "Untitled* — Bermake"
 
 
 def test_save_as_writes_file_and_marks_clean(app, tmp_path, monkeypatch):
@@ -34,12 +34,12 @@ def test_save_as_writes_file_and_marks_clean(app, tmp_path, monkeypatch):
     win._command_stack.execute(ClearSceneCommand(), win._model.active_scene)
     assert win._doc_controller.dirty is True
 
-    target = tmp_path / "out.pluton"
+    target = tmp_path / "out.berm"
     monkeypatch.setattr(win, "_prompt_save_path", lambda: str(target))
     assert win._on_file_save_as() is True
     assert target.exists()
     assert win._doc_controller.dirty is False
-    assert win.windowTitle() == "out.pluton — Pluton"
+    assert win.windowTitle() == "out.berm — Bermake"
 
 
 def test_guard_cancel_aborts(app):
@@ -93,7 +93,7 @@ def test_new_resets_to_clean_untitled(app, tmp_path):
     win._on_file_new()
     assert win._doc_controller.current_path is None
     assert win._doc_controller.dirty is False
-    assert win.windowTitle() == "Untitled — Pluton"
+    assert win.windowTitle() == "Untitled — Bermake"
     assert not win._command_stack.can_undo  # history cleared
 
 
@@ -119,7 +119,7 @@ def test_open_success_swaps_model_and_clears_history(app, tmp_path, monkeypatch)
     # First, save a file with a known box.
     saver = MainWindow()
     _draw_something(saver)
-    target = tmp_path / "doc.pluton"
+    target = tmp_path / "doc.berm"
     saver._prompt_save_path = lambda: str(target)
     assert saver._on_file_save_as() is True
 
@@ -136,15 +136,15 @@ def test_open_success_swaps_model_and_clears_history(app, tmp_path, monkeypatch)
 
 
 def test_open_failure_keeps_current_model(app, monkeypatch):
-    from pluton.io import PlutonFormatError
+    from bermake.io import BermakeFormatError
     win = MainWindow()
     _draw_something(win)
     before_root = win._model.root
-    win._prompt_open_path = lambda: "/whatever.pluton"
+    win._prompt_open_path = lambda: "/whatever.berm"
 
-    import pluton.ui.main_window as mw
+    import bermake.ui.main_window as mw
     monkeypatch.setattr(mw, "load_document",
-                        lambda p: (_ for _ in ()).throw(PlutonFormatError("bad")))
+                        lambda p: (_ for _ in ()).throw(BermakeFormatError("bad")))
     # Suppress + record the error dialog.
     shown = {}
     from PySide6.QtWidgets import QMessageBox

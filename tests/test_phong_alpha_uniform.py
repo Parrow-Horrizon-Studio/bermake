@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pluton.viewport.scene_renderer import _PHONG_UNIFORMS, _load_shader_source
+from bermake.viewport.scene_renderer import _PHONG_UNIFORMS, _load_shader_source
 
 
 def test_phong_uniforms_tuple_includes_u_alpha():

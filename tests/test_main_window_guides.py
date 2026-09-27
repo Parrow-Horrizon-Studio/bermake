@@ -7,8 +7,8 @@ poking tool internals.
 
 from __future__ import annotations
 
-from pluton.model.annotation import Dimension, Guide, GuidePoint, Label
-from pluton.ui.main_window import MainWindow
+from bermake.model.annotation import Dimension, Guide, GuidePoint, Label
+from bermake.ui.main_window import MainWindow
 
 
 def _seed_annotations(w):

@@ -12,7 +12,7 @@ agree, which is the whole reason M7.6a exists.
 from __future__ import annotations
 
 import numpy as np
-from pluton.scene.scene import DEFAULT_PLACEMENT, Scene, Side, TexturePlacement
+from bermake.scene.scene import DEFAULT_PLACEMENT, Scene, Side, TexturePlacement
 
 
 def _two_quads_sharing_an_edge() -> tuple[Scene, int, int, int]:

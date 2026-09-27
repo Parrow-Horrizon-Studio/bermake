@@ -1,5 +1,5 @@
 def test_unit_change_refreshes_the_wall_options_bar(qtbot):
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     win = MainWindow()
     qtbot.addWidget(win)

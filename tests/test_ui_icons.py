@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from PySide6.QtGui import QColor
 
-from pluton.ui import icons
+from bermake.ui import icons
 
 _SQUARE = (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'

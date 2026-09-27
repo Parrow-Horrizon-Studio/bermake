@@ -12,7 +12,7 @@ class TestSceneRendererConstruction:
     """SceneRenderer should be constructible without a GL context."""
 
     def test_constructs_without_gl(self):
-        from pluton.viewport.scene_renderer import SceneRenderer
+        from bermake.viewport.scene_renderer import SceneRenderer
 
         renderer = SceneRenderer()
         assert not renderer._initialized
@@ -23,7 +23,7 @@ class TestFaceFillOverlayPass:
 
     def test_empty_polygon_list_is_a_noop(self, qtbot):
         """Smoke test: empty list shouldn't touch GL state or raise."""
-        from pluton.viewport.scene_renderer import SceneRenderer
+        from bermake.viewport.scene_renderer import SceneRenderer
 
         renderer = SceneRenderer()
         # Don't call initialize_gl — the empty-list path must short-circuit
@@ -35,7 +35,7 @@ class TestFaceFillOverlayPass:
         """The renderer should accept a single (4, 3) numpy quad without raising.
         Actual GL drawing is exercised by manual visual verification."""
         import inspect
-        from pluton.viewport.scene_renderer import SceneRenderer
+        from bermake.viewport.scene_renderer import SceneRenderer
 
         renderer = SceneRenderer()
         assert hasattr(renderer, "draw_face_fill_overlays")
@@ -46,8 +46,8 @@ class TestFaceFillOverlayPass:
 
 def test_snap_marker_vertices_shape_per_kind():
     import numpy as np
-    from pluton.viewport.scene_renderer import _snap_marker_vertices
-    from pluton.viewport.snap_engine import SnapKind
+    from bermake.viewport.scene_renderer import _snap_marker_vertices
+    from bermake.viewport.snap_engine import SnapKind
 
     p = np.array([1.0, 2.0, 3.0], dtype=np.float32)
     # GL_LINES vertex counts: square=8, triangle=6, diamond=8, X=4.
@@ -64,9 +64,9 @@ def test_snap_marker_vertices_shape_per_kind():
 class TestSelectionHighlightHelpers:
     def test_selection_face_polygons_returns_live_selected_loops(self):
         import numpy as np
-        from pluton.scene import Scene
-        from pluton.selection import Selection
-        from pluton.viewport.scene_renderer import _selection_face_polygons
+        from bermake.scene import Scene
+        from bermake.selection import Selection
+        from bermake.viewport.scene_renderer import _selection_face_polygons
 
         scene = Scene()
         a = scene.add_vertex(np.array([0, 0, 0], dtype=np.float32))
@@ -81,9 +81,9 @@ class TestSelectionHighlightHelpers:
         assert polys[0].shape == (4, 3)
 
     def test_selection_face_polygons_skips_dead_ids(self):
-        from pluton.scene import Scene
-        from pluton.selection import Selection
-        from pluton.viewport.scene_renderer import _selection_face_polygons
+        from bermake.scene import Scene
+        from bermake.selection import Selection
+        from bermake.viewport.scene_renderer import _selection_face_polygons
 
         sel = Selection()
         sel.replace(faces=[999])  # not live
@@ -91,9 +91,9 @@ class TestSelectionHighlightHelpers:
 
     def test_selection_edge_segments_returns_2E_by_3(self):
         import numpy as np
-        from pluton.scene import Scene
-        from pluton.selection import Selection
-        from pluton.viewport.scene_renderer import _selection_edge_segments
+        from bermake.scene import Scene
+        from bermake.selection import Selection
+        from bermake.viewport.scene_renderer import _selection_edge_segments
 
         scene = Scene()
         a = scene.add_vertex(np.array([0, 0, 0], dtype=np.float32))
@@ -106,7 +106,7 @@ class TestSelectionHighlightHelpers:
 
     def test_render_accepts_selection_param(self):
         import inspect
-        from pluton.viewport.scene_renderer import SceneRenderer
+        from bermake.viewport.scene_renderer import SceneRenderer
 
         sig = inspect.signature(SceneRenderer.render)
         assert "selection" in sig.parameters
@@ -114,7 +114,7 @@ class TestSelectionHighlightHelpers:
 
 def test_box_rect_ndc_segments_maps_corners():
     import numpy as np
-    from pluton.viewport.scene_renderer import _box_rect_ndc_segments
+    from bermake.viewport.scene_renderer import _box_rect_ndc_segments
 
     # 800x600 viewport; rect from (0,0) to (800,600) -> full NDC [-1,1] square.
     segs = _box_rect_ndc_segments((0.0, 0.0, 800.0, 600.0), 800, 600)

@@ -144,10 +144,10 @@ def _wall(scene):
 def test_the_top_of_the_image_renders_at_the_top_of_the_wall(gl_context, monkeypatch):
     from OpenGL import GL
 
-    from pluton.model.model import Model
-    from pluton.scene.scene import Side, TexturePlacement
-    from pluton.viewport import scene_renderer as sr
-    from pluton.viewport.camera import Camera
+    from bermake.model.model import Model
+    from bermake.scene.scene import Side, TexturePlacement
+    from bermake.viewport import scene_renderer as sr
+    from bermake.viewport.camera import Camera
 
     # A core profile rejects glLineWidth above 1.0, which the renderer sets for
     # its overlays. Pre-existing, unrelated to orientation, and only reachable

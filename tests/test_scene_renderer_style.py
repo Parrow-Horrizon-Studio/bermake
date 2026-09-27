@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pluton.viewport.render_style import FaceStyle, RenderStyle
-from pluton.viewport.scene_renderer import SceneRenderer
+from bermake.viewport.render_style import FaceStyle, RenderStyle
+from bermake.viewport.scene_renderer import SceneRenderer
 
 
 def test_renderer_defaults_to_shaded_no_xray():

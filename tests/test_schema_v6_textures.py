@@ -7,12 +7,12 @@ import zipfile
 
 import numpy as np
 import pytest
-from pluton.document import DocumentSettings
-from pluton.io.document_codec import geometry_from_dict, geometry_to_dict
-from pluton.io.errors import PlutonFormatError
-from pluton.io.pluton_file import SCHEMA_VERSION
-from pluton.scene.scene import DEFAULT_PLACEMENT, Scene, Side, TexturePlacement
-from pluton.viewport.camera import Camera
+from bermake.document import DocumentSettings
+from bermake.io.document_codec import geometry_from_dict, geometry_to_dict
+from bermake.io.errors import BermakeFormatError
+from bermake.io.bermake_file import SCHEMA_VERSION
+from bermake.scene.scene import DEFAULT_PLACEMENT, Scene, Side, TexturePlacement
+from bermake.viewport.camera import Camera
 
 _PNG = b"\x89PNG\r\n\x1a\nfake-but-stable-bytes"
 
@@ -89,20 +89,20 @@ def test_an_out_of_range_placement_face_index_raises():
     _square(s)
     d = geometry_to_dict(s)
     d["face_placements"] = {"99": [0.0, 0.0, 1.0, 0.0]}
-    with pytest.raises(PlutonFormatError):
+    with pytest.raises(BermakeFormatError):
         geometry_from_dict(Scene(), d)
 
 
 def test_a_placement_with_the_wrong_arity_raises():
     # A truncated record (e.g. [offset_u, offset_v] with scale/rotation
     # missing) must not silently become a full TexturePlacement with invented
-    # defaults, and must raise PlutonFormatError (not a raw TypeError) so a
+    # defaults, and must raise BermakeFormatError (not a raw TypeError) so a
     # direct caller of geometry_from_dict sees the documented exception.
     s = Scene()
     _square(s)
     d = geometry_to_dict(s)
     d["face_placements"] = {"0": [0.5, 0.5]}
-    with pytest.raises(PlutonFormatError):
+    with pytest.raises(BermakeFormatError):
         geometry_from_dict(Scene(), d)
 
 
@@ -123,9 +123,9 @@ def test_placement_round_trips_through_a_real_file(tmp_path):
     # a front placement, a back placement, a nested Definition's face (not just
     # root), and an unadjusted face staying at identity -- the other half of
     # this task, alongside the texture-blob real-file tests below.
-    from pluton.io.pluton_file import load_document, save_document
-    from pluton.model.model import Model
-    from pluton.viewport.render_style import RenderStyle
+    from bermake.io.bermake_file import load_document, save_document
+    from bermake.model.model import Model
+    from bermake.viewport.render_style import RenderStyle
 
     model = Model()
     f_root = _square(model.root.mesh)
@@ -138,7 +138,7 @@ def test_placement_round_trips_through_a_real_file(tmp_path):
     chair.mesh.set_face_placement(f_nested, TexturePlacement(offset_u=0.5))
     model.root.children.append(model.new_instance(chair))
 
-    path = tmp_path / "t.pluton"
+    path = tmp_path / "t.berm"
     save_document(path, model, _camera(), _doc(), RenderStyle())
     loaded = load_document(path)
 
@@ -156,16 +156,16 @@ def test_placement_round_trips_through_a_real_file(tmp_path):
 
 
 def test_texture_records_and_blobs_round_trip_through_a_real_file(tmp_path):
-    from pluton.io.pluton_file import load_document, save_document
-    from pluton.model.model import Model
-    from pluton.viewport.render_style import RenderStyle
+    from bermake.io.bermake_file import load_document, save_document
+    from bermake.model.model import Model
+    from bermake.viewport.render_style import RenderStyle
 
     model = Model()
     tex = model.textures.add("brick.png", _PNG, "png", 8, 8, True)
     mat = model.materials.add_custom("Brick", (1.0, 1.0, 1.0))
     model.materials.edit(mat.id, texture_id=tex.id, texture_size=(2.0, 3.0))
 
-    path = tmp_path / "t.pluton"
+    path = tmp_path / "t.berm"
     save_document(path, model, _camera(), _doc(), RenderStyle())
     loaded = load_document(path)
 
@@ -184,16 +184,16 @@ def test_next_id_survives_removing_the_highest_id_texture(tmp_path):
     # would then reuse the freed id, and any material whose texture_id
     # pointed at the original image would silently point at whatever gets
     # that id next.
-    from pluton.io.pluton_file import load_document, save_document
-    from pluton.model.model import Model
-    from pluton.viewport.render_style import RenderStyle
+    from bermake.io.bermake_file import load_document, save_document
+    from bermake.model.model import Model
+    from bermake.viewport.render_style import RenderStyle
 
     model = Model()
     first = model.textures.add("a.png", _PNG, "png", 4, 4, False)
     second = model.textures.add("b.png", _PNG, "png", 4, 4, False)
     model.textures.remove(second.id)
 
-    path = tmp_path / "t.pluton"
+    path = tmp_path / "t.berm"
     save_document(path, model, _camera(), _doc(), RenderStyle())
     loaded = load_document(path)
 
@@ -203,13 +203,13 @@ def test_next_id_survives_removing_the_highest_id_texture(tmp_path):
 
 
 def test_the_blob_is_a_sibling_entry_not_base64_in_the_json(tmp_path):
-    from pluton.io.pluton_file import save_document
-    from pluton.model.model import Model
-    from pluton.viewport.render_style import RenderStyle
+    from bermake.io.bermake_file import save_document
+    from bermake.model.model import Model
+    from bermake.viewport.render_style import RenderStyle
 
     model = Model()
     tex = model.textures.add("brick.png", _PNG, "png", 8, 8, False)
-    path = tmp_path / "t.pluton"
+    path = tmp_path / "t.berm"
     save_document(path, model, _camera(), _doc(), RenderStyle())
 
     with zipfile.ZipFile(path) as zf:
@@ -235,16 +235,16 @@ def test_the_blob_is_a_sibling_entry_not_base64_in_the_json(tmp_path):
 def test_a_document_referencing_a_missing_blob_still_opens(tmp_path):
     # Spec 1.8. Rewriting the zip without the texture entry simulates a file
     # that was truncated or hand-edited; the open must succeed untextured.
-    from pluton.io.pluton_file import load_document, save_document
-    from pluton.model.model import Model
-    from pluton.viewport.render_style import RenderStyle
+    from bermake.io.bermake_file import load_document, save_document
+    from bermake.model.model import Model
+    from bermake.viewport.render_style import RenderStyle
 
     model = Model()
     tex = model.textures.add("brick.png", _PNG, "png", 8, 8, False)
-    src = tmp_path / "a.pluton"
+    src = tmp_path / "a.berm"
     save_document(src, model, _camera(), _doc(), RenderStyle())
 
-    dst = tmp_path / "b.pluton"
+    dst = tmp_path / "b.berm"
     with zipfile.ZipFile(src) as zin, zipfile.ZipFile(dst, "w") as zout:
         for item in zin.infolist():
             if not item.filename.startswith("textures/"):

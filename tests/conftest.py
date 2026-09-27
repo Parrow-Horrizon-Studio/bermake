@@ -4,8 +4,8 @@ import os
 
 import numpy as np
 import pytest
-from pluton.commands.group_commands import MakeGroupCommand
-from pluton.model.model import Model
+from bermake.commands.group_commands import MakeGroupCommand
+from bermake.model.model import Model
 
 # Ensure Qt uses the offscreen platform in CI / headless environments.
 # This must run BEFORE QApplication is created (i.e., before any pytest-qt fixture).
@@ -29,7 +29,7 @@ def _scratch_window_settings(tmp_path, monkeypatch):
     unique to this test.
     """
     try:
-        import pluton.ui.main_window as main_window_module
+        import bermake.ui.main_window as main_window_module
     except Exception:
         return
 
@@ -55,7 +55,7 @@ def _no_blocking_close_dialog(monkeypatch):
     instance, which shadows this class-level patch.
     """
     try:
-        from pluton.ui.main_window import MainWindow
+        from bermake.ui.main_window import MainWindow
     except Exception:
         return
     monkeypatch.setattr(MainWindow, "_prompt_discard", lambda self: "discard", raising=False)
@@ -97,7 +97,7 @@ def group_factory():
 
 @pytest.fixture
 def main_window(qtbot):
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     window = MainWindow()
     qtbot.addWidget(window)

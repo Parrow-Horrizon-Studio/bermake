@@ -16,13 +16,13 @@ import types
 import numpy as np
 import pytest
 
-from pluton.geometry.transforms import apply_mat, mat_translate
-from pluton.model.model import Model
-from pluton.scene.scene import Scene
-from pluton.tools.line_tool import LineTool
-from pluton.tools.rotate_tool import RotateTool
-from pluton.tools.tool import ToolContext
-from pluton.viewport.snap_engine import SnapKind
+from bermake.geometry.transforms import apply_mat, mat_translate
+from bermake.model.model import Model
+from bermake.scene.scene import Scene
+from bermake.tools.line_tool import LineTool
+from bermake.tools.rotate_tool import RotateTool
+from bermake.tools.tool import ToolContext
+from bermake.viewport.snap_engine import SnapKind
 
 
 # ---------------------------------------------------------------------------
@@ -146,8 +146,8 @@ class TestRotateToolDiskRadius:
         """Build a group with two vertices, enter it, arm the RotateTool with a
         world center equal to (translation + local origin), and return the tool
         plus the expected local radius."""
-        from pluton.commands.command_stack import CommandStack
-        from pluton.selection import Selection
+        from bermake.commands.command_stack import CommandStack
+        from bermake.selection import Selection
 
         wt = mat_translate(translation)
         model = Model()
@@ -174,8 +174,8 @@ class TestRotateToolDiskRadius:
 
     def test_disk_radius_identity(self):
         """At identity the center is LOCAL == WORLD, so radius is just max(|v-center|)."""
-        from pluton.commands.command_stack import CommandStack
-        from pluton.selection import Selection
+        from bermake.commands.command_stack import CommandStack
+        from bermake.selection import Selection
 
         scene = Scene()
         a = scene.add_vertex(np.array([3.0, 0.0, 0.0], np.float32))
@@ -221,8 +221,8 @@ class TestRotateToolDiskRadius:
 
     def test_disk_radius_fallback_no_orig(self):
         """Returns 1.0 when _orig is empty (e.g. immediately after reset)."""
-        from pluton.commands.command_stack import CommandStack
-        from pluton.selection import Selection
+        from bermake.commands.command_stack import CommandStack
+        from bermake.selection import Selection
 
         scene = Scene()
         sel = Selection()

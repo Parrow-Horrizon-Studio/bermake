@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 from PySide6.QtCore import Qt
-from pluton.ui.outliner_tree import OutlinerTree
+from bermake.ui.outliner_tree import OutlinerTree
 
 
 def _square(window):

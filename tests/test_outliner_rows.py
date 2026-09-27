@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.model.model_queries import instance_path, outliner_rows
+from bermake.model.model_queries import instance_path, outliner_rows
 
 
 def _square(model):

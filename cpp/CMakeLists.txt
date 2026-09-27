@@ -21,7 +21,7 @@ set_target_properties(bermake_core PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
 
-# The nanobind module — exposed to Python as `pluton._core`
+# The nanobind module — exposed to Python as `bermake._core`
 nanobind_add_module(_core
     bindings/module.cpp
 )
@@ -29,4 +29,4 @@ nanobind_add_module(_core
 target_link_libraries(_core PRIVATE bermake_core)
 
 # Install the compiled module into the Python package directory
-install(TARGETS _core LIBRARY DESTINATION pluton)
+install(TARGETS _core LIBRARY DESTINATION bermake)

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from pluton.ui.actions import ContextTarget
-from pluton.ui.context_menu import context_menu_ids, is_enabled
+from bermake.ui.actions import ContextTarget
+from bermake.ui.context_menu import context_menu_ids, is_enabled
 
 
 def _ids(target, **kwargs):
@@ -45,7 +45,7 @@ def test_empty_menu_offers_selection_and_view_commands():
 
 
 def test_every_returned_id_is_a_declared_action():
-    from pluton.ui.actions import action_by_id
+    from bermake.ui.actions import action_by_id
 
     for target in ContextTarget:
         for action_id in _ids(target):
@@ -128,8 +128,8 @@ def test_select_same_material_is_disabled_with_nothing_selected(qtbot):
     _add_select_submenu and this is the test that catches it. Same
     material needs a seed face; with no selection at all there is nothing
     to seed from."""
-    from pluton.ui.context_menu import build_context_menu
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.context_menu import build_context_menu
+    from bermake.ui.main_window import MainWindow
 
     w = MainWindow()
     qtbot.addWidget(w)
@@ -147,8 +147,8 @@ def test_select_same_material_is_disabled_with_nothing_selected(qtbot):
 
 
 def test_the_select_submenu_appears_on_every_target(qtbot):
-    from pluton.ui.context_menu import build_context_menu
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.context_menu import build_context_menu
+    from bermake.ui.main_window import MainWindow
 
     w = MainWindow()
     qtbot.addWidget(w)

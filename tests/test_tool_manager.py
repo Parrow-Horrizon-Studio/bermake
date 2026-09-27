@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from pluton.scene import Scene
-from pluton.tools import Tool, ToolContext, ToolManager, ToolOverlay
+from bermake.scene import Scene
+from bermake.tools import Tool, ToolContext, ToolManager, ToolOverlay
 
 
 class FakeTool(Tool):

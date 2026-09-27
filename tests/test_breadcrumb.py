@@ -9,7 +9,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from pluton.model.model import Model
+from bermake.model.model import Model
 
 
 def _build_group_model():

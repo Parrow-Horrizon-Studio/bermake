@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pluton.ui.main_window as mw_mod
-from pluton.scene.scene import Side
-from pluton.ui.main_window import MainWindow
+import bermake.ui.main_window as mw_mod
+from bermake.scene.scene import Side
+from bermake.ui.main_window import MainWindow
 
 _GLTF_DATA = Path(__file__).parent / "data" / "gltf"
 
@@ -39,7 +39,7 @@ def test_import_gltf_cancelled_is_noop(qtbot):
 
 
 def test_import_gltf_runs_command(qtbot, monkeypatch, tmp_path):
-    from pluton.io.gltf_scene import GltfMesh, GltfNode, GltfSceneData
+    from bermake.io.gltf_scene import GltfMesh, GltfNode, GltfSceneData
     tri = ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
     ident = (1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
     scene = GltfSceneData(
@@ -109,10 +109,10 @@ def test_import_gltf_stores_uvs_and_textures_and_repaints(qtbot, monkeypatch):
 
 
 def test_import_gltf_bad_file_shows_dialog(qtbot, monkeypatch, tmp_path):
-    from pluton.io.errors import PlutonFormatError
+    from bermake.io.errors import BermakeFormatError
 
     def _raise(path):
-        raise PlutonFormatError("bad")
+        raise BermakeFormatError("bad")
 
     w = _win(qtbot)
     w._prompt_open_path = lambda *a, **k: str(tmp_path / "bad.glb")

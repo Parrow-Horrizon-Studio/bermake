@@ -9,7 +9,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from pluton.ui.main_window import MainWindow
+from bermake.ui.main_window import MainWindow
 
 
 @pytest.fixture

@@ -15,17 +15,17 @@ import pytest
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
 
-from pluton.commands.command_stack import CommandStack
-from pluton.commands.instance_commands import TransformInstanceCommand
-from pluton.geometry.transforms import mat_translate, mat_rotate, mat_scale
-from pluton.model.model import Model
-from pluton.scene.scene import Scene
-from pluton.selection import Selection
-from pluton.tools.move_tool import MoveTool
-from pluton.tools.rotate_tool import RotateTool
-from pluton.tools.scale_tool import ScaleTool
-from pluton.tools.tool import ToolContext
-from pluton.viewport.snap_engine import SnapKind
+from bermake.commands.command_stack import CommandStack
+from bermake.commands.instance_commands import TransformInstanceCommand
+from bermake.geometry.transforms import mat_translate, mat_rotate, mat_scale
+from bermake.model.model import Model
+from bermake.scene.scene import Scene
+from bermake.selection import Selection
+from bermake.tools.move_tool import MoveTool
+from bermake.tools.rotate_tool import RotateTool
+from bermake.tools.scale_tool import ScaleTool
+from bermake.tools.tool import ToolContext
+from bermake.viewport.snap_engine import SnapKind
 
 
 # ---------------------------------------------------------------------------
@@ -183,7 +183,7 @@ def test_move_instance_mode_undo(qtbot):
 
 def test_move_entity_mode_unchanged(qtbot):
     """With only entities selected, MoveTool still moves vertices (regression)."""
-    from pluton.scene.scene import Scene
+    from bermake.scene.scene import Scene
     s = Scene()
     a = s.add_vertex(np.array([0, 0, 0], np.float32))
     b = s.add_vertex(np.array([1, 0, 0], np.float32))
@@ -212,7 +212,7 @@ def test_move_entity_mode_unchanged(qtbot):
 
 def test_move_instance_mode_apply_typed_value(qtbot):
     """apply_typed_value in instance-mode applies the typed distance along the drag direction."""
-    from pluton.units import Units
+    from bermake.units import Units
     m, inst = _make_model_with_group()
     sel = Selection()
     sel.replace(instances={inst.id})
@@ -347,7 +347,7 @@ def test_scale_instance_mode_scales_instance(qtbot, monkeypatch):
     tool.activate(_ctx(m, stack, sel))
 
     # Manually inject a grip (corner at [1,1,1], anchor at [0,0,0])
-    from pluton.tools.transform_support import GripSpec
+    from bermake.tools.transform_support import GripSpec
     grip = GripSpec(
         position=np.array([1, 1, 1], np.float32),
         opposite=np.array([0, 0, 0], np.float32),
@@ -385,7 +385,7 @@ def test_scale_instance_mode_undo(qtbot, monkeypatch):
     tool = ScaleTool()
     tool.activate(_ctx(m, stack, sel))
 
-    from pluton.tools.transform_support import GripSpec
+    from bermake.tools.transform_support import GripSpec
     grip = GripSpec(
         position=np.array([1, 1, 1], np.float32),
         opposite=np.array([0, 0, 0], np.float32),
@@ -434,7 +434,7 @@ def test_scale_entity_mode_unchanged(qtbot, monkeypatch):
     tool = ScaleTool()
     tool.activate(ctx)
 
-    from pluton.tools.transform_support import GripSpec
+    from bermake.tools.transform_support import GripSpec
     grip = GripSpec(
         position=np.array([2, 2, 0], np.float32),
         opposite=np.array([0, 0, 0], np.float32),
@@ -467,7 +467,7 @@ def test_scale_instance_world_aabb(qtbot):
     d.mesh.add_vertex(np.array([0, 0, 0], np.float32))
     d.mesh.add_vertex(np.array([1, 1, 1], np.float32))
     # Translate instance by [5, 0, 0]
-    from pluton.geometry.transforms import mat_translate
+    from bermake.geometry.transforms import mat_translate
     inst = m.new_instance(d, mat_translate([5, 0, 0]))
     m.root.children.append(inst)
 
@@ -492,7 +492,7 @@ def test_scale_instance_mode_apply_typed_value(qtbot, monkeypatch):
     tool = ScaleTool()
     tool.activate(_ctx(m, stack, sel))
 
-    from pluton.tools.transform_support import GripSpec
+    from bermake.tools.transform_support import GripSpec
     grip = GripSpec(
         position=np.array([1, 1, 1], np.float32),
         opposite=np.array([0, 0, 0], np.float32),

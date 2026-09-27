@@ -6,7 +6,7 @@ import numpy as np
 
 
 def _window_with_quad_pair(qtbot):
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     w = MainWindow()
     qtbot.addWidget(w)
@@ -45,7 +45,7 @@ def test_shrink_removes_a_boundary_face(qtbot):
 
 
 def test_select_same_material_finds_the_other_painted_face(qtbot):
-    from pluton.scene.scene import Side
+    from bermake.scene.scene import Side
 
     w, ids = _window_with_quad_pair(qtbot)
     scene = w._model.active_scene

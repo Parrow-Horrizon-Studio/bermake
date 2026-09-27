@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.scene.scene import Scene, Side
-from pluton.viewport.face_batches import plan_face_batches
+from bermake.scene.scene import Scene, Side
+from bermake.viewport.face_batches import plan_face_batches
 
 
 def _two_face_scene():

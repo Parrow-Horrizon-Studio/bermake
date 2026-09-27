@@ -1,6 +1,6 @@
 import numpy as np
-from pluton.model.model import Model
-from pluton.viewport.scene_renderer import definition_is_dimmed
+from bermake.model.model import Model
+from bermake.viewport.scene_renderer import definition_is_dimmed
 
 
 def _child_group(m):

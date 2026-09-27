@@ -9,8 +9,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from pluton.viewport.picking import world_to_local_point
-from pluton.geometry.transforms import mat_translate
+from bermake.viewport.picking import world_to_local_point
+from bermake.geometry.transforms import mat_translate
 
 
 # ---------------------------------------------------------------------------
@@ -54,7 +54,7 @@ def test_return_dtype_is_float32_regardless_of_identity_branch():
 # ---------------------------------------------------------------------------
 
 def _grid_snap(world):
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
     return SnapResult(
         kind=SnapKind.GRID,
         world_position=np.array(world, dtype=np.float32),
@@ -69,9 +69,9 @@ def test_line_tool_writes_local_vertex_inside_translated_group():
     Clicking at world (10, 0, 0) should place a vertex at LOCAL (0, 0, 0).
     Without the fix it would write (10, 0, 0) into the local mesh — double-offset.
     """
-    from pluton.model.model import Model
-    from pluton.tools.line_tool import LineTool
-    from pluton.tools.tool import ToolContext
+    from bermake.model.model import Model
+    from bermake.tools.line_tool import LineTool
+    from bermake.tools.tool import ToolContext
 
     # Build a model with one group translated +10 on X.
     model = Model()

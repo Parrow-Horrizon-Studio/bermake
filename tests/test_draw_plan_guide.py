@@ -9,13 +9,13 @@ from __future__ import annotations
 import math
 
 import numpy as np
-from pluton.units import Units
+from bermake.units import Units
 
 W, H = 1280, 800
 
 
 def _camera_at_default():
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.aspect = W / H
@@ -26,7 +26,7 @@ def _camera(azimuth_deg, elevation_deg, radius, fov_y_deg, near, target):
     """An orbit camera at the given spherical offset from `target`. Mirrors
     the fix-round-1 review's own probe camera so the regression test below
     reproduces its exact reported coordinates."""
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
 
     az, el = math.radians(azimuth_deg), math.radians(elevation_deg)
     offset = np.array(
@@ -47,7 +47,7 @@ def _camera(azimuth_deg, elevation_deg, radius, fov_y_deg, near, target):
 
 
 def _plan(annotation, cam):
-    from pluton.annotations.draw_plan import plan_annotation
+    from bermake.annotations.draw_plan import plan_annotation
 
     return plan_annotation(annotation, None, cam, W, H, Units())
 
@@ -57,7 +57,7 @@ def _inside(x, y, pad=2.0):
 
 
 def test_a_guide_through_the_view_lays_out_one_segment_inside_the_viewport():
-    from pluton.model.annotation import Guide
+    from bermake.model.annotation import Guide
 
     plan = _plan(Guide(1, (0.0, 0.0, 0.0), (1.0, 0.0, 0.0)), _camera_at_default())
     assert plan is not None
@@ -68,7 +68,7 @@ def test_a_guide_through_the_view_lays_out_one_segment_inside_the_viewport():
 
 
 def test_a_guide_entirely_behind_the_camera_lays_out_nothing():
-    from pluton.model.annotation import Guide
+    from bermake.model.annotation import Guide
 
     cam = _camera_at_default()
     origin, direction = cam.ray_from_screen(W / 2, H / 2, W, H)
@@ -82,7 +82,7 @@ def test_a_guide_entirely_behind_the_camera_lays_out_nothing():
 
 def test_a_guide_nearly_edge_on_to_the_view_does_not_produce_runaway_coordinates():
     """The failure mode of projecting two far-apart samples instead of clipping."""
-    from pluton.model.annotation import Guide
+    from bermake.model.annotation import Guide
 
     cam = _camera_at_default()
     _origin, direction = cam.ray_from_screen(W / 2, H / 2, W, H)
@@ -100,7 +100,7 @@ def test_a_guide_nearly_edge_on_to_the_view_does_not_produce_runaway_coordinates
 
 
 def test_a_guide_point_lays_out_a_small_cross():
-    from pluton.model.annotation import GuidePoint
+    from bermake.model.annotation import GuidePoint
 
     plan = _plan(GuidePoint(1, (0.0, 0.0, 0.0)), _camera_at_default())
     assert plan is not None
@@ -113,7 +113,7 @@ def test_a_guide_point_far_outside_the_viewport_lays_out_nothing():
     infinite line (clipped to the viewport by _clip_segment_to_viewport), an
     unguarded guide point would otherwise emit a cross at wildly
     out-of-range pixel coordinates instead of nothing."""
-    from pluton.model.annotation import GuidePoint
+    from bermake.model.annotation import GuidePoint
 
     cam = _camera_at_default()
     origin, direction = cam.ray_from_screen(50 * W, H / 2, W, H)
@@ -134,7 +134,7 @@ def test_a_distant_guide_does_not_truncate_in_mid_viewport():
     drawn end was (500.1, 662.5); the true line continues visibly to roughly
     (577.8, 654.1) -- the span must reach far enough that the drawn endpoint
     lands within a couple of pixels of that, not stop 78px short."""
-    from pluton.model.annotation import Guide
+    from bermake.model.annotation import Guide
 
     cam = _camera(133, -20, 5, 25, 0.01, (0.0, 0.0, 0.5))
     guide = Guide(1, (300.0, 300.0, -50.0), (0.692, -0.692, 0.208))
@@ -159,7 +159,7 @@ def test_a_guide_between_the_eye_and_the_near_plane_lays_out_nothing():
     The parallel branch of _clip_line_to_near_plane (b ~= 0) has its own
     `a <= 0` rejection for exactly this case; deleting it would let such a
     guide draw as a full-width line where no geometry could ever appear."""
-    from pluton.model.annotation import Guide
+    from bermake.model.annotation import Guide
 
     cam = _camera_at_default()
     cam.near = 2.0

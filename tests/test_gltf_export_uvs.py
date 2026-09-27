@@ -7,10 +7,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from pluton.io.gltf_export import export_gltf, model_to_gltf
-from pluton.model.model import Model
-from pluton.scene.scene import Side
-from pluton.viewport.uv_resolve import resolve_face_uvs as _resolver
+from bermake.io.gltf_export import export_gltf, model_to_gltf
+from bermake.model.model import Model
+from bermake.scene.scene import Side
+from bermake.viewport.uv_resolve import resolve_face_uvs as _resolver
 
 
 def _quad_definition(model):
@@ -303,7 +303,7 @@ def test_gltf_export_is_importable_with_no_qt_loaded():
     import sys
 
     code = (
-        "import sys; import pluton.io.gltf_export; "
+        "import sys; import bermake.io.gltf_export; "
         "assert not [m for m in sys.modules if m.startswith('PySide6')], "
         "sorted(m for m in sys.modules if m.startswith('PySide6'))"
     )
@@ -338,7 +338,7 @@ def _glb_json(path):
 
 
 def test_two_materials_sharing_one_texture_embed_it_once():
-    """The memoisation contract this task's brief calls out: keyed on Pluton
+    """The memoisation contract this task's brief calls out: keyed on Bermake
     texture id, not material id, so two DIFFERENT materials painted with the
     SAME texture must still produce exactly one glTF image/texture pair, both
     materials' baseColorTexture pointing at it. Nothing else in this file
@@ -367,7 +367,7 @@ def test_two_materials_sharing_one_texture_embed_it_once():
 def test_two_distinct_textures_sharing_a_sanitized_name_do_not_collide(tmp_path):
     """The exact scenario that motivated appending the texture id to the
     sidecar filename: two DIFFERENT textures (different bytes, different
-    Pluton ids) that both sanitize to "diffuse", each painted on its own
+    Bermake ids) that both sanitize to "diffuse", each painted on its own
     material, both materials used by an exported face. Without the id
     suffix, `add_image(embed=False)` would write both under the filename
     "diffuse.png" in `sidecars`, the second call silently overwriting the
@@ -468,7 +468,7 @@ def test_a_resolver_failure_still_produces_a_complete_export_on_disk(tmp_path, m
     pattern `export_obj` uses, re-resolved on every call -- to prove a
     resolver failure still yields a complete, valid .gltf + .bin rather than
     an uncaught exception with partial output already on disk."""
-    import pluton.viewport.uv_resolve as uv_resolve_mod
+    import bermake.viewport.uv_resolve as uv_resolve_mod
 
     model, fids = _two_faces_sharing_an_edge()
     mesh = _only_definition(model).mesh

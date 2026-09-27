@@ -2,14 +2,14 @@ import numpy as np
 
 
 def _win(qtbot):
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
     w = MainWindow()
     qtbot.addWidget(w)
     return w
 
 
 def test_selection_survives_transform_undo(qtbot):
-    from pluton.commands.instance_commands import TransformInstanceCommand
+    from bermake.commands.instance_commands import TransformInstanceCommand
 
     win = _win(qtbot)
     model = win._model
@@ -23,7 +23,7 @@ def test_selection_survives_transform_undo(qtbot):
     move = np.eye(4, dtype=np.float64)
     move[0, 3] = 1.0
     # TransformInstanceCommand takes a single instance, not a list (confirmed
-    # against python/pluton/commands/instance_commands.py's real signature).
+    # against python/bermake/commands/instance_commands.py's real signature).
     win._command_stack.execute(TransformInstanceCommand(inst, move), model)
     win._command_stack.undo()
 

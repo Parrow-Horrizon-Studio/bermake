@@ -21,7 +21,7 @@ def test_uvgrid_is_asymmetric_in_both_axes():
 
     sys.path.insert(0, str(DATA))
     from make_fixtures import uvgrid_png
-    from pluton.viewport.texture_cache import decode_image
+    from bermake.viewport.texture_cache import decode_image
 
     img = decode_image(uvgrid_png())
     assert img is not None and (img.width, img.height) == (4, 4)

@@ -1,6 +1,6 @@
 """Persistence tests for M7d annotations.
 
-Covers the per-Definition "annotations" array in the .pluton codec, back-compat
+Covers the per-Definition "annotations" array in the .berm codec, back-compat
 with documents saved before annotations existed, field-fidelity for both
 Dimension and Label (no swapped/transposed fields), and the id-counter
 regression guard on Model.load_from.
@@ -9,17 +9,17 @@ regression guard on Model.load_from.
 from __future__ import annotations
 
 import pytest
-from pluton.document import DocumentSettings
-from pluton.io.document_codec import (
+from bermake.document import DocumentSettings
+from bermake.io.document_codec import (
     annotation_from_dict,
     document_from_dict,
     document_to_dict,
 )
-from pluton.io.errors import PlutonFormatError
-from pluton.model.annotation import Dimension, Label
-from pluton.model.model import Model
-from pluton.viewport.camera import Camera
-from pluton.viewport.render_style import RenderStyle
+from bermake.io.errors import BermakeFormatError
+from bermake.model.annotation import Dimension, Label
+from bermake.model.model import Model
+from bermake.viewport.camera import Camera
+from bermake.viewport.render_style import RenderStyle
 
 
 def _roundtrip(model, camera, doc):
@@ -133,7 +133,7 @@ def test_load_from_resets_next_annotation_id_after_document_load():
 
 
 def test_annotation_from_dict_raises_on_missing_kind():
-    """A record with a missing 'kind' key must raise PlutonFormatError,
+    """A record with a missing 'kind' key must raise BermakeFormatError,
     not silently construct a Label."""
     record = {
         "id": 1,
@@ -141,12 +141,12 @@ def test_annotation_from_dict_raises_on_missing_kind():
         "text_pos": [1.0, 1.0, 0.0],
         "text": "label",
     }
-    with pytest.raises(PlutonFormatError):
+    with pytest.raises(BermakeFormatError):
         annotation_from_dict(record)
 
 
 def test_annotation_from_dict_raises_on_unrecognized_kind():
-    """A record with an unrecognized 'kind' value must raise PlutonFormatError."""
+    """A record with an unrecognized 'kind' value must raise BermakeFormatError."""
     record = {
         "kind": "callout",
         "id": 1,
@@ -154,14 +154,14 @@ def test_annotation_from_dict_raises_on_unrecognized_kind():
         "text_pos": [1.0, 1.0, 0.0],
         "text": "callout",
     }
-    with pytest.raises(PlutonFormatError):
+    with pytest.raises(BermakeFormatError):
         annotation_from_dict(record)
 
 
 def test_guides_survive_a_round_trip():
     """M7.6b: Guide and GuidePoint ride the same annotations rail as Dimension
     and Label, so they must round-trip the same way."""
-    from pluton.model.annotation import Guide, GuidePoint
+    from bermake.model.annotation import Guide, GuidePoint
 
     model = Model()
     ctx = model.active_context

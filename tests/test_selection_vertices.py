@@ -6,13 +6,13 @@ import numpy as np
 
 
 def test_selection_starts_with_no_vertices():
-    from pluton.selection import Selection
+    from bermake.selection import Selection
 
     assert Selection().vertices == set()
 
 
 def test_replace_sets_vertices_and_bumps_the_version():
-    from pluton.selection import Selection
+    from bermake.selection import Selection
 
     sel = Selection()
     before = sel.version
@@ -24,7 +24,7 @@ def test_replace_sets_vertices_and_bumps_the_version():
 def test_replace_without_vertices_clears_them():
     """replace() is a full reset of every kind. A vertices-shaped hole in it
     would leave stale vertices behind after an ordinary click."""
-    from pluton.selection import Selection
+    from bermake.selection import Selection
 
     sel = Selection()
     sel.replace(vertices={1, 2})
@@ -34,7 +34,7 @@ def test_replace_without_vertices_clears_them():
 
 
 def test_add_and_remove_vertices():
-    from pluton.selection import Selection
+    from bermake.selection import Selection
 
     sel = Selection()
     sel.add(vertices={1, 2})
@@ -43,7 +43,7 @@ def test_add_and_remove_vertices():
 
 
 def test_toggle_vertex():
-    from pluton.selection import Selection
+    from bermake.selection import Selection
 
     sel = Selection()
     sel.toggle_vertex(5)
@@ -53,7 +53,7 @@ def test_toggle_vertex():
 
 
 def test_clear_drops_vertices():
-    from pluton.selection import Selection
+    from bermake.selection import Selection
 
     sel = Selection()
     sel.replace(vertices={1})
@@ -64,7 +64,7 @@ def test_clear_drops_vertices():
 def test_is_empty_accounts_for_a_vertex_only_selection():
     """A vertex-only selection is NOT empty. Move consults is_empty() before
     capturing a drag, so a False here means a selected vertex cannot move."""
-    from pluton.selection import Selection
+    from bermake.selection import Selection
 
     sel = Selection()
     sel.replace(vertices={1})
@@ -72,7 +72,7 @@ def test_is_empty_accounts_for_a_vertex_only_selection():
 
 
 def test_counts_appends_vertices_last():
-    from pluton.selection import Selection
+    from bermake.selection import Selection
 
     sel = Selection()
     sel.replace(edges={1}, faces={2, 3}, vertices={4, 5, 6})
@@ -80,8 +80,8 @@ def test_counts_appends_vertices_last():
 
 
 def test_status_text_names_vertices():
-    from pluton.selection import Selection
-    from pluton.ui.selection_controller import selection_status_text
+    from bermake.selection import Selection
+    from bermake.ui.selection_controller import selection_status_text
 
     sel = Selection()
     sel.replace(vertices={4, 5})
@@ -89,8 +89,8 @@ def test_status_text_names_vertices():
 
 
 def test_status_text_singular_vertex():
-    from pluton.selection import Selection
-    from pluton.ui.selection_controller import selection_status_text
+    from bermake.selection import Selection
+    from bermake.ui.selection_controller import selection_status_text
 
     sel = Selection()
     sel.replace(vertices={4})
@@ -98,7 +98,7 @@ def test_status_text_singular_vertex():
 
 
 def _scene_with_one_edge():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     a = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -110,8 +110,8 @@ def _scene_with_one_edge():
 def test_selection_vertices_includes_a_bare_vertex_selection():
     """transform_support.selection_vertices is the chokepoint Move, Rotate and
     Scale all read. This one union is what makes a bare vertex draggable."""
-    from pluton.selection import Selection
-    from pluton.tools.transform_support import selection_vertices
+    from bermake.selection import Selection
+    from bermake.tools.transform_support import selection_vertices
 
     scene, a, _b, _e = _scene_with_one_edge()
     sel = Selection()
@@ -120,8 +120,8 @@ def test_selection_vertices_includes_a_bare_vertex_selection():
 
 
 def test_selection_vertices_unions_a_vertex_with_an_edge_without_duplicating():
-    from pluton.selection import Selection
-    from pluton.tools.transform_support import selection_vertices
+    from bermake.selection import Selection
+    from bermake.tools.transform_support import selection_vertices
 
     scene, a, b, e = _scene_with_one_edge()
     sel = Selection()
@@ -130,8 +130,8 @@ def test_selection_vertices_unions_a_vertex_with_an_edge_without_duplicating():
 
 
 def test_selection_vertices_skips_a_dead_vertex_id():
-    from pluton.selection import Selection
-    from pluton.tools.transform_support import selection_vertices
+    from bermake.selection import Selection
+    from bermake.tools.transform_support import selection_vertices
 
     scene, a, _b, _e = _scene_with_one_edge()
     sel = Selection()
@@ -144,7 +144,7 @@ def test_delete_does_nothing_to_a_vertex_only_selection(qtbot):
     A no-op is the honest behaviour, not a silent cascade."""
     import numpy as np
 
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     w = MainWindow()
     qtbot.addWidget(w)
@@ -166,10 +166,10 @@ def test_prune_to_live_keeps_a_vertex_whose_edge_died(model_factory):
     prune_to_live's replace() call would fall back to the empty default and
     unconditionally clear every selected vertex, live or not; this test
     catches that by asserting the still-live vertex survives."""
-    from pluton.commands.command_stack import CommandStack
-    from pluton.commands.scene_commands import RemoveEdgeCommand
-    from pluton.selection import Selection
-    from pluton.ui.selection_controller import prune_to_live
+    from bermake.commands.command_stack import CommandStack
+    from bermake.commands.scene_commands import RemoveEdgeCommand
+    from bermake.selection import Selection
+    from bermake.ui.selection_controller import prune_to_live
 
     model = model_factory()
     scene = model.active_context.mesh
@@ -196,8 +196,8 @@ def test_prune_to_live_drops_a_dangling_vertex_id(model_factory):
     Mirrors test_selection_vertices_skips_a_dead_vertex_id's synthetic-id
     pattern rather than relying on cascading deletion, since nothing in this
     mesh cascades a vertex's death from its edge."""
-    from pluton.selection import Selection
-    from pluton.ui.selection_controller import prune_to_live
+    from bermake.selection import Selection
+    from bermake.ui.selection_controller import prune_to_live
 
     model = model_factory()
     scene = model.active_context.mesh

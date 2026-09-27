@@ -90,7 +90,7 @@ def _double_click_event(x, y):
 
 
 def _widget(qtbot, clock):
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     w = ViewportWidget()
     qtbot.addWidget(w)
@@ -263,7 +263,7 @@ def test_the_base_tool_supplies_a_no_op_triple_click_hook():
     that implements only the abstract members, to exercise the base class's
     default hook."""
     import numpy as np
-    from pluton.tools.tool import Tool, ToolOverlay
+    from bermake.tools.tool import Tool, ToolOverlay
 
     class _Min(Tool):
         @property

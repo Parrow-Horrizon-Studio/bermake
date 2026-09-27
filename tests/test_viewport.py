@@ -15,15 +15,15 @@ from PySide6.QtGui import QMouseEvent, QWheelEvent
 
 
 def test_main_window_constructs(qtbot):
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     window = MainWindow()
     qtbot.addWidget(window)
-    assert window.windowTitle() == "Untitled — Pluton"  # M6a: filename + dirty-state title
+    assert window.windowTitle() == "Untitled — Bermake"  # M6a: filename + dirty-state title
 
 
 def test_viewport_widget_constructs(qtbot):
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     widget = ViewportWidget()
     qtbot.addWidget(widget)
@@ -31,9 +31,9 @@ def test_viewport_widget_constructs(qtbot):
 
 
 def test_viewport_widget_has_camera_and_scene(qtbot):
-    from pluton.viewport.camera import Camera
-    from pluton.viewport.scene_renderer import SceneRenderer
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.viewport.camera import Camera
+    from bermake.viewport.scene_renderer import SceneRenderer
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     widget = ViewportWidget()
     qtbot.addWidget(widget)
@@ -43,7 +43,7 @@ def test_viewport_widget_has_camera_and_scene(qtbot):
 
 def test_resize_updates_camera_aspect(qtbot):
     """Resizing the widget must update the camera's aspect ratio."""
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     widget = ViewportWidget()
     qtbot.addWidget(widget)
@@ -55,7 +55,7 @@ def test_resize_updates_camera_aspect(qtbot):
 
 def test_middle_button_drag_orbits_camera(qtbot):
     """MMB drag should change the camera position (orbit)."""
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     widget = ViewportWidget()
     qtbot.addWidget(widget)
@@ -76,7 +76,7 @@ def test_wheel_event_zooms_camera(qtbot):
     and target move together (pure zoom, no rotation). The camera-to-target
     distance is preserved; it is camera.position that moves.
     """
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     widget = ViewportWidget()
     qtbot.addWidget(widget)
@@ -96,7 +96,7 @@ def test_wheel_event_with_zero_vertical_delta_does_not_zoom(qtbot):
     The viewport's wheelEvent should also leave the event unaccepted so a
     parent widget could handle horizontal scroll without it being swallowed.
     """
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     widget = ViewportWidget()
     qtbot.addWidget(widget)
@@ -129,7 +129,7 @@ def _make_wheel_event(widget, delta_y: int) -> QWheelEvent:
 
 
 def test_keyboard_l_activates_line_tool(qtbot):
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     window = MainWindow()
     qtbot.addWidget(window)
@@ -142,7 +142,7 @@ def test_keyboard_l_activates_line_tool(qtbot):
 
 
 def test_keyboard_r_activates_rectangle_tool(qtbot):
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     window = MainWindow()
     qtbot.addWidget(window)
@@ -155,7 +155,7 @@ def test_keyboard_r_activates_rectangle_tool(qtbot):
 
 def test_esc_two_stage_cancel_then_deactivate(qtbot):
     """First ESC cancels gesture; second ESC deactivates the tool entirely."""
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     window = MainWindow()
     qtbot.addWidget(window)
@@ -168,7 +168,7 @@ def test_esc_two_stage_cancel_then_deactivate(qtbot):
     assert window._tool_manager.active is not None
     # Drive a first click via the active tool directly (skipping the mouse
     # plumbing because the QOpenGLWidget doesn't render the offscreen ray).
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
 
     active = window._tool_manager.active
     snap = SnapResult(
@@ -194,7 +194,7 @@ def test_esc_two_stage_cancel_then_deactivate(qtbot):
 def test_clear_active_context_clears_scene(qtbot):
     # Ctrl+N is now File ▸ New (M6a); the old clear-scene behavior moved to
     # Edit ▸ "Clear Active Context" (_on_clear_scene), still undoable.
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     window = MainWindow()
     qtbot.addWidget(window)
@@ -206,7 +206,7 @@ def test_clear_active_context_clears_scene(qtbot):
 
 
 def test_ctrl_z_undoes_completed_rectangle(qtbot):
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     window = MainWindow()
     qtbot.addWidget(window)
@@ -216,7 +216,7 @@ def test_ctrl_z_undoes_completed_rectangle(qtbot):
 
     # Activate Rectangle, simulate two clicks via the tool directly.
     qtbot.keyClick(window, Qt.Key.Key_R)
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
     active = window._tool_manager.active
 
     def snap_at(x, y):
@@ -241,7 +241,7 @@ def test_ctrl_z_undoes_completed_rectangle(qtbot):
 
 def test_clear_active_context_is_undoable(qtbot):
     # Clear Active Context (formerly Ctrl+N, now on the Edit menu) stays undoable.
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     window = MainWindow()
     qtbot.addWidget(window)
@@ -264,7 +264,7 @@ class TestStatusBarThirdSlot:
     # bar.text() is now bar.measurements_text(); the prompt keeps only tool
     # and snap.
     def test_set_status_appends_third_segment(self, qtbot):  # noqa: ARG002
-        from pluton.ui.status_bar import StatusBar
+        from bermake.ui.status_bar import StatusBar
 
         bar = StatusBar()
         qtbot.addWidget(bar)
@@ -275,7 +275,7 @@ class TestStatusBarThirdSlot:
         assert bar.measurements_text() == "depth: 1.500"
 
     def test_set_status_empty_omits_the_third_segment(self, qtbot):  # noqa: ARG002
-        from pluton.ui.status_bar import StatusBar
+        from bermake.ui.status_bar import StatusBar
 
         bar = StatusBar()
         qtbot.addWidget(bar)
@@ -288,7 +288,7 @@ class TestStatusBarThirdSlot:
 
 class TestCoordinatesWithNoSnap:
     # M7.3 Task 15 review finding 2: SnapResult.world_position
-    # (python/pluton/viewport/snap_engine.py:43) is a non-optional np.ndarray,
+    # (python/bermake/viewport/snap_engine.py:43) is a non-optional np.ndarray,
     # always populated even when kind == SnapKind.NONE. So with no snap match
     # the coordinates readout should still show the inferred point -- only the
     # snap *label* goes blank (viewport_widget.py's mouseMoveEvent feed site
@@ -298,7 +298,7 @@ class TestCoordinatesWithNoSnap:
         self, qtbot, main_window, monkeypatch
     ):
         from PySide6.QtCore import QPointF
-        from pluton.viewport.snap_engine import SnapKind, SnapResult
+        from bermake.viewport.snap_engine import SnapKind, SnapResult
 
         main_window._activate("line")
 
@@ -332,7 +332,7 @@ class TestPushPullToolIntegration:
     def test_p_keybind_activates_push_pull_tool(self, qtbot):
         from PySide6.QtCore import Qt
 
-        from pluton.ui.main_window import MainWindow
+        from bermake.ui.main_window import MainWindow
 
         win = MainWindow()
         qtbot.addWidget(win)
@@ -346,7 +346,7 @@ class TestPushPullToolIntegration:
     def test_tool_context_carries_camera_and_widget_size_provider(self, qtbot):  # noqa: ARG002
         """Sanity: MainWindow wires the viewport's camera + size accessor
         into the ToolContext so PushPullTool can compute camera rays."""
-        from pluton.ui.main_window import MainWindow
+        from bermake.ui.main_window import MainWindow
 
         win = MainWindow()
         ctx = win._tool_manager._ctx  # noqa: SLF001
@@ -358,7 +358,7 @@ class TestPushPullToolIntegration:
 
 
 def test_camera_input_callback_fires(qtbot):
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.viewport.viewport_widget import ViewportWidget
     vp = ViewportWidget()
     qtbot.addWidget(vp)
     fired = []
@@ -379,8 +379,8 @@ def test_drawing_plane_normal_is_pinned_at_anchor_time_not_re_derived(qtbot):
     normal must survive the cursor moving onto a different face while the
     anchor is still set, and must clear once the anchor goes away.
     """
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     class _FakeScene:
         def __init__(self):

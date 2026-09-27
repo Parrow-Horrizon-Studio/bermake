@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from PySide6.QtGui import QPainter
 
-from pluton.ui import actions, cursors
+from bermake.ui import actions, cursors
 
 
 def test_crosshair_hotspot_is_the_crosshair_centre(qtbot):

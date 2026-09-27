@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pluton.model.model import Model
-from pluton.model.tag import TagLibrary
+from bermake.model.model import Model
+from bermake.model.tag import TagLibrary
 
 
 def test_new_instance_defaults_to_untagged():

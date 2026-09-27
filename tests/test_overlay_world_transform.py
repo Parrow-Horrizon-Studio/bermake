@@ -14,9 +14,9 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from pluton.geometry.transforms import apply_mat, is_identity_transform
-from pluton.selection import Selection
-from pluton.viewport.scene_renderer import _selection_edge_segments
+from bermake.geometry.transforms import apply_mat, is_identity_transform
+from bermake.selection import Selection
+from bermake.viewport.scene_renderer import _selection_edge_segments
 
 
 # ---------------------------------------------------------------------------
@@ -32,7 +32,7 @@ def _translate_x(dx: float) -> np.ndarray:
 
 def _make_scene_with_edge():
     """Return (scene, edge_id) for a single edge from (1,2,3) to (4,5,6)."""
-    from pluton.scene import Scene  # noqa: PLC0415
+    from bermake.scene import Scene  # noqa: PLC0415
 
     scene = Scene()
     v0 = scene.add_vertex(np.array([1.0, 2.0, 3.0], dtype=np.float32))

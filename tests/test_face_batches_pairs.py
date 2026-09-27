@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.viewport.face_batches import plan_face_batches
+from bermake.viewport.face_batches import plan_face_batches
 
 
 def test_an_empty_input_gives_an_empty_plan():

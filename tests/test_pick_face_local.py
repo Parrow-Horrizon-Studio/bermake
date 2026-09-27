@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.geometry.wall import wall_box
-from pluton.model.model import Model
+from bermake.geometry.wall import wall_box
+from bermake.model.model import Model
 
 
 def _add_wall(model):

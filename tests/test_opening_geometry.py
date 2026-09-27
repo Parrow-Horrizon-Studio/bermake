@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import Counter
 
 import numpy as np
-from pluton.geometry.opening import opening_frame
+from bermake.geometry.opening import opening_frame
 
 
 def _closed(faces):

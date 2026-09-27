@@ -6,7 +6,7 @@ requires = [
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "pluton"
+name = "bermake"
 version = "0.13.0"
 description = "Polygonal 3D modeler for architecture"
 readme = "README.md"
@@ -40,7 +40,7 @@ dev = [
 ]
 
 [project.scripts]
-pluton = "pluton.app:main"
+bermake = "bermake.app:main"
 
 # scikit-build-core configuration
 [tool.scikit-build]
@@ -48,7 +48,7 @@ minimum-version = "0.10"
 cmake.version = ">=3.27"
 ninja.version = ">=1.11"
 build-dir = "build/{wheel_tag}"
-wheel.packages = ["python/pluton"]
+wheel.packages = ["python/bermake"]
 
 # Ruff configuration
 [tool.ruff]
@@ -61,14 +61,14 @@ ignore = []
 
 [tool.ruff.lint.per-file-ignores]
 # Qt's QOpenGLWidget requires camelCase method overrides (initializeGL, resizeGL, paintGL).
-"python/pluton/viewport/viewport_widget.py" = ["N802"]
+"python/bermake/viewport/viewport_widget.py" = ["N802"]
 # Qt dispatches virtual overrides by exact camelCase name (eventFilter, closeEvent).
-"python/pluton/ui/main_window.py" = ["N802"]
+"python/bermake/ui/main_window.py" = ["N802"]
 # Qt dispatches virtual overrides by exact camelCase name (mousePressEvent).
-"python/pluton/ui/outliner_tree.py" = ["N802"]
+"python/bermake/ui/outliner_tree.py" = ["N802"]
 # `SweepRefused` is the exact name in the M7.4 Task 7/8 interface contract:
 # Task 8's Follow Me tool imports and catches it by this name.
-"python/pluton/tools/sweep_support.py" = ["N818"]
+"python/bermake/tools/sweep_support.py" = ["N818"]
 
 [tool.ruff.format]
 quote-style = "double"

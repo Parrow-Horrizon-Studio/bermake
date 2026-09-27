@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import pluton.ui.actions as A
+import bermake.ui.actions as A
 
 
 def test_module_imports_no_qt():
@@ -13,7 +13,7 @@ def test_module_imports_no_qt():
     for value in vars(A).values():
         module = getattr(value, "__module__", "") or ""
         assert not module.startswith("PySide6"), f"{value!r} comes from Qt"
-    assert "pluton.ui.actions" in sys.modules
+    assert "bermake.ui.actions" in sys.modules
 
 
 def test_action_ids_are_unique():

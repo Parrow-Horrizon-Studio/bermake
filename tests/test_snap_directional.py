@@ -8,7 +8,7 @@ import numpy as np
 
 
 def _camera_at_default():
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.aspect = 1280.0 / 800.0
@@ -21,7 +21,7 @@ def _screen_of(cam, world):
 
 
 def _acquired_edge(position, direction):
-    from pluton.viewport.inference import Acquired, AcquiredKind
+    from bermake.viewport.inference import Acquired, AcquiredKind
 
     d = np.asarray(direction, dtype=np.float64)
     return Acquired(
@@ -33,7 +33,7 @@ def _acquired_edge(position, direction):
 
 
 def _acquired_vertex(position):
-    from pluton.viewport.inference import Acquired, AcquiredKind
+    from bermake.viewport.inference import Acquired, AcquiredKind
 
     return Acquired(
         kind=AcquiredKind.VERTEX,
@@ -45,8 +45,8 @@ def _acquired_vertex(position):
 
 def test_parallel_to_an_acquired_edge():
     """An edge running 1,1,0 gives a parallel inference along 1,1,0 from the anchor."""
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     scene = Scene()
     cam = _camera_at_default()
@@ -64,8 +64,8 @@ def test_parallel_to_an_acquired_edge():
 
 def test_perpendicular_resolves_in_the_drawing_plane():
     """Perpendicular to a 1,0,0 edge in the Z-normal plane runs along 0,1,0."""
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     scene = Scene()
     cam = _camera_at_default()
@@ -88,8 +88,8 @@ def test_perpendicular_resolves_in_the_drawing_plane():
 
 def test_perpendicular_is_skipped_when_the_edge_runs_along_the_plane_normal():
     """cross(n, d) degenerates, so no candidate is offered rather than a guess."""
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     scene = Scene()
     cam = _camera_at_default()
@@ -111,8 +111,8 @@ def test_perpendicular_is_skipped_when_the_edge_runs_along_the_plane_normal():
 
 def test_from_point_radiates_axes_from_an_acquired_vertex():
     """A point on the red axis THROUGH THE ACQUIRED VERTEX, not through the anchor."""
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     scene = Scene()
     cam = _camera_at_default()
@@ -130,8 +130,8 @@ def test_from_point_radiates_axes_from_an_acquired_vertex():
 
 def test_no_acquisition_yields_no_directional_candidates():
     """The pre-M7.6b path must be unchanged when nothing is acquired."""
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     scene = Scene()
     cam = _camera_at_default()
@@ -170,8 +170,8 @@ def test_directional_candidates_emits_no_perpendicular_when_the_edge_is_the_plan
     tell a correct degeneracy guard from a missing one. This test inspects the
     generator's own return value, where the NaN candidate has nowhere to hide.
     """
-    from pluton.viewport.snap_candidates import directional_candidates
-    from pluton.viewport.snap_engine import SnapKind
+    from bermake.viewport.snap_candidates import directional_candidates
+    from bermake.viewport.snap_engine import SnapKind
 
     cam = _camera_at_default()
     anchor = np.array([0.0, 0.0, 0.0], dtype=np.float32)
@@ -204,9 +204,9 @@ def test_directional_candidates_emits_no_perpendicular_for_a_non_unit_edge_direc
     directly (not via _acquired_edge, which normalises) so the non-unit
     direction survives intact.
     """
-    from pluton.viewport.inference import Acquired, AcquiredKind
-    from pluton.viewport.snap_candidates import directional_candidates
-    from pluton.viewport.snap_engine import SnapKind
+    from bermake.viewport.inference import Acquired, AcquiredKind
+    from bermake.viewport.snap_candidates import directional_candidates
+    from bermake.viewport.snap_engine import SnapKind
 
     cam = _camera_at_default()
     anchor = np.array([0.0, 0.0, 0.0], dtype=np.float32)
@@ -239,7 +239,7 @@ def test_directional_candidates_returns_nothing_with_no_acquisition():
     made through SnapEngine.snap(). This test calls the generator directly so
     a broken guard here cannot hide behind the engine's outer one.
     """
-    from pluton.viewport.snap_candidates import directional_candidates
+    from bermake.viewport.snap_candidates import directional_candidates
 
     cam = _camera_at_default()
     anchor = np.array([0.0, 0.0, 0.0], dtype=np.float32)
@@ -257,7 +257,7 @@ def test_from_point_candidates_returns_nothing_with_no_acquisition():
     but it is still only reachable through snap() when acquired is not None,
     so its own None-guard is likewise untested by any end-to-end assertion.
     """
-    from pluton.viewport.snap_candidates import from_point_candidates
+    from bermake.viewport.snap_candidates import from_point_candidates
 
     cam = _camera_at_default()
 
@@ -273,7 +273,7 @@ def test_marker_colors_reflect_the_d14_intersection_move():
     freed-up magenta. Without an assertion on the actual values, a revert of
     this change -- accidental or "helpful" -- would pass every other test.
     """
-    from pluton.viewport.snap_engine import MARKER_COLOR_BY_KIND, SnapKind
+    from bermake.viewport.snap_engine import MARKER_COLOR_BY_KIND, SnapKind
 
     assert MARKER_COLOR_BY_KIND[SnapKind.INTERSECTION] == (0.10, 0.10, 0.12)
     assert MARKER_COLOR_BY_KIND[SnapKind.PARALLEL] == (0.82, 0.23, 0.82)
@@ -281,8 +281,8 @@ def test_marker_colors_reflect_the_d14_intersection_move():
 
 
 def _snap_at(cam, probe, **kwargs):
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine
 
     return SnapEngine().snap(_screen_of(cam, probe), (1280, 800), cam, Scene(), **kwargs)
 
@@ -295,8 +295,8 @@ def test_shift_locks_a_parallel_inference():
     that carried an `axis`, which PARALLEL never does, so holding Shift over
     one silently did nothing at all.
     """
-    from pluton.viewport.inference import InferenceState
-    from pluton.viewport.snap_engine import SnapKind
+    from bermake.viewport.inference import InferenceState
+    from bermake.viewport.snap_engine import SnapKind
 
     cam = _camera_at_default()
     anchor = np.array([0.0, 0.0, 0.0], dtype=np.float32)
@@ -315,8 +315,8 @@ def test_shift_locks_a_parallel_inference():
 def test_shift_locks_a_perpendicular_inference():
     """Perpendicular carries no axis either, and its direction depends on the
     drawing plane, which InferenceState never sees. It rides on the snap."""
-    from pluton.viewport.inference import InferenceState
-    from pluton.viewport.snap_engine import SnapKind
+    from bermake.viewport.inference import InferenceState
+    from bermake.viewport.snap_engine import SnapKind
 
     cam = _camera_at_default()
     anchor = np.array([0.0, 0.0, 0.0], dtype=np.float32)
@@ -340,8 +340,8 @@ def test_shift_locks_a_perpendicular_inference():
 def test_shift_locks_an_on_guide_inference():
     """A guide's direction is nowhere in the snapped point's own geometry and
     nowhere near the gesture anchor, so it has to be carried on the snap."""
-    from pluton.viewport.inference import InferenceState
-    from pluton.viewport.snap_engine import SnapKind
+    from bermake.viewport.inference import InferenceState
+    from bermake.viewport.snap_engine import SnapKind
 
     cam = _camera_at_default()
     guide_origin = np.array([1.0, 0.0, 0.0], dtype=np.float64)
@@ -359,9 +359,9 @@ def test_shift_locks_an_on_guide_inference():
 def test_shift_over_a_point_inference_locks_nothing():
     """An endpoint answers "where", not "which way". There is no line to
     hold, so Shift declines rather than inventing a direction."""
-    from pluton.scene import Scene
-    from pluton.viewport.inference import InferenceState
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.inference import InferenceState
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     cam = _camera_at_default()
     scene = Scene()

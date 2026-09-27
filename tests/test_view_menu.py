@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import pytest
-from pluton.ui.main_window import MainWindow
-from pluton.viewport.render_style import FaceStyle
+from bermake.ui.main_window import MainWindow
+from bermake.viewport.render_style import FaceStyle
 
 
 @pytest.fixture

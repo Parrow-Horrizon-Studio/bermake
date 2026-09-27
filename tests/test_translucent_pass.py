@@ -12,13 +12,13 @@ from dataclasses import dataclass
 
 import numpy as np
 import pytest
-from pluton.model.model import Model
-from pluton.viewport import scene_renderer
-from pluton.viewport.camera import Camera
-from pluton.viewport.environment import STUDIO
-from pluton.viewport.face_batches import FaceBatch, plan_face_batches
-from pluton.viewport.render_style import RenderStyle
-from pluton.viewport.scene_renderer import (
+from bermake.model.model import Model
+from bermake.viewport import scene_renderer
+from bermake.viewport.camera import Camera
+from bermake.viewport.environment import STUDIO
+from bermake.viewport.face_batches import FaceBatch, plan_face_batches
+from bermake.viewport.render_style import RenderStyle
+from bermake.viewport.scene_renderer import (
     _ENVIRONMENT_UNIFORMS,
     _FACE_VERTEX_BYTES,
     _FACE_VERTEX_FLOATS,

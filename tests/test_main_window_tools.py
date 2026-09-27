@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt
 
 @pytest.fixture
 def main_window(qtbot):  # noqa: ANN001
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     w = MainWindow()
     qtbot.addWidget(w)
@@ -27,7 +27,7 @@ def test_new_tools_registered(main_window):  # noqa: ANN001
 
 
 def test_arrow_keys_forward_to_active_polygon_gesture(main_window):  # noqa: ANN001
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
 
     mgr = main_window._tool_manager
     mgr.activate_by_shortcut("G")

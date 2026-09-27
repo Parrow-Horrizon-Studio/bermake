@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from pluton.ui import actions
+from bermake.ui import actions
 
 
 @pytest.mark.parametrize(

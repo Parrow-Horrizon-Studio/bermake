@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pluton.model.material import Material
-from pluton.scene.scene import Side, TexturePlacement
-from pluton.tools import paint_tool as paint_tool_mod
-from pluton.tools.paint_tool import PaintTool
-from pluton.tools.tool import ToolContext
+from bermake.model.material import Material
+from bermake.scene.scene import Side, TexturePlacement
+from bermake.tools import paint_tool as paint_tool_mod
+from bermake.tools.paint_tool import PaintTool
+from bermake.tools.tool import ToolContext
 from PySide6.QtCore import QPointF, Qt
 
 

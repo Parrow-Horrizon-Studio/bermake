@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from pluton.model.model import Model
+from bermake.model.model import Model
 
 
 def test_model_traverse_provides_drawable_pairs():
@@ -71,7 +71,7 @@ def test_traverse_nested_transforms_accumulate():
 
 def test_scene_renderer_has_def_buffers_cache():
     """SceneRenderer exposes _def_buffers dict (per-definition GL buffer cache)."""
-    from pluton.viewport.scene_renderer import SceneRenderer
+    from bermake.viewport.scene_renderer import SceneRenderer
 
     renderer = SceneRenderer()
     assert hasattr(renderer, "_def_buffers")
@@ -82,7 +82,7 @@ def test_scene_renderer_has_def_buffers_cache():
 def test_scene_renderer_render_accepts_model_param():
     """render() signature uses 'model' not 'scene'."""
     import inspect
-    from pluton.viewport.scene_renderer import SceneRenderer
+    from bermake.viewport.scene_renderer import SceneRenderer
 
     sig = inspect.signature(SceneRenderer.render)
     assert "model" in sig.parameters

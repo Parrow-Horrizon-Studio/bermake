@@ -7,7 +7,7 @@ import pytest
 
 
 def test_vertex_holds_id_and_position():
-    from pluton.scene import Vertex
+    from bermake.scene import Vertex
 
     v = Vertex(id=7, position=np.array([1.0, 2.0, 3.0], dtype=np.float32))
     assert v.id == 7
@@ -15,7 +15,7 @@ def test_vertex_holds_id_and_position():
 
 
 def test_vertex_is_frozen():
-    from pluton.scene import Vertex
+    from bermake.scene import Vertex
 
     v = Vertex(id=0, position=np.array([0.0, 0.0, 0.0], dtype=np.float32))
     with pytest.raises(Exception):
@@ -23,7 +23,7 @@ def test_vertex_is_frozen():
 
 
 def test_edge_holds_id_and_two_vertex_ids():
-    from pluton.scene import Edge
+    from bermake.scene import Edge
 
     e = Edge(id=3, v1_id=10, v2_id=20)
     assert e.id == 3
@@ -32,7 +32,7 @@ def test_edge_holds_id_and_two_vertex_ids():
 
 
 def test_face_holds_id_loop_normal_triangles():
-    from pluton.scene import Face
+    from bermake.scene import Face
 
     triangles = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int32)
     f = Face(
@@ -53,7 +53,7 @@ def test_face_holds_id_loop_normal_triangles():
 
 
 def test_scene_starts_empty():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     assert len(list(s.vertices_iter())) == 0
@@ -63,7 +63,7 @@ def test_scene_starts_empty():
 
 
 def test_add_vertex_returns_new_id_when_position_is_new():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -73,7 +73,7 @@ def test_add_vertex_returns_new_id_when_position_is_new():
 
 
 def test_add_vertex_is_idempotent_on_exact_match():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     pos = np.array([2.0, 3.0, 0.0], dtype=np.float32)
@@ -83,7 +83,7 @@ def test_add_vertex_is_idempotent_on_exact_match():
 
 
 def test_clear_resets_dirty_flag_and_removes_everything():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -99,7 +99,7 @@ def test_clear_resets_dirty_flag_and_removes_everything():
 
 
 def test_vertex_lookup_by_id():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     pos = np.array([5.0, 6.0, 0.0], dtype=np.float32)
@@ -115,7 +115,7 @@ def test_vertex_lookup_by_id():
 
 
 def test_vertex_is_hashable_by_id():
-    from pluton.scene import Vertex
+    from bermake.scene import Vertex
 
     a = Vertex(id=7, position=np.array([1.0, 2.0, 3.0], dtype=np.float32))
     b = Vertex(id=7, position=np.array([9.0, 9.0, 9.0], dtype=np.float32))
@@ -128,7 +128,7 @@ def test_vertex_is_hashable_by_id():
 
 
 def test_vertex_position_is_immutable():
-    from pluton.scene import Vertex
+    from bermake.scene import Vertex
 
     v = Vertex(id=0, position=np.array([1.0, 2.0, 3.0], dtype=np.float32))
     with pytest.raises(ValueError):
@@ -136,7 +136,7 @@ def test_vertex_position_is_immutable():
 
 
 def test_face_position_arrays_are_immutable():
-    from pluton.scene import Face
+    from bermake.scene import Face
 
     f = Face(
         id=0,
@@ -152,7 +152,7 @@ def test_face_position_arrays_are_immutable():
 
 def test_add_vertex_collapses_negative_zero():
     """`-0.0` and `0.0` must dedupe to the same vertex (computed coords can produce -0.0)."""
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -167,7 +167,7 @@ def test_add_vertex_collapses_negative_zero():
 
 
 def test_add_edge_returns_new_id():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -178,7 +178,7 @@ def test_add_edge_returns_new_id():
 
 
 def test_add_edge_is_idempotent_unordered():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -189,7 +189,7 @@ def test_add_edge_is_idempotent_unordered():
 
 
 def test_add_edge_rejects_self_loop():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -198,7 +198,7 @@ def test_add_edge_rejects_self_loop():
 
 
 def test_add_edge_canonicalises_endpoints():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -211,7 +211,7 @@ def test_add_edge_canonicalises_endpoints():
 
 
 def test_add_edge_rejects_unknown_vertex_ids():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -229,7 +229,7 @@ def test_add_edge_rejects_unknown_vertex_ids():
 
 
 def test_add_face_from_loop_creates_face_and_triangulates():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     # A unit square on Z=0
@@ -254,7 +254,7 @@ def test_add_face_from_loop_creates_face_and_triangulates():
 
 
 def test_add_face_from_loop_rejects_fewer_than_three_vertices():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -265,7 +265,7 @@ def test_add_face_from_loop_rejects_fewer_than_three_vertices():
 
 
 def test_add_face_from_loop_triangulates_concave_polygon():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     # An L-shape (6 vertices, concave) on Z=0
@@ -283,7 +283,7 @@ def test_add_face_from_loop_triangulates_concave_polygon():
 
 def test_add_face_from_loop_rejects_unknown_vertex_id():
     """Phantom vertex IDs in the loop must raise — topology coherence."""
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -295,7 +295,7 @@ def test_add_face_from_loop_rejects_unknown_vertex_id():
 
 def test_add_face_from_loop_accepts_list_and_stores_as_tuple():
     """Accept any Sequence; the stored loop_vertex_ids must be a tuple."""
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -315,7 +315,7 @@ def test_add_face_from_loop_accepts_list_and_stores_as_tuple():
 
 
 def test_find_vertex_near_returns_closest_within_tolerance():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -329,7 +329,7 @@ def test_find_vertex_near_returns_closest_within_tolerance():
 
 
 def test_find_vertex_near_returns_none_when_outside_tolerance():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -338,7 +338,7 @@ def test_find_vertex_near_returns_none_when_outside_tolerance():
 
 
 def test_find_vertex_near_picks_closest_when_multiple_within_tolerance():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v_far = s.add_vertex(np.array([0.3, 0.0, 0.0], dtype=np.float32))
@@ -350,7 +350,7 @@ def test_find_vertex_near_picks_closest_when_multiple_within_tolerance():
 
 
 def test_edge_line_buffer_shape():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -365,7 +365,7 @@ def test_edge_line_buffer_shape():
 
 
 def test_edge_line_buffer_is_empty_when_no_edges():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))  # vertex but no edge
@@ -376,7 +376,7 @@ def test_edge_line_buffer_is_empty_when_no_edges():
 
 
 def test_face_triangle_buffer_shape():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -394,7 +394,7 @@ def test_face_triangle_buffer_shape():
 
 
 def test_face_triangle_buffer_is_empty_when_no_faces():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -409,7 +409,7 @@ def test_face_triangle_buffer_is_empty_when_no_faces():
 
 
 def test_remove_face_leaves_verts_and_edges_alive():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -429,7 +429,7 @@ def test_remove_face_leaves_verts_and_edges_alive():
 
 
 def test_remove_edge_rejects_if_face_still_uses_it():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -445,7 +445,7 @@ def test_remove_edge_rejects_if_face_still_uses_it():
 
 
 def test_remove_vertex_rejects_if_edge_still_uses_it():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -457,7 +457,7 @@ def test_remove_vertex_rejects_if_edge_still_uses_it():
 
 
 def test_restore_face_round_trip():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -480,7 +480,7 @@ def test_restore_face_round_trip():
 
 def test_add_vertex_after_tombstone_at_same_position_allocates_new_id():
     """Position-index only tracks live vertices; tombstoned slots stay tombstoned."""
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     pos = np.array([5.0, 5.0, 0.0], dtype=np.float32)
@@ -496,10 +496,10 @@ def test_add_vertex_after_tombstone_at_same_position_allocates_new_id():
 
 
 class TestSceneRayPickFace:
-    """Scene.ray_pick_face — thin wrapper over pluton._core.ray_intersect_mesh."""
+    """Scene.ray_pick_face — thin wrapper over bermake._core.ray_intersect_mesh."""
 
     def test_returns_none_for_empty_scene(self):
-        from pluton.scene import Scene
+        from bermake.scene import Scene
 
         scene = Scene()
         hit = scene.ray_pick_face(
@@ -509,7 +509,7 @@ class TestSceneRayPickFace:
         assert hit is None
 
     def test_returns_face_id_when_ray_hits(self):
-        from pluton.scene import Scene
+        from bermake.scene import Scene
 
         scene = Scene()
         v0 = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -527,7 +527,7 @@ class TestSceneRayPickFace:
         assert hit.t == pytest.approx(5.0, abs=1e-4)
 
     def test_returns_none_after_face_removed(self):
-        from pluton.scene import Scene
+        from bermake.scene import Scene
 
         scene = Scene()
         v0 = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -548,7 +548,7 @@ class TestSceneFaceLoopNormalCenter:
     """face_loop / face_normal / face_center — extrusion composite needs these."""
 
     def _make_unit_rect(self):
-        from pluton.scene import Scene
+        from bermake.scene import Scene
 
         scene = Scene()
         v0 = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -564,7 +564,7 @@ class TestSceneFaceLoopNormalCenter:
         assert loop == [v0, v1, v2, v3]
 
     def test_face_loop_raises_keyerror_on_invalid_face_id(self):
-        from pluton.scene import Scene
+        from bermake.scene import Scene
 
         scene = Scene()
         with pytest.raises(KeyError):
@@ -591,7 +591,7 @@ class TestSceneFaceLoopNormalCenter:
         e1=(1,0,0) and e2=(0,0,1). Cross product e1 × e2 = (0·1−0·0,
         0·0−1·1, 1·0−0·0) = (0, −1, 0). So the geometric normal is (0,-1,0).
         """
-        from pluton.scene import Scene
+        from bermake.scene import Scene
 
         scene = Scene()
         v0 = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -615,7 +615,7 @@ class TestSceneVerticalFaceTriangulation:
     as wireframe-only. This test pins the dominant-axis projection fix."""
 
     def test_xz_plane_face_produces_triangles(self):
-        from pluton.scene import Scene
+        from bermake.scene import Scene
 
         scene = Scene()
         v0 = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -628,7 +628,7 @@ class TestSceneVerticalFaceTriangulation:
         assert len(tris) == 6, f"expected 6 vertex IDs for 2 triangles; got {len(tris)}"
 
     def test_yz_plane_face_produces_triangles(self):
-        from pluton.scene import Scene
+        from bermake.scene import Scene
 
         scene = Scene()
         v0 = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -641,7 +641,7 @@ class TestSceneVerticalFaceTriangulation:
 
     def test_xy_plane_face_still_works(self):
         """Regression sanity: the existing M2 ground-plane rectangle keeps working."""
-        from pluton.scene import Scene
+        from bermake.scene import Scene
 
         scene = Scene()
         v0 = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))

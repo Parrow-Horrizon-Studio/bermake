@@ -1,4 +1,4 @@
-from pluton.io.obj_codec import parse_obj
+from bermake.io.obj_codec import parse_obj
 
 
 def test_map_kd_is_captured():

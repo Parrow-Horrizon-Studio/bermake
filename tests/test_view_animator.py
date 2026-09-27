@@ -1,8 +1,8 @@
 import numpy as np
 
-from pluton.io.document_codec import CameraState
-from pluton.viewport.camera import Camera
-from pluton.viewport.view_animator import ViewAnimator
+from bermake.io.document_codec import CameraState
+from bermake.viewport.camera import Camera
+from bermake.viewport.view_animator import ViewAnimator
 
 
 def _state(pos, target=(0.0, 0.0, 0.0)):

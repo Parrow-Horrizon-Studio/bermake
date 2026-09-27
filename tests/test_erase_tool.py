@@ -8,7 +8,7 @@ from PySide6.QtGui import QMouseEvent
 
 
 def _cam(w, h):
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
     c = Camera()
     c.aspect = float(w) / float(h)
     return c
@@ -33,7 +33,7 @@ def _release(x, y):
 
 
 def _quad_scene():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
     s = Scene()
     a = s.add_vertex(np.array([-1, -1, 0], dtype=np.float32))
     b = s.add_vertex(np.array([1, -1, 0], dtype=np.float32))
@@ -44,8 +44,8 @@ def _quad_scene():
 
 
 def _make(scene, stack, w=800, h=600):
-    from pluton.tools import ToolContext
-    from pluton.tools.erase_tool import EraserTool
+    from bermake.tools import ToolContext
+    from bermake.tools.erase_tool import EraserTool
     cam = _cam(w, h)
     tool = EraserTool()
     tool.activate(ToolContext(scene=scene, command_stack=stack, camera=cam,
@@ -54,7 +54,7 @@ def _make(scene, stack, w=800, h=600):
 
 
 def test_erase_edge_removes_edge_and_its_face(qtbot):
-    from pluton.commands import CommandStack
+    from bermake.commands import CommandStack
     scene, fid = _quad_scene()
     stack = CommandStack()
     tool, cam = _make(scene, stack)
@@ -68,7 +68,7 @@ def test_erase_edge_removes_edge_and_its_face(qtbot):
 
 
 def test_erase_is_atomically_undoable(qtbot):
-    from pluton.commands import CommandStack
+    from bermake.commands import CommandStack
     scene, fid = _quad_scene()
     stack = CommandStack()
     tool, cam = _make(scene, stack)
@@ -86,7 +86,7 @@ def test_erase_is_atomically_undoable(qtbot):
 
 
 def test_drag_erase_two_edges_is_one_undo(qtbot):
-    from pluton.commands import CommandStack
+    from bermake.commands import CommandStack
     scene, fid = _quad_scene()
     stack = CommandStack()
     tool, cam = _make(scene, stack)
@@ -102,7 +102,7 @@ def test_drag_erase_two_edges_is_one_undo(qtbot):
 
 
 def test_miss_click_pushes_nothing(qtbot):
-    from pluton.commands import CommandStack
+    from bermake.commands import CommandStack
     scene, fid = _quad_scene()
     stack = CommandStack()
     tool, cam = _make(scene, stack)
@@ -115,8 +115,8 @@ def test_miss_click_pushes_nothing(qtbot):
 
 
 def test_erase_a_crease_edge_removes_both_faces(qtbot):
-    from pluton.commands import CommandStack
-    from pluton.scene import Scene
+    from bermake.commands import CommandStack
+    from bermake.scene import Scene
 
     # Two quads meeting at a right-angle crease along (1,0)-(1,1) -- NOT
     # coplanar. M7.6a (#31) makes a COPLANAR interior seam dissolve into one

@@ -1,8 +1,8 @@
 """chain_cuts_face: which face, if any, a drawn chain divides (M7.6a)."""
 
 import numpy as np
-from pluton.scene.scene import Scene
-from pluton.tools.shape_support import chain_cuts_face
+from bermake.scene.scene import Scene
+from bermake.tools.shape_support import chain_cuts_face
 
 
 def _quad(s, z=0.0, size=2.0):

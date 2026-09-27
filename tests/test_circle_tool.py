@@ -6,7 +6,7 @@ import numpy as np
 
 
 def _snap(world, *, kind=None, face_id=None):  # noqa: ANN001
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
 
     return SnapResult(
         kind=kind if kind is not None else SnapKind.GRID,
@@ -19,8 +19,8 @@ def _snap(world, *, kind=None, face_id=None):  # noqa: ANN001
 
 
 def _make_tool(scene, stack=None):  # noqa: ANN001
-    from pluton.tools import ToolContext
-    from pluton.tools.circle_tool import CircleTool
+    from bermake.tools import ToolContext
+    from bermake.tools.circle_tool import CircleTool
 
     tool = CircleTool()
     tool.activate(ToolContext(scene=scene, command_stack=stack))
@@ -28,14 +28,14 @@ def _make_tool(scene, stack=None):  # noqa: ANN001
 
 
 def test_circle_idle_overlay_empty():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     tool = _make_tool(Scene())
     assert tool.overlay().rubber_band_segments.shape == (0, 3)
 
 
 def test_circle_two_clicks_make_24_segments_and_a_face():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)
@@ -50,7 +50,7 @@ def test_circle_two_clicks_make_24_segments_and_a_face():
 
 
 def test_circle_face_normal_points_up_on_ground():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)
@@ -61,7 +61,7 @@ def test_circle_face_normal_points_up_on_ground():
 
 
 def test_circle_zero_radius_does_not_commit():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)
@@ -71,8 +71,8 @@ def test_circle_zero_radius_does_not_commit():
 
 
 def test_circle_commit_is_atomically_undoable():
-    from pluton.commands import CommandStack
-    from pluton.scene import Scene
+    from bermake.commands import CommandStack
+    from bermake.scene import Scene
 
     scene = Scene()
     stack = CommandStack()
@@ -87,8 +87,8 @@ def test_circle_commit_is_atomically_undoable():
 
 
 def test_circle_draws_on_a_vertical_face():
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapKind
 
     scene = Scene()
     a = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -108,7 +108,7 @@ def test_circle_draws_on_a_vertical_face():
 
 
 def test_circle_esc_mid_gesture_resets():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
     from PySide6.QtCore import Qt
     from PySide6.QtGui import QKeyEvent
 

@@ -42,15 +42,15 @@ import pytest
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
 
-from pluton.commands.command_stack import CommandStack
-from pluton.geometry.transforms import apply_mat, mat_compose, mat_rotate, mat_translate
-from pluton.model.model import Model
-from pluton.scene.scene import Scene
-from pluton.selection import Selection
-from pluton.tools.scale_tool import ScaleTool
-from pluton.tools.tool import ToolContext
-from pluton.tools.transform_support import GripSpec
-from pluton.viewport.picking import world_to_local_point
+from bermake.commands.command_stack import CommandStack
+from bermake.geometry.transforms import apply_mat, mat_compose, mat_rotate, mat_translate
+from bermake.model.model import Model
+from bermake.scene.scene import Scene
+from bermake.selection import Selection
+from bermake.tools.scale_tool import ScaleTool
+from bermake.tools.tool import ToolContext
+from bermake.tools.transform_support import GripSpec
+from bermake.viewport.picking import world_to_local_point
 
 
 # ---------------------------------------------------------------------------

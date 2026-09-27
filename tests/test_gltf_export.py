@@ -3,12 +3,12 @@ from __future__ import annotations
 import struct
 
 import numpy as np
-from pluton.io.gltf_export import export_gltf, model_to_gltf
-from pluton.model.model import Model
+from bermake.io.gltf_export import export_gltf, model_to_gltf
+from bermake.model.model import Model
 
 
 def _painted_quad_model():
-    """A model with one quad face at Pluton z=1 (up), painted red."""
+    """A model with one quad face at Bermake z=1 (up), painted red."""
     model = Model()
     mesh = model.root.mesh
     ids = [
@@ -96,7 +96,7 @@ def test_child_instance_matrix_is_column_major():
 
 
 def test_export_uses_kernel_triangulation_for_concave_face():
-    from pluton.io.gltf_export import _definition_primitives
+    from bermake.io.gltf_export import _definition_primitives
     model = Model()
     mesh = model.root.mesh
     # A concave U-shape in the z=0 plane (a fan from vertex 0 would triangulate it differently).

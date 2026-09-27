@@ -8,7 +8,7 @@ Tests verify:
 import numpy as np
 import pytest
 
-from pluton.viewport.scene_renderer import aabb_world_edges
+from bermake.viewport.scene_renderer import aabb_world_edges
 
 
 def test_aabb_world_edges_count_and_translation():

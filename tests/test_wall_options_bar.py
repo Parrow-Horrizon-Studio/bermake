@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from pluton.tools.wall_tool import WallTool
-from pluton.ui.wall_options_bar import WallOptionsBar
-from pluton.units import Units
+from bermake.tools.wall_tool import WallTool
+from bermake.ui.wall_options_bar import WallOptionsBar
+from bermake.units import Units
 
 
 def test_fields_reflect_and_update_tool(qtbot):

@@ -6,7 +6,7 @@ import numpy as np
 
 
 def _camera(w, h):
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.aspect = float(w) / float(h)
@@ -14,8 +14,8 @@ def _camera(w, h):
 
 
 def test_pick_returns_edge_near_its_screen_projection():
-    from pluton.scene import Scene
-    from pluton.viewport.picking import pick_selectable
+    from bermake.scene import Scene
+    from bermake.viewport.picking import pick_selectable
 
     w, h = 800, 600
     cam = _camera(w, h)
@@ -31,8 +31,8 @@ def test_pick_returns_edge_near_its_screen_projection():
 
 
 def test_pick_far_from_everything_is_none():
-    from pluton.scene import Scene
-    from pluton.viewport.picking import pick_selectable
+    from bermake.scene import Scene
+    from bermake.viewport.picking import pick_selectable
 
     w, h = 800, 600
     cam = _camera(w, h)
@@ -45,8 +45,8 @@ def test_pick_far_from_everything_is_none():
 
 
 def test_pick_prefers_edge_over_face_behind_it():
-    from pluton.scene import Scene
-    from pluton.viewport.picking import pick_selectable
+    from bermake.scene import Scene
+    from bermake.viewport.picking import pick_selectable
 
     w, h = 800, 600
     cam = _camera(w, h)
@@ -74,8 +74,8 @@ def _screen(cam, world, w, h):
 
 
 def test_window_selects_only_fully_enclosed():
-    from pluton.scene import Scene
-    from pluton.viewport.picking import entities_in_box
+    from bermake.scene import Scene
+    from bermake.viewport.picking import entities_in_box
 
     w, h = 800, 600
     cam = _camera(w, h)
@@ -98,8 +98,8 @@ def test_window_selects_only_fully_enclosed():
 
 
 def test_crossing_selects_straddling_edge_window_does_not():
-    from pluton.scene import Scene
-    from pluton.viewport.picking import entities_in_box
+    from bermake.scene import Scene
+    from bermake.viewport.picking import entities_in_box
 
     w, h = 800, 600
     cam = _camera(w, h)
@@ -123,8 +123,8 @@ def test_crossing_selects_straddling_edge_window_does_not():
 
 
 def test_crossing_face_when_rect_is_inside_the_face():
-    from pluton.scene import Scene
-    from pluton.viewport.picking import entities_in_box
+    from bermake.scene import Scene
+    from bermake.viewport.picking import entities_in_box
 
     w, h = 800, 600
     cam = _camera(w, h)

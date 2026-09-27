@@ -4,8 +4,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from pluton.viewport.picking import ray_into_local
-from pluton.geometry.transforms import mat_translate
+from bermake.viewport.picking import ray_into_local
+from bermake.geometry.transforms import mat_translate
 
 
 _ORIGIN = np.array([1.0, 2.0, 3.0], dtype=np.float32)

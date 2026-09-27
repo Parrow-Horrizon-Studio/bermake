@@ -14,9 +14,9 @@ plane tests focused purely on the plane-normal bug.
 """
 
 import numpy as np
-from pluton.tools.scale_tool import ScaleTool
-from pluton.tools.transform_support import grip_specs
-from pluton.viewport.camera import Camera
+from bermake.tools.scale_tool import ScaleTool
+from bermake.tools.transform_support import grip_specs
+from bermake.viewport.camera import Camera
 from PySide6.QtCore import QPointF
 
 

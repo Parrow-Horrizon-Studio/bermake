@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.scene.scene import DEFAULT_PLACEMENT, Scene, Side, TexturePlacement
+from bermake.scene.scene import DEFAULT_PLACEMENT, Scene, Side, TexturePlacement
 
 
 def _square(scene, z=0.0):

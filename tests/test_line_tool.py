@@ -6,7 +6,7 @@ import numpy as np
 
 
 def _endpoint_snap(world, vertex_id: int):
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
 
     return SnapResult(
         kind=SnapKind.ENDPOINT,
@@ -18,7 +18,7 @@ def _endpoint_snap(world, vertex_id: int):
 
 
 def _grid_snap(world):
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
 
     return SnapResult(
         kind=SnapKind.GRID,
@@ -30,9 +30,9 @@ def _grid_snap(world):
 
 
 def test_line_tool_first_click_adds_one_vertex():
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.line_tool import LineTool
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.line_tool import LineTool
 
     scene = Scene()
     tool = LineTool()
@@ -43,9 +43,9 @@ def test_line_tool_first_click_adds_one_vertex():
 
 
 def test_line_tool_branch_3_new_vertex_creates_edge():
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.line_tool import LineTool
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.line_tool import LineTool
 
     scene = Scene()
     tool = LineTool()
@@ -59,9 +59,9 @@ def test_line_tool_branch_3_new_vertex_creates_edge():
 
 
 def test_line_tool_loop_close_creates_face():
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.line_tool import LineTool
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.line_tool import LineTool
 
     scene = Scene()
     tool = LineTool()
@@ -81,9 +81,9 @@ def test_line_tool_loop_close_creates_face():
 
 
 def test_line_tool_branch_2_extend_to_existing_vertex():
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.line_tool import LineTool
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.line_tool import LineTool
 
     scene = Scene()
     # Pre-existing vertex (e.g. drawn by a previous gesture or Rectangle).
@@ -101,9 +101,9 @@ def test_line_tool_branch_2_extend_to_existing_vertex():
 
 
 def test_line_tool_close_with_fewer_than_three_vertices_ignored():
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.line_tool import LineTool
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.line_tool import LineTool
 
     scene = Scene()
     tool = LineTool()
@@ -119,9 +119,9 @@ def test_line_tool_close_with_fewer_than_three_vertices_ignored():
 
 
 def test_line_tool_has_active_gesture_reflects_state():
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.line_tool import LineTool
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.line_tool import LineTool
 
     scene = Scene()
     tool = LineTool()
@@ -143,9 +143,9 @@ def test_line_tool_esc_cancels_visible_gesture():
     from PySide6.QtCore import Qt
     from PySide6.QtGui import QKeyEvent
 
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.line_tool import LineTool
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.line_tool import LineTool
 
     scene = Scene()
     tool = LineTool()
@@ -162,10 +162,10 @@ def test_line_tool_esc_cancels_visible_gesture():
 
 
 def test_line_tool_pushes_composite_at_loop_close():
-    from pluton.commands import CommandStack
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.line_tool import LineTool
+    from bermake.commands import CommandStack
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.line_tool import LineTool
 
     scene = Scene()
     stack = CommandStack()
@@ -192,10 +192,10 @@ def test_line_tool_esc_mid_gesture_rolls_back_committed_geometry():
     from PySide6.QtCore import Qt
     from PySide6.QtGui import QKeyEvent
 
-    from pluton.commands import CommandStack
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.line_tool import LineTool
+    from bermake.commands import CommandStack
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.line_tool import LineTool
 
     scene = Scene()
     stack = CommandStack()
@@ -229,10 +229,10 @@ def test_line_tool_enter_finishes_and_commits_open_polyline():
     from PySide6.QtCore import Qt
     from PySide6.QtGui import QKeyEvent
 
-    from pluton.commands import CommandStack
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.line_tool import LineTool
+    from bermake.commands import CommandStack
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.line_tool import LineTool
 
     scene = Scene()
     stack = CommandStack()
@@ -269,10 +269,10 @@ def test_line_tool_enter_with_only_seed_discards():
     from PySide6.QtCore import Qt
     from PySide6.QtGui import QKeyEvent
 
-    from pluton.commands import CommandStack
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.line_tool import LineTool
+    from bermake.commands import CommandStack
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.line_tool import LineTool
 
     scene = Scene()
     stack = CommandStack()

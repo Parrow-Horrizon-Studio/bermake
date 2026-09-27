@@ -5,7 +5,7 @@ import struct
 
 import pytest
 
-from pluton.io.gltf_codec import GltfAsset
+from bermake.io.gltf_codec import GltfAsset
 
 TRI_POS = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)]
 TRI_IDX = [0, 1, 2]

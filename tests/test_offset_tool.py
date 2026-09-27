@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pluton.tools.offset_tool import OffsetTool
+from bermake.tools.offset_tool import OffsetTool
 
 
 def _square_face(window, size=4.0):
@@ -200,7 +200,7 @@ def test_a_small_distance_is_not_clamped(main_window):
 
 
 def test_typed_value_drives_the_offset(main_window):
-    from pluton.units import Units
+    from bermake.units import Units
 
     fid = _square_face(main_window)
     tool = _arm(main_window, fid)
@@ -226,8 +226,8 @@ def test_status_text_reports_the_applied_distance_not_the_requested_one(main_win
     # the raw drag distance -- a number that no longer matched the geometry.
     # Past a 4x4 square's ~2.0 limit, the text must reflect what committing
     # NOW would actually apply.
-    from pluton.tools.sweep_support import offset_polygon
-    from pluton.units import format_length
+    from bermake.tools.sweep_support import offset_polygon
+    from bermake.units import format_length
 
     fid = _square_face(main_window, size=4.0)
     tool = _arm(main_window, fid)

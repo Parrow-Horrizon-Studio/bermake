@@ -199,7 +199,7 @@ def test_a_click_after_entering_a_group_does_not_flood_the_new_context(main_wind
     """Measured before the fix: Press(t=0), DblClick(t=120), Press(t=380) at
     one pixel gave `tool.triples == 1`. `ClickRuns` measures each press
     against the PREVIOUS press only, so a click a third of a second after a
-    double-click continues the run to three -- and in pluton a double-click
+    double-click continues the run to three -- and in bermake a double-click
     ENTERS a group, so that follow-on click flood-selected the context the
     user had only just stepped into.
 

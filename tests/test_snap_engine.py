@@ -6,7 +6,7 @@ import numpy as np
 
 
 def _camera_at_default():
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.aspect = 1280.0 / 800.0
@@ -20,8 +20,8 @@ def _screen_of(cam, world):
 
 
 def test_endpoint_snap_in_3d_off_the_ground():
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     eng = SnapEngine()
     scene = Scene()
@@ -35,8 +35,8 @@ def test_endpoint_snap_in_3d_off_the_ground():
 
 
 def test_midpoint_snap_in_3d():
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     eng = SnapEngine()
     scene = Scene()
@@ -53,8 +53,8 @@ def test_midpoint_snap_in_3d():
 
 
 def test_grid_fallback_on_empty_ground():
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     eng = SnapEngine()
     scene = Scene()
@@ -84,9 +84,9 @@ def test_grid_fallback_lands_on_a_rotated_translated_contexts_own_floor():
     """
     import math
 
-    from pluton.geometry.transforms import apply_mat, mat_compose, mat_rotate, mat_translate
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.geometry.transforms import apply_mat, mat_compose, mat_rotate, mat_translate
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     eng = SnapEngine()
     scene = Scene()
@@ -112,7 +112,7 @@ def test_grid_fallback_lands_on_a_rotated_translated_contexts_own_floor():
 
 
 def test_none_when_scene_is_none():
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     eng = SnapEngine()
     cam = _camera_at_default()
@@ -121,7 +121,7 @@ def test_none_when_scene_is_none():
 
 
 def test_selection_prefers_precedence_then_depth():
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind, _Candidate
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind, _Candidate
 
     eng = SnapEngine()
     near = np.zeros(3, dtype=np.float32)
@@ -141,7 +141,7 @@ def test_selection_prefers_precedence_then_depth():
 
 
 def test_closest_points_two_lines_perpendicular_crossing():
-    from pluton.viewport.snap_engine import _closest_points_two_lines
+    from bermake.viewport.snap_engine import _closest_points_two_lines
 
     p1 = np.array([0, 0, 0], np.float32); d1 = np.array([1, 0, 0], np.float32)
     p2 = np.array([3, 0, 1], np.float32); d2 = np.array([0, 1, 0], np.float32)
@@ -151,7 +151,7 @@ def test_closest_points_two_lines_perpendicular_crossing():
 
 
 def test_closest_point_on_segment_to_ray_clamps():
-    from pluton.viewport.snap_engine import _closest_point_on_segment_to_ray
+    from bermake.viewport.snap_engine import _closest_point_on_segment_to_ray
 
     ro = np.array([5, 0, 10], np.float32); rd = np.array([0, 0, -1], np.float32)
     a = np.array([0, 0, 0], np.float32); b = np.array([2, 0, 0], np.float32)
@@ -161,7 +161,7 @@ def test_closest_point_on_segment_to_ray_clamps():
 
 
 def test_precedence_rank_orders_endpoint_above_on_face():
-    from pluton.viewport.snap_engine import SnapKind, _PRECEDENCE_RANK
+    from bermake.viewport.snap_engine import SnapKind, _PRECEDENCE_RANK
 
     assert _PRECEDENCE_RANK[SnapKind.ENDPOINT] < _PRECEDENCE_RANK[SnapKind.MIDPOINT]
     assert _PRECEDENCE_RANK[SnapKind.MIDPOINT] < _PRECEDENCE_RANK[SnapKind.ON_EDGE]
@@ -171,8 +171,8 @@ def test_precedence_rank_orders_endpoint_above_on_face():
 
 
 def test_on_edge_snap_to_interior_point():
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     eng = SnapEngine()
     scene = Scene()
@@ -189,8 +189,8 @@ def test_on_edge_snap_to_interior_point():
 
 
 def test_on_face_snap_over_a_face():
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     eng = SnapEngine()
     scene = Scene()
@@ -212,8 +212,8 @@ def test_on_face_snap_over_a_face():
 def test_endpoint_beats_midpoint_full_pipeline():
     """Full-pipeline precedence (not just _select): a vertex under the cursor
     wins over the edge's midpoint/on-edge candidates."""
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     eng = SnapEngine()
     scene = Scene()
@@ -229,8 +229,8 @@ def test_endpoint_beats_midpoint_full_pipeline():
 
 def test_axis_lock_vertical_z_in_3d():
     """Z-axis lock — impossible in M2's ground-only world."""
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     eng = SnapEngine()
     scene = Scene()
@@ -244,8 +244,8 @@ def test_axis_lock_vertical_z_in_3d():
 
 
 def test_intersection_of_axis_line_and_edge():
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     eng = SnapEngine()
     scene = Scene()
@@ -270,8 +270,8 @@ def test_axis_lock_wins_over_a_face():
     the cursor exactly), and ON_FACE outranked AXIS_LOCK, so the axis inference
     was invisible in the ordinary case of drawing on a face.
     """
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     scene = Scene()
     vids = [
@@ -311,8 +311,8 @@ def test_axis_candidates_skips_a_ray_collinear_with_its_axis():
     """
     import math
 
-    from pluton.geometry.ray import closest_points_two_lines
-    from pluton.viewport.snap_candidates import axis_candidates
+    from bermake.geometry.ray import closest_points_two_lines
+    from bermake.viewport.snap_candidates import axis_candidates
 
     cam = _camera_at_default()
     anchor = np.array([0.0, 0.0, 0.0], dtype=np.float32)
@@ -340,8 +340,8 @@ def test_same_kind_tiebreak_prefers_the_candidate_under_the_cursor():
 
     The far vertex is placed NEARER the camera, so a depth-only tiebreak picks it.
     """
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     scene = Scene()
     cam = _camera_at_default()
@@ -390,8 +390,8 @@ def test_endpoint_beats_intersection_when_both_land_on_the_same_point():
     ON_EDGE and AXIS_LOCK candidates that also land there rank below both
     members of the pair and stay there whichever way the pair is ordered.
     """
-    from pluton.scene import Scene
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     scene = Scene()
     cam = _camera_at_default()
@@ -418,9 +418,9 @@ def test_perpendicular_beats_parallel_where_the_two_lines_meet():
     the AXIS_LOCK and GRID candidates that the anchor's position also
     produces both rank below the pair and cannot mask its ordering.
     """
-    from pluton.scene import Scene
-    from pluton.viewport.inference import Acquired, AcquiredKind
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.inference import Acquired, AcquiredKind
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     cam = _camera_at_default()
     anchor = np.array([0.0, 0.0, 0.0], dtype=np.float32)
@@ -452,8 +452,8 @@ def test_parallel_beats_from_point_in_the_precedence_table():
     generator ran -- so it is pinned where it lives, at the selection step,
     with exactly those two candidates and every tiebreaker equal.
     """
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
-    from pluton.viewport.snap_types import Candidate
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.viewport.snap_types import Candidate
 
     def _cand(kind):
         return Candidate(
@@ -479,9 +479,9 @@ def test_from_point_beats_axis_lock_where_their_lines_cross():
     there; the GRID fallback does land on the same ground-plane point, but
     it is the bottom of D12 and cannot mask this pair either way.
     """
-    from pluton.scene import Scene
-    from pluton.viewport.inference import Acquired, AcquiredKind
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.scene import Scene
+    from bermake.viewport.inference import Acquired, AcquiredKind
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     cam = _camera_at_default()
     anchor = np.array([0.0, 0.0, 0.0], dtype=np.float32)

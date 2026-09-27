@@ -1,7 +1,7 @@
 """Task 10: MainWindow owns a Model; ToolContext routes to the active scene."""
 import numpy as np
 import pytest
-from pluton.ui.main_window import MainWindow
+from bermake.ui.main_window import MainWindow
 
 
 @pytest.fixture

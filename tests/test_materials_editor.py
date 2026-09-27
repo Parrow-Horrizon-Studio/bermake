@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from pluton.ui.materials_page import MaterialsPage, _swatch_style
+from bermake.ui.materials_page import MaterialsPage, _swatch_style
 
 
 def test_editing_alpha_goes_through_the_command_stack(main_window):
@@ -135,7 +135,7 @@ def test_undo_through_the_menu_path_refreshes_the_editor_fields(main_window):
 def test_picking_the_same_colour_pushes_no_undo_entry(main_window, monkeypatch):
     from PySide6.QtGui import QColor
 
-    from pluton.ui import materials_page as materials_page_module
+    from bermake.ui import materials_page as materials_page_module
 
     win = main_window
     lib = win._model.materials
@@ -195,7 +195,7 @@ def test_translucent_swatch_carries_a_lower_alpha_than_opaque():
 
 
 def test_swatch_grid_reflects_material_alpha(qtbot):
-    from pluton.model.material import MaterialLibrary
+    from bermake.model.material import MaterialLibrary
 
     lib = MaterialLibrary()
     mat = lib.add_custom("Glass", (0.4, 0.6, 0.9))

@@ -1,17 +1,17 @@
 """#113, export half: an exported .obj carries explicit `vn` normals.
 
-Pluton's kernel stores one normal per face, recomputed from the boundary
+Bermake's kernel stores one normal per face, recomputed from the boundary
 loop by Newell's method, so what goes out is flat per-face shading. Honouring
 IMPORTED per-corner normals is the smooth-shading half and stays open: there
 is nowhere for a per-corner normal to live and no consumer for one.
 """
 
 import numpy as np
-from pluton.io.obj_codec import parse_obj
-from pluton.io.obj_io import export_obj, model_to_objdoc
-from pluton.model.definition import Definition
-from pluton.model.instance import Instance
-from pluton.model.model import Model
+from bermake.io.obj_codec import parse_obj
+from bermake.io.obj_io import export_obj, model_to_objdoc
+from bermake.model.definition import Definition
+from bermake.model.instance import Instance
+from bermake.model.model import Model
 
 
 def _quad(mesh, z=0.0):

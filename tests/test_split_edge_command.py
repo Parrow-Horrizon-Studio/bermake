@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.commands.command import CompositeCommand
-from pluton.commands.scene_commands import AddEdgeCommand, SplitEdgeCommand
-from pluton.scene.scene import Scene
+from bermake.commands.command import CompositeCommand
+from bermake.commands.scene_commands import AddEdgeCommand, SplitEdgeCommand
+from bermake.scene.scene import Scene
 
 
 def _two_quads(scene: Scene):

@@ -1,21 +1,21 @@
-from pluton.io.errors import PlutonFormatError, PlutonIOError, PlutonVersionError
+from bermake.io.errors import BermakeFormatError, BermakeIOError, BermakeVersionError
 
 
 def test_subclass_hierarchy():
-    assert issubclass(PlutonFormatError, PlutonIOError)
-    assert issubclass(PlutonVersionError, PlutonIOError)
+    assert issubclass(BermakeFormatError, BermakeIOError)
+    assert issubclass(BermakeVersionError, BermakeIOError)
 
 
-def test_os_error_is_not_a_pluton_io_error():
-    """PlutonIOError is a project-specific hierarchy; plain filesystem errors
+def test_os_error_is_not_a_bermake_io_error():
+    """BermakeIOError is a project-specific hierarchy; plain filesystem errors
     (missing file, permission denied) must NOT be silently caught by a
-    `except PlutonIOError` handler — callers need OSError to still surface."""
-    assert not issubclass(OSError, PlutonIOError)
+    `except BermakeIOError` handler — callers need OSError to still surface."""
+    assert not issubclass(OSError, BermakeIOError)
 
 
 def test_raisable_with_message():
-    for exc in (PlutonIOError, PlutonFormatError, PlutonVersionError):
+    for exc in (BermakeIOError, BermakeFormatError, BermakeVersionError):
         try:
             raise exc("boom")
-        except PlutonIOError as e:
+        except BermakeIOError as e:
             assert "boom" in str(e)

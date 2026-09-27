@@ -5,12 +5,12 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pluton.model.annotation import Dimension
+from bermake.model.annotation import Dimension
 
 
 @pytest.fixture
 def win(qtbot):
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
     w = MainWindow()
     qtbot.addWidget(w)
     return w

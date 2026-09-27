@@ -43,9 +43,9 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pluton.commands.instance_commands import CreateInstanceCommand
-from pluton.commands.instance_lifecycle_commands import DeleteInstanceCommand
-from pluton.model.model import Model
+from bermake.commands.instance_commands import CreateInstanceCommand
+from bermake.commands.instance_lifecycle_commands import DeleteInstanceCommand
+from bermake.model.model import Model
 
 
 def test_lift_returns_points_unchanged_at_the_root(main_window):

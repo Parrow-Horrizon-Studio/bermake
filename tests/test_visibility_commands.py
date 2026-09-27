@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.commands.command_stack import CommandStack
-from pluton.commands.naming_commands import RenameInstanceCommand
-from pluton.commands.visibility_commands import HideInstancesCommand
+from bermake.commands.command_stack import CommandStack
+from bermake.commands.naming_commands import RenameInstanceCommand
+from bermake.commands.visibility_commands import HideInstancesCommand
 
 
 def _square(model):

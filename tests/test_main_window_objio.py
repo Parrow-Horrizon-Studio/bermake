@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from pluton.ui.main_window import MainWindow
+from bermake.ui.main_window import MainWindow
 
 
 @pytest.fixture(scope="module")
@@ -24,7 +24,7 @@ def test_export_obj_writes_file_and_leaves_doc_clean(app, tmp_path):
     win._prompt_save_path = lambda *a, **k: str(target)
     win._on_export_obj()
     assert target.exists()
-    assert win._doc_controller.dirty is False           # export never dirties the .pluton doc
+    assert win._doc_controller.dirty is False           # export never dirties the .berm doc
     assert win._doc_controller.current_path is None      # nor sets a current path
 
 

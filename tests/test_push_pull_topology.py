@@ -46,10 +46,10 @@ def _live_face_count(scene) -> int:
 
 def _setup_push_pull():
     """Build a fresh Scene + REAL CommandStack + PushPullTool with one rect face."""
-    from pluton.commands import CommandStack
-    from pluton.scene import Scene
-    from pluton.tools.push_pull_tool import PushPullTool
-    from pluton.tools.tool import ToolContext
+    from bermake.commands import CommandStack
+    from bermake.scene import Scene
+    from bermake.tools.push_pull_tool import PushPullTool
+    from bermake.tools.tool import ToolContext
 
     scene = Scene()
     v0 = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -85,10 +85,10 @@ def _setup_push_pull_split_edge_square():
     sitting second in the loop, which makes the first three loop vertices
     collinear. That is what an edge split leaves behind (issue #110).
     """
-    from pluton.commands import CommandStack
-    from pluton.scene import Scene
-    from pluton.tools.push_pull_tool import PushPullTool
-    from pluton.tools.tool import ToolContext
+    from bermake.commands import CommandStack
+    from bermake.scene import Scene
+    from bermake.tools.push_pull_tool import PushPullTool
+    from bermake.tools.tool import ToolContext
 
     scene = Scene()
     loop = [

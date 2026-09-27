@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.commands.command_stack import CommandStack
-from pluton.model.model import Model
-from pluton.tools.tool import ToolContext
-from pluton.tools.wall_tool import WallTool
+from bermake.commands.command_stack import CommandStack
+from bermake.model.model import Model
+from bermake.tools.tool import ToolContext
+from bermake.tools.wall_tool import WallTool
 
 
 def _ctx(model, stack):
@@ -19,7 +19,7 @@ def _ctx(model, stack):
 
 
 def _snap(x, y, z=0.0):
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
 
     return SnapResult(
         kind=SnapKind.ON_FACE,
@@ -80,7 +80,7 @@ def test_thickness_height_drive_geometry():
 
 
 def test_apply_typed_value_commits_wall_at_typed_length():
-    from pluton.units import Units
+    from bermake.units import Units
 
     model = Model()
     stack = CommandStack()
@@ -102,7 +102,7 @@ def test_second_immediate_typed_value_does_not_fire_backward():
     the new anchor (mirroring LineTool). Without that, a SECOND immediately
     typed length (no mouse move in between) computes its direction from the
     stale OLD tip against the NEW anchor and can fire the wall backward."""
-    from pluton.units import Units
+    from bermake.units import Units
 
     model = Model()
     stack = CommandStack()
@@ -146,7 +146,7 @@ def test_locally_degenerate_vertical_segment_pushes_no_command():
 def test_world_to_local_conversion_inside_translated_group():
     """A group translated +10 in X: clicking world (10,0,0) -> (14,0,0) must
     build the wall from LOCAL (0,0,0) -> (4,0,0), not the doubled world offset."""
-    from pluton.geometry.transforms import mat_translate
+    from bermake.geometry.transforms import mat_translate
 
     model = Model()
     d = model.new_definition("G", is_group=True)

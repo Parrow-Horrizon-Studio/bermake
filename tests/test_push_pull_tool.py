@@ -30,9 +30,9 @@ def _make_tool_with_unit_rect():
     The tool is activated against a context with a mock camera + widget sizer
     that we can drive directly.
     """
-    from pluton.scene import Scene
-    from pluton.tools.push_pull_tool import PushPullTool
-    from pluton.tools.tool import ToolContext
+    from bermake.scene import Scene
+    from bermake.tools.push_pull_tool import PushPullTool
+    from bermake.tools.tool import ToolContext
 
     scene = Scene()
     v0 = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -67,7 +67,7 @@ def _make_tool_with_unit_rect():
 
 class TestPushPullIdentity:
     def test_name_and_shortcut(self):
-        from pluton.tools.push_pull_tool import PushPullTool
+        from bermake.tools.push_pull_tool import PushPullTool
 
         tool = PushPullTool()
         assert tool.name == "Push/Pull"

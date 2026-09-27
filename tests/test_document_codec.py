@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from pluton.document import DocumentSettings
-from pluton.io.document_codec import (
+from bermake.document import DocumentSettings
+from bermake.io.document_codec import (
     CameraState,
     document_from_dict,
     document_to_dict,
@@ -12,20 +12,20 @@ from pluton.io.document_codec import (
     model_from_dict,
     model_to_dict,
 )
-from pluton.io.errors import PlutonFormatError
-from pluton.io.pluton_file import SCHEMA_VERSION
-from pluton.model.model import Model
-from pluton.scene.scene import Scene
-from pluton.units import Units, UnitSystem
-from pluton.viewport.camera import Camera
-from pluton.viewport.environment import (
+from bermake.io.errors import BermakeFormatError
+from bermake.io.bermake_file import SCHEMA_VERSION
+from bermake.model.model import Model
+from bermake.scene.scene import Scene
+from bermake.units import Units, UnitSystem
+from bermake.viewport.camera import Camera
+from bermake.viewport.environment import (
     DEFAULT_ENVIRONMENT,
     LEGACY_ENVIRONMENT,
     PLAIN_WHITE,
     SKY_AND_GROUND,
     STUDIO,
 )
-from pluton.viewport.render_style import RenderStyle
+from bermake.viewport.render_style import RenderStyle
 
 
 def _square(scene: Scene) -> list[int]:
@@ -74,7 +74,7 @@ def test_geometry_roundtrip_compacts_id_gaps():
 def test_geometry_from_dict_rejects_bad_index():
     dst = Scene()
     bad = {"vertices": [[0, 0, 0]], "edges": [[0, 7]], "faces": [], "face_materials": {}}
-    with pytest.raises(PlutonFormatError):
+    with pytest.raises(BermakeFormatError):
         geometry_from_dict(dst, bad)
 
 
@@ -103,7 +103,7 @@ def test_geometry_from_dict_rejects_an_out_of_range_material_id(bad_id, key):
     #
     # Both sides and both ends of the range: a guard that only checks
     # face_materials, or only the negative end, is a plausible half-fix.
-    with pytest.raises(PlutonFormatError):
+    with pytest.raises(BermakeFormatError):
         geometry_from_dict(Scene(), _one_face_doc({"0": bad_id}, key))
 
 
@@ -119,14 +119,14 @@ def test_an_in_range_material_id_naming_no_material_still_loads():
 
 def test_a_document_with_a_malformed_material_id_fails_at_load_not_at_render():
     # The whole point of the fix, through the real document path: the error
-    # arrives once, from the loader, as the PlutonFormatError the UI already
+    # arrives once, from the loader, as the BermakeFormatError the UI already
     # knows how to show.
     model = Model()
     _square(model.root.mesh)
     data = document_to_dict(model, Camera(), DocumentSettings(), RenderStyle())
     data["model"]["definitions"][0]["geometry"]["face_materials"] = {"0": -3}
 
-    with pytest.raises(PlutonFormatError):
+    with pytest.raises(BermakeFormatError):
         document_from_dict(data)
 
 
@@ -178,7 +178,7 @@ def test_model_from_dict_rejects_dangling_definition_ref():
                           "tag_id": 0}],
         }],
     }
-    with pytest.raises(PlutonFormatError):
+    with pytest.raises(BermakeFormatError):
         model_from_dict(data)
 
 
@@ -220,21 +220,21 @@ def test_camera_state_apply_to_roundtrip():
 
 
 def test_document_from_dict_wraps_structural_errors():
-    with pytest.raises(PlutonFormatError):
+    with pytest.raises(BermakeFormatError):
         document_from_dict({"model": {}})  # missing keys everywhere
 
 
 def test_document_dict_round_trips_scenes_and_style():
-    from pluton.document import DocumentSettings
-    from pluton.io.document_codec import (
+    from bermake.document import DocumentSettings
+    from bermake.io.document_codec import (
         CameraState,
         document_from_dict,
         document_to_dict,
     )
-    from pluton.model.model import Model
-    from pluton.viewport.camera import Camera
-    from pluton.viewport.render_style import FaceStyle, RenderStyle
-    from pluton.views.saved_view import SavedView
+    from bermake.model.model import Model
+    from bermake.viewport.camera import Camera
+    from bermake.viewport.render_style import FaceStyle, RenderStyle
+    from bermake.views.saved_view import SavedView
 
     model = Model()
     cam_state = CameraState(position=(2.0, 2.0, 2.0), target=(0.0, 0.0, 0.0),
@@ -259,11 +259,11 @@ def test_color_by_tag_survives_a_document_round_trip():
     # xray, so a document saved with Color-by-Tag on reopened with it off. The
     # assertion is on the LOADED style, not on the dict, so it fails for a
     # writer that emits the key and a reader that ignores it too.
-    from pluton.document import DocumentSettings
-    from pluton.io.document_codec import document_from_dict, document_to_dict
-    from pluton.model.model import Model
-    from pluton.viewport.camera import Camera
-    from pluton.viewport.render_style import FaceStyle, RenderStyle
+    from bermake.document import DocumentSettings
+    from bermake.io.document_codec import document_from_dict, document_to_dict
+    from bermake.model.model import Model
+    from bermake.viewport.camera import Camera
+    from bermake.viewport.render_style import FaceStyle, RenderStyle
 
     style = RenderStyle(face_style=FaceStyle.HIDDEN_LINE, xray=True, color_by_tag=True)
     data = document_to_dict(Model(), Camera(), DocumentSettings(), style)
@@ -273,11 +273,11 @@ def test_color_by_tag_survives_a_document_round_trip():
 
 
 def test_a_style_block_without_color_by_tag_still_loads():
-    # Schema 5 already carries the key's absence: every .pluton written before
+    # Schema 5 already carries the key's absence: every .berm written before
     # this fix has a "style" block with only face_style and xray. Those files
     # must open, with the mode off rather than a KeyError.
-    from pluton.io.document_codec import render_style_from_dict
-    from pluton.viewport.render_style import FaceStyle
+    from bermake.io.document_codec import render_style_from_dict
+    from bermake.viewport.render_style import FaceStyle
 
     style = render_style_from_dict({"face_style": "WIREFRAME", "xray": True})
     assert style.face_style is FaceStyle.WIREFRAME
@@ -287,11 +287,11 @@ def test_a_style_block_without_color_by_tag_still_loads():
 
 def test_document_from_dict_without_scenes_or_style_uses_defaults():
     # A v2-shaped document (no "scenes"/"style" keys) still loads.
-    from pluton.document import DocumentSettings
-    from pluton.io.document_codec import document_from_dict, document_to_dict
-    from pluton.model.model import Model
-    from pluton.viewport.camera import Camera
-    from pluton.viewport.render_style import RenderStyle
+    from bermake.document import DocumentSettings
+    from bermake.io.document_codec import document_from_dict, document_to_dict
+    from bermake.model.model import Model
+    from bermake.viewport.camera import Camera
+    from bermake.viewport.render_style import RenderStyle
 
     data = document_to_dict(Model(), Camera(), DocumentSettings(), RenderStyle())
     del data["scenes"]
@@ -302,8 +302,8 @@ def test_document_from_dict_without_scenes_or_style_uses_defaults():
 
 
 def test_guide_round_trips_through_the_codec():
-    from pluton.io.document_codec import annotation_from_dict, annotation_to_dict
-    from pluton.model.annotation import Guide
+    from bermake.io.document_codec import annotation_from_dict, annotation_to_dict
+    from bermake.model.annotation import Guide
 
     g = Guide(3, (1.0, 2.0, 3.0), (0.0, 1.0, 0.0))
     back = annotation_from_dict(annotation_to_dict(g))
@@ -314,8 +314,8 @@ def test_guide_round_trips_through_the_codec():
 
 
 def test_guide_point_round_trips_through_the_codec():
-    from pluton.io.document_codec import annotation_from_dict, annotation_to_dict
-    from pluton.model.annotation import GuidePoint
+    from bermake.io.document_codec import annotation_from_dict, annotation_to_dict
+    from bermake.model.annotation import GuidePoint
 
     gp = GuidePoint(4, (5.0, 6.0, 7.0))
     back = annotation_from_dict(annotation_to_dict(gp))
@@ -327,10 +327,10 @@ def test_guide_point_round_trips_through_the_codec():
 def test_an_unknown_annotation_kind_still_raises():
     import pytest
 
-    from pluton.io.document_codec import annotation_from_dict
-    from pluton.io.errors import PlutonFormatError
+    from bermake.io.document_codec import annotation_from_dict
+    from bermake.io.errors import BermakeFormatError
 
-    with pytest.raises(PlutonFormatError):
+    with pytest.raises(BermakeFormatError):
         annotation_from_dict({"kind": "sprocket", "id": 1})
 
 
@@ -338,24 +338,24 @@ def test_a_degenerate_guide_direction_is_reported_as_a_format_error():
     """`Guide.__post_init__` rejects a zero-length direction with ValueError.
 
     A malformed record is this module's own business to report, and
-    PlutonFormatError is the one exception `load_document`'s callers are
+    BermakeFormatError is the one exception `load_document`'s callers are
     told to catch. Today the outer `document_from_dict` also catches
     ValueError, so the whole-document path was already covered; translating
     here means `annotation_from_dict` keeps its own contract whoever calls
     it, and names the offending record the way every other malformed record
     in this module is named.
     """
-    from pluton.io.document_codec import annotation_from_dict
+    from bermake.io.document_codec import annotation_from_dict
 
     record = {"kind": "guide", "id": 4, "origin": [0, 0, 0], "direction": [0.0, 0.0, 0.0]}
-    with pytest.raises(PlutonFormatError) as excinfo:
+    with pytest.raises(BermakeFormatError) as excinfo:
         annotation_from_dict(record)
     assert "guide" in str(excinfo.value)
 
 
 def test_a_degenerate_guide_direction_never_escapes_the_whole_document_load():
     """The path MainWindow._on_file_open actually catches on."""
-    from pluton.model.annotation import Guide
+    from bermake.model.annotation import Guide
 
     model = Model()
     model.active_context.annotations.append(Guide(0, (0.0, 0.0, 0.0), (1.0, 0.0, 0.0)))
@@ -365,7 +365,7 @@ def test_a_degenerate_guide_direction_never_escapes_the_whole_document_load():
             if ann.get("kind") == "guide":
                 ann["direction"] = [0.0, 0.0, 0.0]
 
-    with pytest.raises(PlutonFormatError):
+    with pytest.raises(BermakeFormatError):
         document_from_dict(data)
 
 
@@ -417,7 +417,7 @@ def test_ground_opacity_is_clamped_to_the_unit_interval():
 
 def test_an_explicit_null_ground_opacity_falls_back_like_a_missing_one():
     """Review finding: {"ground_opacity": null} reached float(None) and raised
-    TypeError, which document_from_dict surfaces as PlutonFormatError, unlike
+    TypeError, which document_from_dict surfaces as BermakeFormatError, unlike
     every colour field, where an explicit null already falls back cleanly via
     _environment_color. Per-key defaulting should be uniform across the record.
     """
@@ -454,11 +454,11 @@ def test_a_non_object_environment_value_is_a_format_error_not_an_attribute_error
         environment_from_dict(value)
 
 
-def test_a_document_with_a_non_object_environment_raises_pluton_format_error():
+def test_a_document_with_a_non_object_environment_raises_bermake_format_error():
     """The same input one level up, through the real entry point."""
     data = _minimal_document_dict()
     data["environment"] = "blue"
-    with pytest.raises(PlutonFormatError):
+    with pytest.raises(BermakeFormatError):
         document_from_dict(data)
 
 

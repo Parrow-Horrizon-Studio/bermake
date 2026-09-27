@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from pluton.io.gltf_scene import GltfImage, GltfMaterial, GltfMesh, GltfSceneData
-from pluton.io.gltf_import import read_gltf_texture_bytes
+from bermake.io.gltf_scene import GltfImage, GltfMaterial, GltfMesh, GltfSceneData
+from bermake.io.gltf_import import read_gltf_texture_bytes
 
 DATA = Path(__file__).parent / "data" / "gltf"
 

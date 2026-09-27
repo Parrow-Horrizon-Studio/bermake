@@ -1,13 +1,13 @@
 """The template table: units configuration is what distinguishes them."""
 
 import pytest
-from pluton.templates import (
+from bermake.templates import (
     DEFAULT_TEMPLATE_KEY,
     TEMPLATES,
     template_for_key,
 )
-from pluton.units import UnitSystem
-from pluton.viewport.environment import PRESETS
+from bermake.units import UnitSystem
+from bermake.viewport.environment import PRESETS
 
 
 def test_every_template_environment_is_one_of_the_presets():
@@ -97,12 +97,12 @@ def test_every_template_has_a_name_and_a_description(template):
 
 @pytest.mark.parametrize("template", TEMPLATES, ids=lambda t: t.key)
 def test_every_template_units_round_trip(template):
-    """A template's Units must survive .pluton persistence unchanged.
+    """A template's Units must survive .berm persistence unchanged.
 
     A template is only worth having if a document started from it reopens with
     the same units. metric_precision 0 is the one most likely to be lost, since
     it is the only template value that differs from the Units dataclass default.
     """
-    from pluton.units import units_from_dict, units_to_dict
+    from bermake.units import units_from_dict, units_to_dict
 
     assert units_from_dict(units_to_dict(template.units)) == template.units

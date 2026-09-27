@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pluton.tools.wall_tool import WallTool
-from pluton.ui.main_window import MainWindow
+from bermake.tools.wall_tool import WallTool
+from bermake.ui.main_window import MainWindow
 
 
 def test_wall_tool_registered_with_w(qtbot):

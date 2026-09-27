@@ -11,11 +11,11 @@ multi-shared edge) keeps the old cascade.
 from __future__ import annotations
 
 import numpy as np
-from pluton.commands import CommandStack, CompositeCommand
-from pluton.scene import Scene
-from pluton.scene.scene import Side
-from pluton.tools import ToolContext
-from pluton.tools.erase_tool import EraserTool
+from bermake.commands import CommandStack, CompositeCommand
+from bermake.scene import Scene
+from bermake.scene.scene import Side
+from bermake.tools import ToolContext
+from bermake.tools.erase_tool import EraserTool
 
 
 def _make(scene: Scene, stack: CommandStack) -> EraserTool:

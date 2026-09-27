@@ -1,7 +1,7 @@
 """Scene.split_face: sub-loop construction and the kernel call (M7.6a)."""
 
 import numpy as np
-from pluton.scene.scene import Scene
+from bermake.scene.scene import Scene
 
 
 def _quad(scene, z=0.0):

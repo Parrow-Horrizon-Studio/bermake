@@ -6,8 +6,8 @@ faces and rebuilds them with new ids, and nothing carried the sidecars across.
 
 import numpy as np
 
-from pluton.commands.scene_commands import SplitEdgeCommand
-from pluton.scene.scene import Scene, Side, TexturePlacement
+from bermake.commands.scene_commands import SplitEdgeCommand
+from bermake.scene.scene import Scene, Side, TexturePlacement
 
 
 def _painted_quad(scene, material_id=7):

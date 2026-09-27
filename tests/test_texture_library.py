@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pluton.model.material import MaterialLibrary
-from pluton.model.texture import Texture, TextureLibrary
+from bermake.model.material import MaterialLibrary
+from bermake.model.texture import Texture, TextureLibrary
 
 _PNG = b"\x89PNG\r\n\x1a\n-pretend-this-is-an-image-"
 
@@ -100,7 +100,7 @@ def test_the_model_layer_imports_no_qt():
     import sys
 
     code = (
-        "import pluton.model.texture, sys; "
+        "import bermake.model.texture, sys; "
         "print(any(m.startswith('PySide6') for m in sys.modules))"
     )
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
@@ -130,6 +130,6 @@ def test_a_schema_5_material_record_without_texture_keys_still_loads():
 
 
 def test_a_model_has_a_texture_library():
-    from pluton.model.model import Model
+    from bermake.model.model import Model
 
     assert isinstance(Model().textures, TextureLibrary)

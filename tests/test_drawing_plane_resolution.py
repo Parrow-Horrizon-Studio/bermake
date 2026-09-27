@@ -13,7 +13,7 @@ import pytest
 
 def _wall_scene():
     """A single vertical quad in the x = 0 plane, so its normal is +/- X."""
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     vids = [
@@ -27,7 +27,7 @@ def _wall_scene():
 
 
 def _camera_at_default():
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.aspect = 1280.0 / 800.0
@@ -54,8 +54,8 @@ def _screen_of(cam, world):
     ],
 )
 def test_drawing_plane_at_a_face_boundary_is_the_face_plane(label, world_point):
-    from pluton.tools.shape_support import resolve_drawing_plane
-    from pluton.viewport.snap_engine import SnapEngine, SnapKind
+    from bermake.tools.shape_support import resolve_drawing_plane
+    from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
     scene, _ = _wall_scene()
     cam = _camera_at_default()

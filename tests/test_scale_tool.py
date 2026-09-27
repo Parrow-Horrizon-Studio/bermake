@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import numpy as np
 
-from pluton.commands.command_stack import CommandStack
-from pluton.scene.scene import Scene
-from pluton.selection import Selection
-from pluton.tools.scale_tool import ScaleTool
-from pluton.tools.tool import ToolContext
-from pluton.tools.transform_support import GripSpec
+from bermake.commands.command_stack import CommandStack
+from bermake.scene.scene import Scene
+from bermake.selection import Selection
+from bermake.tools.scale_tool import ScaleTool
+from bermake.tools.tool import ToolContext
+from bermake.tools.transform_support import GripSpec
 
 
 def _square(s: Scene):

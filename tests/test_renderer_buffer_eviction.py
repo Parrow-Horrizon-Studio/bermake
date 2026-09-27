@@ -9,8 +9,8 @@ _DefBuffers() has all-zero handles, so the guarded release path is a no-op.
 
 from __future__ import annotations
 
-from pluton.model.model import Model
-from pluton.viewport.scene_renderer import SceneRenderer, _DefBuffers
+from bermake.model.model import Model
+from bermake.viewport.scene_renderer import SceneRenderer, _DefBuffers
 
 
 def test_cache_drops_definitions_no_longer_in_the_model():

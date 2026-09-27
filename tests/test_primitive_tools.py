@@ -119,7 +119,7 @@ def test_undo_returns_to_the_pre_existing_non_empty_scene(main_window_with_squar
 
 
 def test_segments_below_the_floor_are_clamped_not_raised(main_window):
-    # pluton._core.make_cylinder raises ValueError below segments=3 (M7.4
+    # bermake._core.make_cylinder raises ValueError below segments=3 (M7.4
     # Task 9). Setting the tool's own attribute below that floor must not
     # let that exception reach the caller -- it should be clamped before
     # _make_mesh ever calls the generator.

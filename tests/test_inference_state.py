@@ -20,7 +20,7 @@ class _FakeClock:
 
 
 def _vertex_snap(vertex_id=7, position=(1.0, 2.0, 3.0)):
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
 
     return SnapResult(
         kind=SnapKind.ENDPOINT,
@@ -32,7 +32,7 @@ def _vertex_snap(vertex_id=7, position=(1.0, 2.0, 3.0)):
 
 
 def test_dwell_shorter_than_the_threshold_acquires_nothing():
-    from pluton.viewport.inference import DWELL_MS, InferenceState
+    from bermake.viewport.inference import DWELL_MS, InferenceState
 
     clock = _FakeClock()
     state = InferenceState(now_ms=clock)
@@ -45,7 +45,7 @@ def test_dwell_shorter_than_the_threshold_acquires_nothing():
 
 
 def test_dwell_at_the_threshold_acquires_the_vertex():
-    from pluton.viewport.inference import DWELL_MS, AcquiredKind, InferenceState
+    from bermake.viewport.inference import DWELL_MS, AcquiredKind, InferenceState
 
     clock = _FakeClock()
     state = InferenceState(now_ms=clock)
@@ -60,7 +60,7 @@ def test_dwell_at_the_threshold_acquires_the_vertex():
 
 
 def test_moving_off_the_candidate_restarts_the_dwell():
-    from pluton.viewport.inference import DWELL_MS, InferenceState
+    from bermake.viewport.inference import DWELL_MS, InferenceState
 
     clock = _FakeClock()
     state = InferenceState(now_ms=clock)
@@ -77,7 +77,7 @@ def test_moving_off_the_candidate_restarts_the_dwell():
 
 
 def test_a_new_entity_replaces_the_acquisition():
-    from pluton.viewport.inference import DWELL_MS, InferenceState
+    from bermake.viewport.inference import DWELL_MS, InferenceState
 
     clock = _FakeClock()
     state = InferenceState(now_ms=clock)
@@ -94,7 +94,7 @@ def test_a_new_entity_replaces_the_acquisition():
 
 
 def test_axis_lock_toggles_off_on_a_second_press():
-    from pluton.viewport.inference import InferenceState
+    from bermake.viewport.inference import InferenceState
 
     state = InferenceState(now_ms=_FakeClock())
     state.toggle_axis_lock(2)
@@ -105,7 +105,7 @@ def test_axis_lock_toggles_off_on_a_second_press():
 
 
 def test_a_different_axis_replaces_the_lock_rather_than_clearing_it():
-    from pluton.viewport.inference import InferenceState
+    from bermake.viewport.inference import InferenceState
 
     state = InferenceState(now_ms=_FakeClock())
     state.toggle_axis_lock(2)
@@ -115,7 +115,7 @@ def test_a_different_axis_replaces_the_lock_rather_than_clearing_it():
 
 
 def test_ending_a_gesture_releases_both_lock_and_acquisition():
-    from pluton.viewport.inference import DWELL_MS, InferenceState
+    from bermake.viewport.inference import DWELL_MS, InferenceState
 
     clock = _FakeClock()
     state = InferenceState(now_ms=clock)
@@ -131,8 +131,8 @@ def test_ending_a_gesture_releases_both_lock_and_acquisition():
 
 
 def test_apply_lock_returns_the_snap_untouched_when_no_lock_is_active():
-    from pluton.viewport.camera import Camera
-    from pluton.viewport.inference import InferenceState
+    from bermake.viewport.camera import Camera
+    from bermake.viewport.inference import InferenceState
 
     cam = Camera()
     cam.aspect = 1280.0 / 800.0
@@ -152,9 +152,9 @@ def test_an_axis_lock_runs_through_the_gesture_anchor():
     point with x = y = 0: axis-aligned with respect to nothing the user had
     drawn.
     """
-    from pluton.viewport.camera import Camera
-    from pluton.viewport.inference import InferenceState
-    from pluton.viewport.snap_engine import SnapKind
+    from bermake.viewport.camera import Camera
+    from bermake.viewport.inference import InferenceState
+    from bermake.viewport.snap_engine import SnapKind
 
     cam = Camera()
     cam.aspect = 1280.0 / 800.0
@@ -181,8 +181,8 @@ def test_an_axis_lock_ignores_the_acquired_reference_once_there_is_an_anchor():
     lock, and it silently changed what the arrow key meant depending on
     whether the cursor had happened to rest on something first.
     """
-    from pluton.viewport.camera import Camera
-    from pluton.viewport.inference import DWELL_MS, InferenceState
+    from bermake.viewport.camera import Camera
+    from bermake.viewport.inference import DWELL_MS, InferenceState
 
     cam = Camera()
     cam.aspect = 1280.0 / 800.0
@@ -206,8 +206,8 @@ def test_an_axis_lock_with_no_gesture_falls_back_to_the_acquired_point():
     the acquired reference (and, failing that, the world origin) rather than
     refusing to produce a point.
     """
-    from pluton.viewport.camera import Camera
-    from pluton.viewport.inference import DWELL_MS, InferenceState
+    from bermake.viewport.camera import Camera
+    from bermake.viewport.inference import DWELL_MS, InferenceState
 
     cam = Camera()
     cam.aspect = 1280.0 / 800.0
@@ -233,9 +233,9 @@ def test_the_viewport_hands_the_gesture_anchor_to_the_active_lock(qtbot):
     arrow-key handler had no access to it, so the anchor could not reach the
     lock however the lock was written.
     """
-    from pluton.model.model import Model
-    from pluton.viewport.snap_engine import SnapKind
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.model.model import Model
+    from bermake.viewport.snap_engine import SnapKind
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     anchor = np.array([5.0, 5.0, 0.0], dtype=np.float32)
 
@@ -275,7 +275,7 @@ def test_the_viewport_hands_the_gesture_anchor_to_the_active_lock(qtbot):
 
 
 def _edge_snap(edge_id=3, position=(0.0, 0.0, 0.0)):
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
 
     return SnapResult(
         kind=SnapKind.MIDPOINT,
@@ -288,7 +288,7 @@ def _edge_snap(edge_id=3, position=(0.0, 0.0, 0.0)):
 
 
 def _axis_snap(axis=2, position=(0.0, 0.0, 5.0)):
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
 
     return SnapResult(
         kind=SnapKind.AXIS_LOCK,
@@ -300,7 +300,7 @@ def _axis_snap(axis=2, position=(0.0, 0.0, 5.0)):
 
 
 def test_toggle_edge_lock_with_nothing_acquired_is_a_no_op():
-    from pluton.viewport.inference import InferenceState
+    from bermake.viewport.inference import InferenceState
 
     state = InferenceState(now_ms=_FakeClock())
     state.toggle_edge_lock()
@@ -309,7 +309,7 @@ def test_toggle_edge_lock_with_nothing_acquired_is_a_no_op():
 
 
 def test_toggle_edge_lock_locks_to_the_acquired_edge_and_toggles_off():
-    from pluton.viewport.inference import DWELL_MS, InferenceState
+    from bermake.viewport.inference import DWELL_MS, InferenceState
 
     clock = _FakeClock()
     state = InferenceState(now_ms=clock)
@@ -330,7 +330,7 @@ def test_toggle_edge_lock_locks_to_the_acquired_edge_and_toggles_off():
 
 
 def test_shift_lock_set_from_an_axis_bearing_snap_and_cleared_on_release():
-    from pluton.viewport.inference import InferenceState
+    from bermake.viewport.inference import InferenceState
 
     state = InferenceState(now_ms=_FakeClock())
 
@@ -346,7 +346,7 @@ def test_an_arrow_armed_axis_lock_survives_a_shift_press_and_release():
     """Regression for Important 1: a Shift release anywhere in the app (the
     eventFilter that drives set_shift_lock is installed application-wide)
     must not discard a lock some other control armed."""
-    from pluton.viewport.inference import InferenceState
+    from bermake.viewport.inference import InferenceState
 
     state = InferenceState(now_ms=_FakeClock())
     state.toggle_axis_lock(0)
@@ -368,7 +368,7 @@ def test_a_shift_lock_with_no_axis_is_not_cleared_by_toggle_edge_lock():
     derives a direction from an axis-bearing snap today, but the two lock
     kinds must never be confused regardless of how the direction was formed.
     """
-    from pluton.viewport.inference import InferenceState, Lock
+    from bermake.viewport.inference import InferenceState, Lock
 
     state = InferenceState(now_ms=_FakeClock())
     state._lock = Lock(
@@ -425,9 +425,9 @@ def test_the_viewport_releases_lock_and_acquisition_when_the_gesture_ends(qtbot)
     the rest of the session: every later Line, Rectangle or Push/Pull drag
     was still being resolved against them.
     """
-    from pluton.model.model import Model
-    from pluton.viewport.inference import Acquired, AcquiredKind
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.model.model import Model
+    from bermake.viewport.inference import Acquired, AcquiredKind
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     tool = _mutable_tool()
 
@@ -467,9 +467,9 @@ def test_the_viewport_drops_the_acquisition_when_the_active_context_changes(qtbo
     longer names the thing it was taken from, and the id may name a
     different edge in the context now underneath it.
     """
-    from pluton.model.model import Model
-    from pluton.viewport.inference import Acquired, AcquiredKind
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.model.model import Model
+    from bermake.viewport.inference import Acquired, AcquiredKind
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     widget = ViewportWidget(model=Model())
     qtbot.addWidget(widget)
@@ -487,8 +487,8 @@ def test_the_viewport_drops_the_acquisition_when_the_active_context_changes(qtbo
 
 def test_main_window_drops_the_acquisition_on_enter_and_exit(qtbot):
     """The wiring half: MainWindow is what SelectTool notifies."""
-    from pluton.ui.main_window import MainWindow
-    from pluton.viewport.inference import Acquired, AcquiredKind
+    from bermake.ui.main_window import MainWindow
+    from bermake.viewport.inference import Acquired, AcquiredKind
 
     win = MainWindow()
     qtbot.addWidget(win)
@@ -512,8 +512,8 @@ def test_every_snap_kind_is_classified_as_point_like_or_line_like():
     PARALLEL, PERPENDICULAR and ON_GUIDE stayed unlockable for a milestone;
     this makes the claim true.
     """
-    from pluton.viewport.inference import _POINT_LIKE_KINDS
-    from pluton.viewport.snap_engine import SnapKind
+    from bermake.viewport.inference import _POINT_LIKE_KINDS
+    from bermake.viewport.snap_engine import SnapKind
 
     line_kinds = {
         SnapKind.AXIS_LOCK,
@@ -551,7 +551,7 @@ def test_a_lock_armed_after_a_key_driven_gesture_end_survives_the_next_mouse_mov
     """
     from PySide6.QtCore import Qt
 
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     win = MainWindow()
     qtbot.addWidget(win)
@@ -588,7 +588,7 @@ def test_a_lock_armed_over_a_stale_selection_gesture_flag_survives(qtbot):
     """
     from PySide6.QtCore import Qt
 
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     win = MainWindow()
     qtbot.addWidget(win)
@@ -627,8 +627,8 @@ def test_a_shift_lock_armed_after_a_gesture_ends_survives_the_next_mouse_move(qt
     from PySide6.QtCore import QEvent, Qt
     from PySide6.QtGui import QKeyEvent
 
-    from pluton.ui.main_window import MainWindow
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.ui.main_window import MainWindow
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
 
     win = MainWindow()
     qtbot.addWidget(win)

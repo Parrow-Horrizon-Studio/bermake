@@ -1,9 +1,9 @@
 import numpy as np
 
-from pluton.io.obj_codec import parse_obj
-from pluton.io.obj_io import build_obj_into_model
-from pluton.model.model import Model
-from pluton.scene.scene import Side
+from bermake.io.obj_codec import parse_obj
+from bermake.io.obj_io import build_obj_into_model
+from bermake.model.model import Model
+from bermake.scene.scene import Side
 
 QUAD = (
     "v 0 0 0\nv 1 0 0\nv 1 1 0\nv 0 1 0\n"

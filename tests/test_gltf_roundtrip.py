@@ -3,15 +3,15 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-from pluton.io.gltf_export import export_gltf
-from pluton.io.gltf_import import build_gltf_into_model, read_gltf_scene, read_gltf_texture_bytes
-from pluton.model.model import Model
+from bermake.io.gltf_export import export_gltf
+from bermake.io.gltf_import import build_gltf_into_model, read_gltf_scene, read_gltf_texture_bytes
+from bermake.model.model import Model
 
 DATA = Path(__file__).parent / "data" / "gltf"
 
 
 def _decoder(data):
-    """The Qt-free decoder shape pluton/io expects, for a 4x4 opaque PNG."""
+    """The Qt-free decoder shape bermake/io expects, for a 4x4 opaque PNG."""
     return ("png", 4, 4, False)
 
 
@@ -37,7 +37,7 @@ def test_glb_roundtrip_preserves_geometry_orientation_and_color(tmp_path):
     assert any(m.color == (1.0, 0.0, 0.0) or np.allclose(m.color, (1.0, 0.0, 0.0), atol=1e-4)
                for m in scene.materials)
 
-    # Rebuild into a fresh model; the up face must land back on Pluton z ~ 1.
+    # Rebuild into a fresh model; the up face must land back on Bermake z ~ 1.
     model = Model()
     build_gltf_into_model(scene, model, model.active_context)
     zs = [w @ np.append(v.position, 1.0)

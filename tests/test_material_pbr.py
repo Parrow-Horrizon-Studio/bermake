@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from pluton.model.material import Material, MaterialLibrary
+from bermake.model.material import Material, MaterialLibrary
 
 
 def test_material_defaults_are_opaque_dielectric():

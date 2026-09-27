@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.commands.opening_commands import PlaceOpeningCommand
-from pluton.model.model import Model
+from bermake.commands.opening_commands import PlaceOpeningCommand
+from bermake.model.model import Model
 
 
 def _cmd(model, kind="door"):

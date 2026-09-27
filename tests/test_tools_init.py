@@ -1,6 +1,6 @@
-"""`pluton.tools` re-exports concrete tool classes lazily (PEP 562
+"""`bermake.tools` re-exports concrete tool classes lazily (PEP 562
 `__getattr__`) instead of importing them eagerly at package-init time, so
-that a Qt-free submodule such as `pluton.tools.sweep_support` does not pull
+that a Qt-free submodule such as `bermake.tools.sweep_support` does not pull
 in PySide6 merely because Python runs the package's `__init__.py` before the
 submodule itself (M7.4 Task 3).
 """
@@ -9,26 +9,26 @@ from __future__ import annotations
 
 import pytest
 
-import pluton.tools as tools_pkg
+import bermake.tools as tools_pkg
 
 # Every name the package advertises, and the module each must come from.
 _EXPECTED = {
-    "ArcTool": "pluton.tools.arc_tool",
-    "CircleTool": "pluton.tools.circle_tool",
-    "EraserTool": "pluton.tools.erase_tool",
-    "LineTool": "pluton.tools.line_tool",
-    "MoveTool": "pluton.tools.move_tool",
-    "PolygonTool": "pluton.tools.polygon_tool",
-    "PushPullTool": "pluton.tools.push_pull_tool",
-    "RectangleTool": "pluton.tools.rectangle_tool",
-    "RotateTool": "pluton.tools.rotate_tool",
-    "ScaleTool": "pluton.tools.scale_tool",
-    "SelectTool": "pluton.tools.select_tool",
-    "TapeMeasureTool": "pluton.tools.tape_measure_tool",
-    "Tool": "pluton.tools.tool",
-    "ToolContext": "pluton.tools.tool",
-    "ToolManager": "pluton.tools.tool_manager",
-    "ToolOverlay": "pluton.tools.tool",
+    "ArcTool": "bermake.tools.arc_tool",
+    "CircleTool": "bermake.tools.circle_tool",
+    "EraserTool": "bermake.tools.erase_tool",
+    "LineTool": "bermake.tools.line_tool",
+    "MoveTool": "bermake.tools.move_tool",
+    "PolygonTool": "bermake.tools.polygon_tool",
+    "PushPullTool": "bermake.tools.push_pull_tool",
+    "RectangleTool": "bermake.tools.rectangle_tool",
+    "RotateTool": "bermake.tools.rotate_tool",
+    "ScaleTool": "bermake.tools.scale_tool",
+    "SelectTool": "bermake.tools.select_tool",
+    "TapeMeasureTool": "bermake.tools.tape_measure_tool",
+    "Tool": "bermake.tools.tool",
+    "ToolContext": "bermake.tools.tool",
+    "ToolManager": "bermake.tools.tool_manager",
+    "ToolOverlay": "bermake.tools.tool",
 }
 
 

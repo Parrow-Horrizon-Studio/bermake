@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from pluton.ui import cursors
+from bermake.ui import cursors
 
 
 def test_arming_a_crosshair_tool_sets_the_crosshair_hotspot(qtbot, main_window):
@@ -36,7 +36,7 @@ def test_the_cursor_is_set_on_the_viewport_not_the_window(qtbot, main_window):
 
 
 def test_every_tool_can_be_armed_without_raising(qtbot, main_window):
-    from pluton.ui.actions import ACTIONS, TOOL_GROUP
+    from bermake.ui.actions import ACTIONS, TOOL_GROUP
 
     for spec in ACTIONS:
         if spec.group == TOOL_GROUP:
@@ -52,7 +52,7 @@ def test_arming_a_shortcutless_tool_checks_its_action_and_sets_the_cursor(qtbot,
     via handler_arg -- must still check the action and set the cursor, not
     just update ToolManager state.
     """
-    from pluton.tools.line_tool import LineTool
+    from bermake.tools.line_tool import LineTool
 
     class _ShortcutlessLine(LineTool):
         """Same id as the shipped Line tool, but no shortcut to key off of."""

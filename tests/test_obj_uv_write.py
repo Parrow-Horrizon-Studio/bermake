@@ -1,4 +1,4 @@
-from pluton.io.obj_codec import ObjDocument, ObjFace, ObjObject, parse_obj, write_obj
+from bermake.io.obj_codec import ObjDocument, ObjFace, ObjObject, parse_obj, write_obj
 
 
 def _doc_with_uvs():

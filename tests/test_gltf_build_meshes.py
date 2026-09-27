@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from pluton.io.gltf_import import _build_mesh_components, _ensure_gltf_materials
-from pluton.io.gltf_scene import GltfMaterial, GltfMesh, GltfSceneData
-from pluton.model.model import Model
+from bermake.io.gltf_import import _build_mesh_components, _ensure_gltf_materials
+from bermake.io.gltf_scene import GltfMaterial, GltfMesh, GltfSceneData
+from bermake.model.model import Model
 
 TRI = ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
 

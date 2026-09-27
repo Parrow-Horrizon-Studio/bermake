@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pluton.ui import actions
+from bermake.ui import actions
 from PySide6.QtGui import QAction
 
 
@@ -40,7 +40,7 @@ def test_activating_a_tool_action_arms_that_tool(qtbot, main_window):
 
 
 def test_face_style_action_applies_the_style(qtbot, main_window):
-    from pluton.viewport.render_style import FaceStyle
+    from bermake.viewport.render_style import FaceStyle
 
     main_window._actions["view_style_wireframe"].trigger()
     assert main_window._render_style.face_style is FaceStyle.WIREFRAME
@@ -72,7 +72,7 @@ def test_tool_actions_are_mutually_exclusive(qtbot, main_window):
 
 
 def test_every_handler_name_exists_on_the_window_class(qtbot):
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     missing = sorted({s.handler for s in actions.ACTIONS if not hasattr(MainWindow, s.handler)})
     assert missing == []

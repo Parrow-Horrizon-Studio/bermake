@@ -6,13 +6,13 @@ import math
 
 import numpy as np
 import pytest
-from pluton.viewport.camera_framing import MIN_RADIUS, frame_bounds
+from bermake.viewport.camera_framing import MIN_RADIUS, frame_bounds
 
 _DIR = np.array([0.0, 1.0, -1.0], dtype=np.float64)
 
 
 def _view_matrix(position: np.ndarray, target: np.ndarray, up: np.ndarray) -> np.ndarray:
-    """Mirrors `Camera.view_matrix` (python/pluton/viewport/camera.py) in
+    """Mirrors `Camera.view_matrix` (python/bermake/viewport/camera.py) in
     float64, so this test exercises the same right-handed look-at convention
     the real viewport uses instead of inventing its own."""
     forward = (target - position) / np.linalg.norm(target - position)
@@ -31,7 +31,7 @@ def _view_matrix(position: np.ndarray, target: np.ndarray, up: np.ndarray) -> np
 
 
 def _projection_matrix(fov_y: float, aspect: float, near: float, far: float) -> np.ndarray:
-    """Mirrors `Camera.projection_matrix` (python/pluton/viewport/camera.py)
+    """Mirrors `Camera.projection_matrix` (python/bermake/viewport/camera.py)
     in float64 -- standard OpenGL right-handed perspective, clip_w = -z_cam."""
     f = 1.0 / math.tan(fov_y / 2.0)
     m = np.zeros((4, 4), dtype=np.float64)

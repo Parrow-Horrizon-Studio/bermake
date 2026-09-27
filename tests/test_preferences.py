@@ -2,8 +2,8 @@
 
 import pytest
 from PySide6.QtCore import QSettings
-from pluton.templates import DEFAULT_TEMPLATE_KEY
-from pluton.ui import preferences
+from bermake.templates import DEFAULT_TEMPLATE_KEY
+from bermake.ui import preferences
 
 
 @pytest.fixture

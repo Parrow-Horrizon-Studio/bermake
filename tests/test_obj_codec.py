@@ -1,6 +1,6 @@
 import pytest
-from pluton.io.errors import PlutonFormatError
-from pluton.io.obj_codec import (
+from bermake.io.errors import BermakeFormatError
+from bermake.io.obj_codec import (
     ObjDocument,
     ObjFace,
     ObjObject,
@@ -117,9 +117,9 @@ def test_parse_face_triplets_and_negative_indices():
 
 
 def test_parse_bad_face_index_raises():
-    with pytest.raises(PlutonFormatError):
+    with pytest.raises(BermakeFormatError):
         parse_obj("v 0 0 0\nv 1 0 0\nf 1 2 9\n", None)   # 9 out of range
-    with pytest.raises(PlutonFormatError):
+    with pytest.raises(BermakeFormatError):
         parse_obj("v 0 0 0\nf 1 x 2\n", None)            # non-numeric
 
 
@@ -145,7 +145,7 @@ def test_round_trip_write_then_parse():
 
 def test_write_obj_emits_a_vn_line_per_normal():
     """#113: an exported .obj carried no explicit normals at all, so a viewer
-    that expects them had to re-derive or flat-shade. Pluton already computes
+    that expects them had to re-derive or flat-shade. Bermake already computes
     one normal per face; writing it costs a line."""
     doc = ObjDocument(
         vertices=((0, 0, 0), (1, 0, 0), (1, 1, 0)),

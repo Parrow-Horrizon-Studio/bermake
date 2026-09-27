@@ -5,11 +5,11 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pluton.commands.command_stack import CommandStack
-from pluton.model.model import Model
-from pluton.tools.dimension_tool import DimensionTool
-from pluton.tools.tool import ToolContext
-from pluton.viewport.snap_engine import SnapKind
+from bermake.commands.command_stack import CommandStack
+from bermake.model.model import Model
+from bermake.tools.dimension_tool import DimensionTool
+from bermake.tools.tool import ToolContext
+from bermake.viewport.snap_engine import SnapKind
 
 
 class _Snap:
@@ -138,7 +138,7 @@ def test_offset_removes_along_axis_component_for_non_axis_aligned_dimension():
 
     # NOTE: at the document root, world_to_local_point's identity-transform
     # branch round-trips through float32 (an existing, out-of-scope property
-    # of pluton.viewport.picking shared by every drawing tool), so this
+    # of bermake.viewport.picking shared by every drawing tool), so this
     # tolerance is float32-scale rather than float64 exact.
     offset = np.array(model.active_context.annotations[0].offset)
     assert float(np.dot(offset, axis_unit)) == pytest.approx(0.0, abs=1e-5)

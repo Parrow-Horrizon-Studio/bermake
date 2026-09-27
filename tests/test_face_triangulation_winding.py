@@ -17,9 +17,9 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pluton._core import make_box, make_cone, make_cylinder, make_sphere
-from pluton.scene.mesh_builder import build_mesh_into_scene
-from pluton.scene.scene import Scene, _project_loop_to_2d_for_earcut
+from bermake._core import make_box, make_cone, make_cylinder, make_sphere
+from bermake.scene.mesh_builder import build_mesh_into_scene
+from bermake.scene.scene import Scene, _project_loop_to_2d_for_earcut
 
 _AXES = {
     "+Z": (0.0, 0.0, 1.0),

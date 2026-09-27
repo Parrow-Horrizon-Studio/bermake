@@ -6,7 +6,7 @@ import math
 
 import numpy as np
 import pytest
-from pluton.scene.scene import Side, TexturePlacement
+from bermake.scene.scene import Side, TexturePlacement
 
 
 def _square(scene, x0: float = 0.0):

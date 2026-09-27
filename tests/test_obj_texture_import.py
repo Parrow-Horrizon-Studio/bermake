@@ -1,8 +1,8 @@
 """Texture import for OBJ. No QApplication: the decoder is injected (spec D7)."""
 
-from pluton.io.obj_codec import parse_obj
-from pluton.io.obj_io import build_obj_into_model, read_obj_texture_bytes
-from pluton.model.model import Model
+from bermake.io.obj_codec import parse_obj
+from bermake.io.obj_io import build_obj_into_model, read_obj_texture_bytes
+from bermake.model.model import Model
 
 FAKE_PNG = b"\x89PNG\r\n\x1a\n-fake-bytes"
 
@@ -216,16 +216,16 @@ def test_reimporting_a_colliding_document_three_times_does_not_pile_up_materials
 
 
 def test_the_io_package_imports_no_qt():
-    """Spec D7: pluton/io stays Qt-free so its tests need no QApplication.
+    """Spec D7: bermake/io stays Qt-free so its tests need no QApplication.
 
     The scanned root is derived from this test file's own location, not the
-    cwd: a relative "python/pluton/io" glob silently returns nothing (so the
+    cwd: a relative "python/bermake/io" glob silently returns nothing (so the
     assertion passes vacuously) when pytest is run from anywhere other than
     the repo root (a reviewer confirmed this running from F:/tmp).
     """
     import pathlib
 
-    root = pathlib.Path(__file__).resolve().parent.parent / "python" / "pluton" / "io"
+    root = pathlib.Path(__file__).resolve().parent.parent / "python" / "bermake" / "io"
     offenders = [
         p.name
         for p in root.glob("*.py")

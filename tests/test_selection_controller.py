@@ -6,9 +6,9 @@ import subprocess
 import sys
 
 import numpy as np
-from pluton.commands.command_stack import CommandStack
-from pluton.selection import Selection
-from pluton.ui import selection_controller as sc
+from bermake.commands.command_stack import CommandStack
+from bermake.selection import Selection
+from bermake.ui import selection_controller as sc
 
 
 def _square(model):
@@ -26,7 +26,7 @@ def test_importing_the_controller_loads_no_qt(model_factory):
     # The whole point of the extraction: this logic must be testable without
     # a QApplication, so it may not drag PySide6 in transitively.
     code = (
-        "import sys; import pluton.ui.selection_controller; "
+        "import sys; import bermake.ui.selection_controller; "
         "print(any(m.startswith('PySide6') for m in sys.modules))"
     )
     out = subprocess.run(

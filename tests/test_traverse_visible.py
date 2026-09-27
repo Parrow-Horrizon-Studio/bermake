@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.model.model import Model
+from bermake.model.model import Model
 
 
 def _child(m, parent, tag_id=0):

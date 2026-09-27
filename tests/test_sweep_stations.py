@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pluton.tools.sweep_support import SweepRefused, sweep_stations
+from bermake.tools.sweep_support import SweepRefused, sweep_stations
 
 UNIT_SQUARE = np.array(
     [[-0.5, -0.5, 0.0], [0.5, -0.5, 0.0], [0.5, 0.5, 0.0], [-0.5, 0.5, 0.0]],

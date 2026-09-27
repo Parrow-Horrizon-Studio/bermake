@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pluton.ui.value_control_box import ValueControlBox
+from bermake.ui.value_control_box import ValueControlBox
 
 
 def test_starts_empty_inactive():

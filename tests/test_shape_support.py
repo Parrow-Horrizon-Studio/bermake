@@ -6,7 +6,7 @@ import numpy as np
 
 
 def _snap(kind, world, *, face_id=None, vertex_id=None):
-    from pluton.viewport.snap_engine import SnapResult
+    from bermake.viewport.snap_engine import SnapResult
 
     return SnapResult(
         kind=kind,
@@ -19,9 +19,9 @@ def _snap(kind, world, *, face_id=None, vertex_id=None):
 
 
 def test_resolve_plane_defaults_to_horizontal_through_point():
-    from pluton.scene import Scene
-    from pluton.tools.shape_support import resolve_drawing_plane
-    from pluton.viewport.snap_engine import SnapKind
+    from bermake.scene import Scene
+    from bermake.tools.shape_support import resolve_drawing_plane
+    from bermake.viewport.snap_engine import SnapKind
 
     plane = resolve_drawing_plane(_snap(SnapKind.ENDPOINT, (1.0, 2.0, 5.0)), Scene())
     assert np.allclose(plane.normal, [0.0, 0.0, 1.0])
@@ -29,9 +29,9 @@ def test_resolve_plane_defaults_to_horizontal_through_point():
 
 
 def test_resolve_plane_uses_face_for_on_face_snap():
-    from pluton.scene import Scene
-    from pluton.tools.shape_support import resolve_drawing_plane
-    from pluton.viewport.snap_engine import SnapKind
+    from bermake.scene import Scene
+    from bermake.tools.shape_support import resolve_drawing_plane
+    from bermake.viewport.snap_engine import SnapKind
 
     scene = Scene()
     a = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -45,9 +45,9 @@ def test_resolve_plane_uses_face_for_on_face_snap():
 
 
 def test_build_closed_face_creates_ring_face_and_undoes_atomically():
-    from pluton.commands import CommandStack
-    from pluton.scene import Scene
-    from pluton.tools.shape_support import build_closed_face
+    from bermake.commands import CommandStack
+    from bermake.scene import Scene
+    from bermake.tools.shape_support import build_closed_face
 
     scene = Scene()
     stack = CommandStack()
@@ -70,8 +70,8 @@ def test_build_closed_face_creates_ring_face_and_undoes_atomically():
 
 
 def test_build_closed_face_reuses_coincident_existing_vertex():
-    from pluton.scene import Scene
-    from pluton.tools.shape_support import build_closed_face
+    from bermake.scene import Scene
+    from bermake.tools.shape_support import build_closed_face
 
     scene = Scene()
     existing = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -82,9 +82,9 @@ def test_build_closed_face_reuses_coincident_existing_vertex():
 
 
 def test_build_open_polyline_creates_edges_no_face():
-    from pluton.commands import CommandStack
-    from pluton.scene import Scene
-    from pluton.tools.shape_support import build_open_polyline
+    from bermake.commands import CommandStack
+    from bermake.scene import Scene
+    from bermake.tools.shape_support import build_open_polyline
 
     scene = Scene()
     stack = CommandStack()
@@ -108,7 +108,7 @@ def test_build_open_polyline_creates_edges_no_face():
 
 
 def test_polyline_segments_closed_and_open():
-    from pluton.tools.shape_support import polyline_segments
+    from bermake.tools.shape_support import polyline_segments
 
     pts = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0]], dtype=np.float32)
     closed = polyline_segments(pts, closed=True)

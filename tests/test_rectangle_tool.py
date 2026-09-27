@@ -7,7 +7,7 @@ import pytest
 
 
 def _snap_at(world):
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
 
     return SnapResult(
         kind=SnapKind.GRID,
@@ -19,9 +19,9 @@ def _snap_at(world):
 
 
 def test_rectangle_tool_idle_overlay_is_empty():
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.rectangle_tool import RectangleTool
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.rectangle_tool import RectangleTool
 
     tool = RectangleTool()
     tool.activate(ToolContext(scene=Scene()))
@@ -30,9 +30,9 @@ def test_rectangle_tool_idle_overlay_is_empty():
 
 
 def test_rectangle_tool_first_click_starts_drag():
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.rectangle_tool import RectangleTool
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.rectangle_tool import RectangleTool
 
     scene = Scene()
     tool = RectangleTool()
@@ -43,9 +43,9 @@ def test_rectangle_tool_first_click_starts_drag():
 
 
 def test_rectangle_tool_two_clicks_commit_four_verts_four_edges_one_face():
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.rectangle_tool import RectangleTool
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.rectangle_tool import RectangleTool
 
     scene = Scene()
     tool = RectangleTool()
@@ -59,9 +59,9 @@ def test_rectangle_tool_two_clicks_commit_four_verts_four_edges_one_face():
 
 
 def test_rectangle_tool_zero_area_drops_gesture():
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.rectangle_tool import RectangleTool
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.rectangle_tool import RectangleTool
 
     scene = Scene()
     tool = RectangleTool()
@@ -74,9 +74,9 @@ def test_rectangle_tool_zero_area_drops_gesture():
 
 
 def test_rectangle_tool_has_active_gesture_reflects_state():
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.rectangle_tool import RectangleTool
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.rectangle_tool import RectangleTool
 
     scene = Scene()
     tool = RectangleTool()
@@ -91,9 +91,9 @@ def test_rectangle_tool_has_active_gesture_reflects_state():
 
 
 def test_rectangle_tool_esc_cancels_mid_drag():
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.rectangle_tool import RectangleTool
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.rectangle_tool import RectangleTool
     from PySide6.QtCore import Qt
     from PySide6.QtGui import QKeyEvent
 
@@ -111,10 +111,10 @@ def test_rectangle_tool_esc_cancels_mid_drag():
 
 
 def test_rectangle_tool_pushes_composite_to_command_stack():
-    from pluton.commands import CommandStack
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.rectangle_tool import RectangleTool
+    from bermake.commands import CommandStack
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.rectangle_tool import RectangleTool
 
     scene = Scene()
     stack = CommandStack()
@@ -148,9 +148,9 @@ def test_rectangle_face_normal_always_points_up(second_corner):
     push/pull extrudes upward consistently. Regression for the un-normalized
     winding bug where down-right / up-left drags produced a -Z (downward)
     normal and push/pull went the wrong way."""
-    from pluton.scene import Scene
-    from pluton.tools import ToolContext
-    from pluton.tools.rectangle_tool import RectangleTool
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.rectangle_tool import RectangleTool
 
     scene = Scene()
     tool = RectangleTool()
@@ -178,10 +178,10 @@ def test_rectangle_commits_local_z_zero_under_rotated_translated_context(group_f
     """
     import math
 
-    from pluton.geometry.transforms import apply_mat, mat_compose, mat_rotate, mat_translate
-    from pluton.model.model import Model
-    from pluton.tools import ToolContext
-    from pluton.tools.rectangle_tool import RectangleTool
+    from bermake.geometry.transforms import apply_mat, mat_compose, mat_rotate, mat_translate
+    from bermake.model.model import Model
+    from bermake.tools import ToolContext
+    from bermake.tools.rectangle_tool import RectangleTool
 
     model = Model()
     scene = model.active_context.mesh
@@ -254,11 +254,11 @@ def test_measurement_text_reports_local_width_and_height_under_a_rotated_context
     """
     import math
 
-    from pluton.geometry.transforms import apply_mat, mat_compose, mat_rotate, mat_translate
-    from pluton.model.model import Model
-    from pluton.tools import ToolContext
-    from pluton.tools.rectangle_tool import RectangleTool
-    from pluton.units import Units
+    from bermake.geometry.transforms import apply_mat, mat_compose, mat_rotate, mat_translate
+    from bermake.model.model import Model
+    from bermake.tools import ToolContext
+    from bermake.tools.rectangle_tool import RectangleTool
+    from bermake.units import Units
 
     model = Model()
     scene = model.active_context.mesh

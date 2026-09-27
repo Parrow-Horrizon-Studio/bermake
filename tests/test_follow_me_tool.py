@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from pluton.geometry.transforms import apply_mat
-from pluton.tools.sweep_support import sweep_stations
+from bermake.geometry.transforms import apply_mat
+from bermake.tools.sweep_support import sweep_stations
 
 
 def _profile_and_path(window):
@@ -454,7 +454,7 @@ def test_arming_from_its_action_checks_and_sets_the_cursor(qtbot, main_window):
     # Task 5's registry re-key is what makes that legal) -- confirm the
     # toolbar/menu checked state and viewport cursor sync for it, end to
     # end, exactly as they would for a shortcut-carrying tool.
-    from pluton.ui import cursors
+    from bermake.ui import cursors
 
     main_window._activate("follow_me")
     assert main_window._actions["tool_follow_me"].isChecked()

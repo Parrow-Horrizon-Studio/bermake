@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pluton.commands.tag_commands import TagInstancesCommand
-from pluton.model.model import Model
+from bermake.commands.tag_commands import TagInstancesCommand
+from bermake.model.model import Model
 
 
 def _inst(m, tag_id=0):

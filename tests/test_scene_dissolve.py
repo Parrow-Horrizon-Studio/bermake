@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from pluton.scene.scene import Scene
+from bermake.scene.scene import Scene
 
 
 def _build_two_quads_sharing_edge(scene: Scene) -> tuple[int, int, int]:

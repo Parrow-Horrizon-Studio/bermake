@@ -16,11 +16,11 @@ import re
 
 import numpy as np
 
-from pluton.tools.tool import ToolOverlay
-from pluton.viewport import scene_renderer as sr
-from pluton.viewport.camera import Camera
-from pluton.viewport.environment import PLAIN_WHITE, SKY_AND_GROUND, STUDIO, environment_pass_needed
-from pluton.viewport.scene_renderer import (
+from bermake.tools.tool import ToolOverlay
+from bermake.viewport import scene_renderer as sr
+from bermake.viewport.camera import Camera
+from bermake.viewport.environment import PLAIN_WHITE, SKY_AND_GROUND, STUDIO, environment_pass_needed
+from bermake.viewport.scene_renderer import (
     _ENVIRONMENT_UNIFORMS,
     _LINE_UNIFORMS,
     SceneRenderer,
@@ -28,7 +28,7 @@ from pluton.viewport.scene_renderer import (
     _snap_marker_halo,
     _snap_marker_vertices,
 )
-from pluton.viewport.snap_engine import SnapKind
+from bermake.viewport.snap_engine import SnapKind
 
 _UNIFORM_DECL = re.compile(r"^\s*uniform\s+\w+\s+(\w+)\s*;", re.MULTILINE)
 _LINE_COMMENT = re.compile(r"//.*")

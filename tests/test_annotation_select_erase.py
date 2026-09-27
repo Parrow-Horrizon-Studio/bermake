@@ -21,13 +21,13 @@ brief, which don't exist anywhere in this codebase.
 from __future__ import annotations
 
 import numpy as np
-from pluton.commands.command_stack import CommandStack
-from pluton.model.annotation import Dimension
-from pluton.model.model import Model
-from pluton.selection import Selection
-from pluton.tools.erase_tool import EraserTool
-from pluton.tools.select_tool import SelectTool
-from pluton.tools.tool import ToolContext
+from bermake.commands.command_stack import CommandStack
+from bermake.model.annotation import Dimension
+from bermake.model.model import Model
+from bermake.selection import Selection
+from bermake.tools.erase_tool import EraserTool
+from bermake.tools.select_tool import SelectTool
+from bermake.tools.tool import ToolContext
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QKeyEvent, QMouseEvent
 
@@ -399,7 +399,7 @@ def test_eraser_annotation_erase_is_active_context_scoped(qtbot):
 # ---------------------------------------------------------------------------
 
 def test_delete_removes_selected_annotations_and_undo_restores():
-    from pluton.commands.annotation_commands import DeleteAnnotationsCommand
+    from bermake.commands.annotation_commands import DeleteAnnotationsCommand
 
     model = _model_with_dimension()
     ctx = model.active_context
@@ -421,7 +421,7 @@ def test_delete_removes_selected_annotations_and_undo_restores():
 
 
 def _model_with_guide_point():
-    from pluton.model.annotation import GuidePoint
+    from bermake.model.annotation import GuidePoint
 
     model = Model()
     model.active_context.annotations.append(GuidePoint(7, (0.0, 0.0, 0.0)))

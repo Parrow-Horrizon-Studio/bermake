@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pluton.model.tag import Tag, TagLibrary
+from bermake.model.tag import Tag, TagLibrary
 
 
 def test_untagged_is_first_and_id_zero():

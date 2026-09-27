@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from PySide6.QtGui import QColor
 
-from pluton.ui import icons
-from pluton.ui.panel_icons import NON_ACTION_ICONS
+from bermake.ui import icons
+from bermake.ui.panel_icons import NON_ACTION_ICONS
 
 EXPECTED = frozenset(
     {

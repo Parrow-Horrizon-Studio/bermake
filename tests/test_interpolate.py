@@ -2,8 +2,8 @@ import math
 
 import numpy as np
 
-from pluton.io.document_codec import CameraState
-from pluton.views.interpolate import interpolate_pose
+from bermake.io.document_codec import CameraState
+from bermake.views.interpolate import interpolate_pose
 
 
 def _cam(pos, target=(0.0, 0.0, 0.0), up=(0.0, 0.0, 1.0), fov=45.0):

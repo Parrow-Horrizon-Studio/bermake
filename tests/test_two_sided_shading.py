@@ -6,12 +6,12 @@ import re
 
 import numpy as np
 import pytest
-from pluton.model.material import MaterialLibrary
-from pluton.viewport import scene_renderer as sr
-from pluton.viewport.environment import STUDIO
-from pluton.viewport.face_batches import FaceBatch
-from pluton.viewport.render_style import BACK_DEFAULT_COLOR, FaceStyle, RenderStyle
-from pluton.viewport.scene_renderer import _PHONG_UNIFORMS, _load_shader_source, resolve_batch_sides
+from bermake.model.material import MaterialLibrary
+from bermake.viewport import scene_renderer as sr
+from bermake.viewport.environment import STUDIO
+from bermake.viewport.face_batches import FaceBatch
+from bermake.viewport.render_style import BACK_DEFAULT_COLOR, FaceStyle, RenderStyle
+from bermake.viewport.scene_renderer import _PHONG_UNIFORMS, _load_shader_source, resolve_batch_sides
 
 _BACK_UNIFORMS = (
     "u_material_ambient_back",

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from pluton.units import format_angle, parse_angle
+from bermake.units import format_angle, parse_angle
 
 
 def test_parse_angle():

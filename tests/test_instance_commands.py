@@ -1,6 +1,6 @@
 import numpy as np
-from pluton.model.model import Model
-from pluton.commands.instance_commands import CreateInstanceCommand, TransformInstanceCommand
+from bermake.model.model import Model
+from bermake.commands.instance_commands import CreateInstanceCommand, TransformInstanceCommand
 
 
 def _xlate(x):

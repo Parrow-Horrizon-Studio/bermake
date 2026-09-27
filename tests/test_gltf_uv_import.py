@@ -1,11 +1,11 @@
-"""Imported glTF UVs land on the right corners, in Pluton's convention."""
+"""Imported glTF UVs land on the right corners, in Bermake's convention."""
 
 import numpy as np
 
-from pluton.io.gltf_import import build_gltf_into_model
-from pluton.io.gltf_scene import GltfMaterial, GltfMesh, GltfNode, GltfSceneData
-from pluton.model.model import Model
-from pluton.scene.scene import Side
+from bermake.io.gltf_import import build_gltf_into_model
+from bermake.io.gltf_scene import GltfMaterial, GltfMesh, GltfNode, GltfSceneData
+from bermake.model.model import Model
+from bermake.scene.scene import Side
 
 # One quad as two triangles. UVs chosen so that u, v, and 1 - v are all
 # different from each other at every corner: a missing flip, a doubled flip
@@ -33,7 +33,7 @@ def _imported_faces(model):
 
 
 def test_bridge_uvs_are_stored_without_a_second_flip():
-    """The IR already carries Pluton's convention, so import must NOT flip.
+    """The IR already carries Bermake's convention, so import must NOT flip.
 
     Assimp's glTF2 importer applies 1 - v before the bridge sees a coordinate
     (pinned by test_assimp_already_flips_v_CI_GATE), so a flip here would be
@@ -70,7 +70,7 @@ def test_u_is_not_touched_either():
 
 
 def test_both_sides_receive_the_imported_array():
-    """Spec 1.5: a source format has one UV set and Pluton has two."""
+    """Spec 1.5: a source format has one UV set and Bermake has two."""
     model = Model()
     build_gltf_into_model(_scene(), model, model.root)
     mesh, faces = _imported_faces(model)
@@ -105,12 +105,12 @@ def test_a_short_uv_array_degrades_that_face_alone():
 
 
 def _decoder(data):
-    """The Qt-free decoder shape pluton/io expects, for a 4x4 opaque PNG."""
+    """The Qt-free decoder shape bermake/io expects, for a 4x4 opaque PNG."""
     return ("png", 4, 4, False)
 
 
 def _textured_scene():
-    from pluton.io.gltf_scene import GltfImage
+    from bermake.io.gltf_scene import GltfImage
 
     img = GltfImage(name="uvgrid", data=b"\x89PNG\r\n\x1a\npretend", format_hint="png")
     mat = GltfMaterial("Brick", (1.0, 1.0, 1.0), texture_index=0, texture_uri="")

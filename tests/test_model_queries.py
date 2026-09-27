@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.model.model_queries import model_bounds, select_all_ids
+from bermake.model.model_queries import model_bounds, select_all_ids
 
 
 def _unit_square(scene):
@@ -121,7 +121,7 @@ def test_bounds_of_an_empty_model_is_none(model_factory):
 
 
 def test_bounds_transforms_geometry_inside_a_transformed_instance(model_factory):
-    from pluton.geometry.transforms import mat_translate
+    from bermake.geometry.transforms import mat_translate
 
     model = model_factory()
     child = model.new_definition("Child", is_group=True)
@@ -142,7 +142,7 @@ def test_bounds_excludes_geometry_under_a_hidden_tag(model_factory):
     subtrees. A regression that swapped in traverse() (all definitions,
     tag visibility ignored) would leave every other bounds test unchanged --
     none of them hide a tag -- so this must exercise that path directly."""
-    from pluton.geometry.transforms import mat_translate
+    from bermake.geometry.transforms import mat_translate
 
     model = model_factory()
 

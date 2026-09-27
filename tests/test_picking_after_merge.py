@@ -4,9 +4,9 @@ Case 2 seam-merge dissolves the original side faces."""
 from __future__ import annotations
 
 import numpy as np
-from pluton.commands.command_stack import CommandStack
-from pluton.scene.scene import Scene
-from pluton.tools.push_pull_tool import PushPullTool
+from bermake.commands.command_stack import CommandStack
+from bermake.scene.scene import Scene
+from bermake.tools.push_pull_tool import PushPullTool
 
 
 def _build_unit_box_and_pp_top(scene: Scene) -> None:

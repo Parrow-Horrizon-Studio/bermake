@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import QLabel
 
-from pluton.ui.panels import PROPERTIES_TABS
-from pluton.ui.properties_dock import PropertiesDock
+from bermake.ui.panels import PROPERTIES_TABS
+from bermake.ui.properties_dock import PropertiesDock
 
 
 def test_the_dock_has_a_persistence_object_name(qtbot):

@@ -1,5 +1,5 @@
 import numpy as np
-from pluton.model.model import Model
+from bermake.model.model import Model
 
 
 def test_fresh_model_is_at_root_identity():

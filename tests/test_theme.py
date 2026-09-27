@@ -1,8 +1,8 @@
 """Theme selection, and the icon refresh that #101 reports missing."""
 
 import pytest
-from pluton.ui import icons, preferences
-from pluton.ui.theme import ThemeChoice, apply_theme, theme_for_name
+from bermake.ui import icons, preferences
+from bermake.ui.theme import ThemeChoice, apply_theme, theme_for_name
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import QApplication
 
@@ -96,7 +96,7 @@ def test_apply_theme_sets_the_qt_colour_scheme(app):
     renames or drops setColorScheme fails here on every platform. Only the
     readback is conditional, because a platform theme without colour-scheme
     support leaves it at Unknown no matter what was set. Nothing in
-    python/pluton reads colorScheme() back, so this is the only place that
+    python/bermake reads colorScheme() back, so this is the only place that
     difference can bite.
     """
     observable = _platform_tracks_colour_scheme(app)
@@ -146,8 +146,8 @@ def test_a_palette_change_re_tints_the_properties_tab_strip(app):
     cacheKey() must change across a real palette change, verified independently
     by measuring 30064771072 -> 356482285568 on a real theme switch.
     """
-    from pluton.ui.main_window import MainWindow
-    from pluton.ui.panel_icons import TAB_ICONS
+    from bermake.ui.main_window import MainWindow
+    from bermake.ui.panel_icons import TAB_ICONS
     from PySide6.QtGui import QColor, QPalette
 
     window = MainWindow()
@@ -182,7 +182,7 @@ def test_a_palette_change_rebuilds_the_outliner(app, monkeypatch):
 
     Discriminates: drop the _rebuild_outliner call and this fails.
     """
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     window = MainWindow()
     calls = []
@@ -198,8 +198,8 @@ def test_a_palette_change_re_tints_the_action_icons(app):
     by warming the cache at the current colour without touching a single
     action. The widget assertion below is the one that actually pins the fix.
     """
-    from pluton.ui import actions
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui import actions
+    from bermake.ui.main_window import MainWindow
     from PySide6.QtGui import QColor, QPalette
 
     window = MainWindow()

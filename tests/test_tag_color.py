@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import pytest
-from pluton.commands.tag_commands import SetTagColorCommand
-from pluton.model.model import Model
-from pluton.model.tag import TagLibrary
-from pluton.viewport.environment import STUDIO
-from pluton.viewport.render_style import RenderStyle
-from pluton.viewport.scene_renderer import (
+from bermake.commands.tag_commands import SetTagColorCommand
+from bermake.model.model import Model
+from bermake.model.tag import TagLibrary
+from bermake.viewport.environment import STUDIO
+from bermake.viewport.render_style import RenderStyle
+from bermake.viewport.scene_renderer import (
     _translucent_ids,
     resolve_batch_sides,
     resolve_tag_color,
@@ -89,7 +89,7 @@ def test_color_by_tag_defaults_off():
 
 
 def test_color_by_tag_is_independent_of_face_style():
-    from pluton.viewport.render_style import FaceStyle
+    from bermake.viewport.render_style import FaceStyle
 
     s = RenderStyle(face_style=FaceStyle.MONOCHROME, color_by_tag=True)
     assert s.face_style is FaceStyle.MONOCHROME
@@ -148,7 +148,7 @@ def test_set_tag_color_command_is_undoable_and_tag_specific():
 
 
 def _batch(front_material_id=0, back_material_id=0):
-    from pluton.viewport.face_batches import FaceBatch
+    from bermake.viewport.face_batches import FaceBatch
 
     return FaceBatch(
         front_material_id=front_material_id, back_material_id=back_material_id, first=0, count=3
@@ -176,7 +176,7 @@ def test_resolve_tag_color_returns_the_tags_own_colour():
 def test_a_tag_colour_replaces_both_sides_diffuse():
     # The brief calls out a front-only override as a plausible, easy-to-miss
     # bug -- asserting only the front side would not catch it.
-    from pluton.model.material import MaterialLibrary
+    from bermake.model.material import MaterialLibrary
 
     lib = MaterialLibrary()
     red = lib.add_custom("Red", (0.8, 0.1, 0.1))
@@ -204,8 +204,8 @@ def test_the_tag_colour_also_drives_ambient_and_specular_on_both_sides():
     # and so pinned exactly that leak. The tag colour must reach every colour
     # term, identically on both sides, or two faces on one tag painted two
     # ways still render two different colours.
-    from pluton.model.material import MaterialLibrary
-    from pluton.viewport.render_style import phong_material_for
+    from bermake.model.material import MaterialLibrary
+    from bermake.viewport.render_style import phong_material_for
 
     lib = MaterialLibrary()
     gold = lib.add_custom("Gold", (0.9, 0.75, 0.2))
@@ -234,7 +234,7 @@ def test_a_tag_colour_does_not_bypass_a_materials_alpha():
     # Alpha is not a colour. A translucent material under Color-by-Tag must
     # still blend, and each side keeps its OWN alpha -- kills a fix that
     # substitutes a whole opaque material (or one shared alpha) for both sides.
-    from pluton.model.material import MaterialLibrary
+    from bermake.model.material import MaterialLibrary
 
     lib = MaterialLibrary()
     glass = lib.add_custom("Glass", (0.8, 0.1, 0.1))
@@ -259,7 +259,7 @@ def test_a_tag_colour_does_not_bypass_a_materials_alpha():
 def test_no_tag_colour_leaves_the_materials_alone():
     # Kills an implementation that always overrides, ignoring the None sentinel
     # that means "Color-by-Tag is off".
-    from pluton.model.material import MaterialLibrary
+    from bermake.model.material import MaterialLibrary
 
     lib = MaterialLibrary()
     red = lib.add_custom("Red", (0.8, 0.1, 0.1))
@@ -497,9 +497,9 @@ class _TagRenderHarness:
 
     def __init__(self, monkeypatch, *, translucent_brick=False) -> None:
         import numpy as np
-        from pluton.viewport import scene_renderer
-        from pluton.viewport.camera import Camera
-        from pluton.viewport.scene_renderer import (
+        from bermake.viewport import scene_renderer
+        from bermake.viewport.camera import Camera
+        from bermake.viewport.scene_renderer import (
             _ENVIRONMENT_UNIFORMS,
             _LINE_UNIFORMS,
             _PHONG_UNIFORMS,
@@ -595,7 +595,7 @@ def test_hidden_line_keeps_its_flat_background_fill_under_color_by_tag(monkeypat
     # Hidden Line's deliberate (0, 0, 0) unlit fill with the tag colour, so
     # faces rendered lit instead of filled. Hidden Line must look exactly the
     # same whether the mode is on or off.
-    from pluton.viewport.render_style import FaceStyle
+    from bermake.viewport.render_style import FaceStyle
 
     h = _TagRenderHarness(monkeypatch)
 
@@ -613,7 +613,7 @@ def test_monochrome_keeps_mono_color_under_color_by_tag(monkeypatch):
     # Monochrome's whole job is one uniform grey. Color-by-Tag must not turn it
     # into a tag-coloured shade -- but ambient still follows the tag, which is
     # what distinguishes this from Hidden Line's full bypass.
-    from pluton.viewport.render_style import MONO_COLOR, FaceStyle, phong_material_for
+    from bermake.viewport.render_style import MONO_COLOR, FaceStyle, phong_material_for
 
     h = _TagRenderHarness(monkeypatch)
     on = h.render(RenderStyle(face_style=FaceStyle.MONOCHROME, color_by_tag=True))
@@ -655,7 +655,7 @@ def test_a_translucent_face_still_blends_under_color_by_tag(monkeypatch):
 
 
 def test_editing_tag_color_goes_through_the_command_stack(main_window, monkeypatch):
-    from pluton.ui import tags_page as tags_page_module
+    from bermake.ui import tags_page as tags_page_module
     from PySide6.QtGui import QColor
 
     win = main_window
@@ -681,7 +681,7 @@ def test_editing_tag_color_goes_through_the_command_stack(main_window, monkeypat
 
 
 def test_picking_the_same_tag_colour_pushes_no_undo_entry(main_window, monkeypatch):
-    from pluton.ui import tags_page as tags_page_module
+    from bermake.ui import tags_page as tags_page_module
     from PySide6.QtGui import QColor
 
     win = main_window
@@ -730,8 +730,8 @@ def test_edit_color_is_a_noop_without_an_injected_command_stack(qtbot, monkeypat
     # unpatched, a regressed guard opens a real modal and HANGS the suite
     # instead of failing it. Patched, the same regression fails this
     # assertion in milliseconds.
-    from pluton.ui import tags_page as tags_page_module
-    from pluton.ui.tags_page import TagsPage
+    from bermake.ui import tags_page as tags_page_module
+    from bermake.ui.tags_page import TagsPage
     from PySide6.QtGui import QColor
 
     monkeypatch.setattr(
@@ -769,9 +769,9 @@ def test_the_dim_pass_still_dims_under_a_tag_colour():
     # Note the second mutation has to be in resolve_batch_sides itself, not in
     # resolve_tag_color: this test passes tag_color directly, so stubbing the
     # resolver never reaches it.
-    from pluton.model.material import MaterialLibrary
-    from pluton.viewport.render_style import phong_material_for
-    from pluton.viewport.scene_renderer import _DIM_AMBIENT, _DIM_DIFFUSE
+    from bermake.model.material import MaterialLibrary
+    from bermake.viewport.render_style import phong_material_for
+    from bermake.viewport.scene_renderer import _DIM_AMBIENT, _DIM_DIFFUSE
 
     lib = MaterialLibrary()
     gold = lib.add_custom("Gold", (0.9, 0.75, 0.2))

@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
-from pluton.io import export_obj, read_obj_document
-from pluton.io.errors import PlutonFormatError
-from pluton.model.model import Model
+from bermake.io import export_obj, read_obj_document
+from bermake.io.errors import BermakeFormatError
+from bermake.model.model import Model
 
 
 def _painted_model():
@@ -50,7 +50,7 @@ def test_export_obj_atomic_old_file_survives_failure(tmp_path, monkeypatch):
     path = tmp_path / "keep.obj"
     export_obj(path, _painted_model())
     original = path.read_bytes()
-    import pluton.io.obj_io as oi
+    import bermake.io.obj_io as oi
 
     monkeypatch.setattr(
         oi, "model_to_objdoc", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom"))
@@ -93,12 +93,12 @@ def test_read_obj_document_subdir_mtllib_is_non_fatal(tmp_path):
 
 def test_read_obj_document_corrupt_raises(tmp_path):
     (tmp_path / "bad.obj").write_text("v 0 0 0\nv 1 0 0\nf 1 2 9\n")
-    with pytest.raises(PlutonFormatError):
+    with pytest.raises(BermakeFormatError):
         read_obj_document(tmp_path / "bad.obj")
 
 
 def test_export_then_import_round_trip(tmp_path):
-    from pluton.io.obj_io import build_obj_into_model
+    from bermake.io.obj_io import build_obj_into_model
 
     src = _painted_model()
     path = tmp_path / "rt.obj"

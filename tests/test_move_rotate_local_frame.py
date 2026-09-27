@@ -28,22 +28,22 @@ import pytest
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
 
-from pluton.commands.command_stack import CommandStack
-from pluton.geometry.transforms import (
+from bermake.commands.command_stack import CommandStack
+from bermake.geometry.transforms import (
     apply_mat,
     is_identity_transform,
     mat_invert,
     mat_rotate,
     mat_translate,
 )
-from pluton.model.model import Model
-from pluton.scene.scene import Scene
-from pluton.selection import Selection
-from pluton.tools.move_tool import MoveTool
-from pluton.tools.rotate_tool import RotateTool
-from pluton.tools.tool import ToolContext
-from pluton.viewport.picking import world_to_local_point
-from pluton.viewport.snap_engine import SnapKind
+from bermake.model.model import Model
+from bermake.scene.scene import Scene
+from bermake.selection import Selection
+from bermake.tools.move_tool import MoveTool
+from bermake.tools.rotate_tool import RotateTool
+from bermake.tools.tool import ToolContext
+from bermake.viewport.picking import world_to_local_point
+from bermake.viewport.snap_engine import SnapKind
 
 
 # ---------------------------------------------------------------------------

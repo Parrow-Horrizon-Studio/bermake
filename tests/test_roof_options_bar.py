@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pluton.tools.roof_tool import RoofTool
-from pluton.ui.roof_options_bar import RoofOptionsBar
+from bermake.tools.roof_tool import RoofTool
+from bermake.ui.roof_options_bar import RoofOptionsBar
 
 
 def test_slope_field_updates_tool(qtbot):

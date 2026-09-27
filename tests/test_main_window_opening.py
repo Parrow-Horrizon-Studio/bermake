@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pluton.tools.opening_tool import DoorWindowTool
-from pluton.ui.main_window import MainWindow
+from bermake.tools.opening_tool import DoorWindowTool
+from bermake.ui.main_window import MainWindow
 
 
 def test_doorwindow_tool_registered_with_d(qtbot):

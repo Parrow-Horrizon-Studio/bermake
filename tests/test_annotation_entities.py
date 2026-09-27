@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pluton.model.annotation import Dimension, Label
-from pluton.model.model import Model
+from bermake.model.annotation import Dimension, Label
+from bermake.model.model import Model
 
 
 def test_dimension_holds_local_points():
@@ -46,7 +46,7 @@ def test_annotations_are_stored_per_context():
 
 
 def test_guide_normalises_its_direction():
-    from pluton.model.annotation import Guide
+    from bermake.model.annotation import Guide
 
     g = Guide(1, (0.0, 0.0, 0.0), (0.0, 0.0, 5.0))
     assert g.kind == "guide"
@@ -57,14 +57,14 @@ def test_guide_normalises_its_direction():
 def test_guide_rejects_a_zero_direction():
     import pytest
 
-    from pluton.model.annotation import Guide
+    from bermake.model.annotation import Guide
 
     with pytest.raises(ValueError):
         Guide(1, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0))
 
 
 def test_guide_point_coerces_to_floats():
-    from pluton.model.annotation import GuidePoint
+    from bermake.model.annotation import GuidePoint
 
     gp = GuidePoint(2, (1, 2, 3))
     assert gp.kind == "guide_point"

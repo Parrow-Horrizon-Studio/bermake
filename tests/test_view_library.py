@@ -1,6 +1,6 @@
-from pluton.io.document_codec import CameraState
-from pluton.views.saved_view import SavedView
-from pluton.views.view_library import ViewLibrary
+from bermake.io.document_codec import CameraState
+from bermake.views.saved_view import SavedView
+from bermake.views.view_library import ViewLibrary
 
 
 def _view(vid, name="V"):

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from pluton.viewport.render_style import (
+from bermake.viewport.render_style import (
     FACE_STYLE_TABLE,
     MONO_COLOR,
     XRAY_ALPHA,

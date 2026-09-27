@@ -21,7 +21,7 @@ import numpy as np
 # ---------------------------------------------------------------------------
 
 def _camera(w, h):
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
     cam = Camera()
     cam.aspect = float(w) / float(h)
     return cam
@@ -44,19 +44,19 @@ def _translation(dx, dy=0.0, dz=0.0):
 # ---------------------------------------------------------------------------
 
 def test_pick_selectable_accepts_world_transform_kwarg():
-    from pluton.viewport.picking import pick_selectable
+    from bermake.viewport.picking import pick_selectable
     sig = inspect.signature(pick_selectable)
     assert "world_transform" in sig.parameters
 
 
 def test_entities_in_box_accepts_world_transform_kwarg():
-    from pluton.viewport.picking import entities_in_box
+    from bermake.viewport.picking import entities_in_box
     sig = inspect.signature(entities_in_box)
     assert "world_transform" in sig.parameters
 
 
 def test_snap_engine_snap_accepts_world_transform_kwarg():
-    from pluton.viewport.snap_engine import SnapEngine
+    from bermake.viewport.snap_engine import SnapEngine
     sig = inspect.signature(SnapEngine.snap)
     assert "world_transform" in sig.parameters
 
@@ -67,8 +67,8 @@ def test_snap_engine_snap_accepts_world_transform_kwarg():
 
 def test_pick_selectable_identity_matches_no_arg():
     """Passing world_transform=None and world_transform=I4 both equal no-arg."""
-    from pluton.scene import Scene
-    from pluton.viewport.picking import pick_selectable
+    from bermake.scene import Scene
+    from bermake.viewport.picking import pick_selectable
 
     w, h = 800, 600
     cam = _camera(w, h)
@@ -104,9 +104,9 @@ def test_pick_selectable_translated_world_transform():
       - cursor aimed at world (+10,0,0) → hit
       - cursor aimed at world (0,0,0)   → miss
     """
-    from pluton.scene import Scene
-    from pluton.viewport.picking import pick_selectable
-    from pluton.geometry.transforms import mat_translate
+    from bermake.scene import Scene
+    from bermake.viewport.picking import pick_selectable
+    from bermake.geometry.transforms import mat_translate
 
     w, h = 800, 600
     cam = _camera(w, h)
@@ -144,8 +144,8 @@ def test_pick_selectable_translated_world_transform():
 def test_pick_selectable_identity_and_none_equivalent_to_untransformed():
     """Passing identity must give the same result as passing None and as no-arg
     for a scene that lives at the origin (canonical regression guard)."""
-    from pluton.scene import Scene
-    from pluton.viewport.picking import pick_selectable
+    from bermake.scene import Scene
+    from bermake.viewport.picking import pick_selectable
 
     w, h = 800, 600
     cam = _camera(w, h)
@@ -173,7 +173,7 @@ def test_pick_selectable_identity_and_none_equivalent_to_untransformed():
 
 def test_tool_context_has_model_field_defaulting_to_none():
     """ToolContext must expose a `model` field that defaults to None."""
-    from pluton.tools.tool import ToolContext
+    from bermake.tools.tool import ToolContext
 
     class _FakeScene:
         pass
@@ -185,7 +185,7 @@ def test_tool_context_has_model_field_defaulting_to_none():
 
 def test_tool_context_model_can_be_set():
     """ToolContext.model must accept an arbitrary object (the Model)."""
-    from pluton.tools.tool import ToolContext
+    from bermake.tools.tool import ToolContext
 
     class _FakeScene:
         pass
@@ -198,17 +198,17 @@ def test_tool_context_model_can_be_set():
 
 
 def test_is_identity_transform_none_is_true():
-    from pluton.geometry.transforms import is_identity_transform
+    from bermake.geometry.transforms import is_identity_transform
     assert is_identity_transform(None) is True
 
 
 def test_is_identity_transform_eye4_is_true():
-    from pluton.geometry.transforms import is_identity_transform
+    from bermake.geometry.transforms import is_identity_transform
     assert is_identity_transform(np.eye(4)) is True
 
 
 def test_is_identity_transform_translated_is_false():
-    from pluton.geometry.transforms import is_identity_transform
+    from bermake.geometry.transforms import is_identity_transform
     m = np.eye(4)
     m[0, 3] = 1.0  # translate X by 1
     assert is_identity_transform(m) is False

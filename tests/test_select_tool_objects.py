@@ -7,11 +7,11 @@ import pytest
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QKeyEvent, QMouseEvent
 
-from pluton.model.model import Model
-from pluton.selection import Selection
-from pluton.tools.select_tool import SelectTool
-from pluton.tools.tool import ToolContext
-from pluton.viewport.camera import Camera
+from bermake.model.model import Model
+from bermake.selection import Selection
+from bermake.tools.select_tool import SelectTool
+from bermake.tools.tool import ToolContext
+from bermake.viewport.camera import Camera
 
 
 def _cam(w=800, h=600):
@@ -274,7 +274,7 @@ def test_double_click_calls_request_rebuild(qtbot, monkeypatch):
 
 def test_root_no_instances_entity_pick_unchanged(qtbot):
     """When pick_instance returns None, behavior is identical to pre-M4e."""
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     a = s.add_vertex(np.array([-1, -1, 0], dtype=np.float32))

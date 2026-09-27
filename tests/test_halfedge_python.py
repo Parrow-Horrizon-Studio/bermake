@@ -7,7 +7,7 @@ import pytest
 
 
 def test_halfedge_mesh_constructs_empty():
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
 
     m = HalfEdgeMesh()
     assert m.vertex_slab_size() == 0
@@ -16,13 +16,13 @@ def test_halfedge_mesh_constructs_empty():
 
 
 def test_invalid_id_constant():
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
 
     assert HalfEdgeMesh.INVALID_ID == 0xFFFFFFFF
 
 
 def test_add_vertex_returns_int_id():
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
 
     m = HalfEdgeMesh()
     v0 = m.add_vertex(0.0, 0.0, 0.0)
@@ -33,7 +33,7 @@ def test_add_vertex_returns_int_id():
 
 
 def test_add_halfedge_pair_and_face():
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
 
     m = HalfEdgeMesh()
     v0 = m.add_vertex(0.0, 0.0, 0.0)
@@ -49,7 +49,7 @@ def test_add_halfedge_pair_and_face():
 
 
 def test_remove_face_throws_on_double_remove():
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
 
     m = HalfEdgeMesh()
     v0 = m.add_vertex(0.0, 0.0, 0.0)
@@ -65,7 +65,7 @@ def test_remove_face_throws_on_double_remove():
 
 
 def test_buffer_projections_return_lists():
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
 
     m = HalfEdgeMesh()
     v0 = m.add_vertex(0.0, 0.0, 0.0)
@@ -80,7 +80,7 @@ def test_face_loop_vertices_returns_ordered_boundary_ids():
     """M3a contract M3b depends on: face_loop_vertices returns the boundary
     loop vertex IDs in insertion order. PushPullTool reads this to know which
     source-face vertices to extrude."""
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
 
     mesh = HalfEdgeMesh()
     v0 = mesh.add_vertex(0.0, 0.0, 0.0)
@@ -102,7 +102,7 @@ def test_face_triangles_returns_flat_triangulation_buffer():
     """M3a contract M3b depends on: face_triangles returns a flat list of vertex
     IDs (3 per triangle). ray_intersect_mesh walks this to test ray-triangle
     intersection per face."""
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
 
     mesh = HalfEdgeMesh()
     v0 = mesh.add_vertex(0.0, 0.0, 0.0)
@@ -121,7 +121,7 @@ def test_face_triangles_returns_flat_triangulation_buffer():
 
 
 def test_face_triangles_raises_on_invalid_face_id():
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
 
     mesh = HalfEdgeMesh()
     with pytest.raises(Exception):  # IndexError or out_of_range translated to a Python exception
@@ -131,7 +131,7 @@ def test_face_triangles_raises_on_invalid_face_id():
 def test_dissolve_edge_binding_round_trip():
     """nanobind smoke test: M3c dissolve_edge binding returns a valid face id
     after dissolving the shared edge between two triangles."""
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
 
     mesh = HalfEdgeMesh()
     v0 = mesh.add_vertex(0.0, 0.0, 0.0)
@@ -155,7 +155,7 @@ def test_dissolve_edge_binding_round_trip():
 def test_faces_are_coplanar_binding():
     """nanobind smoke test: M3c faces_are_coplanar accepts float tolerances and
     returns a bool."""
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
 
     mesh = HalfEdgeMesh()
     # Two coplanar triangles on the XY plane.
@@ -172,7 +172,7 @@ def test_faces_are_coplanar_binding():
 
 
 def test_split_edge_binding_smoke():
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
 
     m = HalfEdgeMesh()
     v0 = m.add_vertex(0.0, 0.0, 0.0)
@@ -200,7 +200,7 @@ def test_split_edge_binding_smoke():
 def test_edge_between_binding_present_and_order_independent():
     """nanobind smoke test: M7.4 edge_between surfaces the packed edge_index_
     lookup to Python. Both vertex orders must resolve to the same edge id."""
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
 
     m = HalfEdgeMesh()
     v0 = m.add_vertex(0.0, 0.0, 0.0)
@@ -217,7 +217,7 @@ def test_edge_between_binding_returns_none_when_absent():
     INVALID_ID sentinel (4294967295) or 0 (a valid live edge id elsewhere in
     this same mesh) would both be truthy-adjacent-but-wrong and must fail
     this assertion."""
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
 
     m = HalfEdgeMesh()
     v0 = m.add_vertex(0.0, 0.0, 0.0)
@@ -232,7 +232,7 @@ def test_edge_between_binding_returns_none_when_absent():
 
 
 def test_set_vertex_position_binding():
-    from pluton._core import HalfEdgeMesh
+    from bermake._core import HalfEdgeMesh
     m = HalfEdgeMesh()
     a = m.add_vertex(0.0, 0.0, 0.0)
     m.set_vertex_position(a, 2.0, 3.0, 4.0)
@@ -242,7 +242,7 @@ def test_set_vertex_position_binding():
 def test_scene_set_vertex_position():
     import numpy as np
     import pytest
-    from pluton.scene.scene import Scene
+    from bermake.scene.scene import Scene
     s = Scene()
     v = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
     s.set_vertex_position(v, np.array([1.0, 1.0, 1.0], dtype=np.float32))

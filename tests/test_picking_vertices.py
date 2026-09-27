@@ -6,7 +6,7 @@ import numpy as np
 
 
 def _camera(w, h):
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.aspect = float(w) / float(h)
@@ -14,7 +14,7 @@ def _camera(w, h):
 
 
 def _quad():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     a = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -28,7 +28,7 @@ def _quad():
 def test_with_the_flag_off_a_corner_still_picks_the_edge():
     """The regression gate for the whole milestone. Every existing tool picks
     through this function with the flag unset."""
-    from pluton.viewport.picking import pick_selectable
+    from bermake.viewport.picking import pick_selectable
 
     w, h = 800, 600
     cam = _camera(w, h)
@@ -40,7 +40,7 @@ def test_with_the_flag_off_a_corner_still_picks_the_edge():
 
 
 def test_with_the_flag_on_a_corner_picks_the_vertex():
-    from pluton.viewport.picking import pick_selectable
+    from bermake.viewport.picking import pick_selectable
 
     w, h = 800, 600
     cam = _camera(w, h)
@@ -56,7 +56,7 @@ def test_with_the_flag_on_a_corner_picks_the_vertex():
 def test_with_the_flag_on_a_midspan_click_still_picks_the_edge():
     """Vertex priority must not swallow the edge everywhere, only near a
     corner. Midspan is well outside PICK_PIXEL_TOLERANCE of either end."""
-    from pluton.viewport.picking import pick_selectable
+    from bermake.viewport.picking import pick_selectable
 
     w, h = 800, 600
     cam = _camera(w, h)
@@ -68,7 +68,7 @@ def test_with_the_flag_on_a_midspan_click_still_picks_the_edge():
 
 
 def test_with_the_flag_on_a_face_centre_still_picks_the_face():
-    from pluton.viewport.picking import pick_selectable
+    from bermake.viewport.picking import pick_selectable
 
     w, h = 800, 600
     cam = _camera(w, h)
@@ -82,7 +82,7 @@ def test_with_the_flag_on_a_face_centre_still_picks_the_face():
 
 
 def test_the_nearest_vertex_wins_when_two_are_in_tolerance():
-    from pluton.viewport.picking import PICK_PIXEL_TOLERANCE, pick_selectable
+    from bermake.viewport.picking import PICK_PIXEL_TOLERANCE, pick_selectable
 
     w, h = 800, 600
     cam = _camera(w, h)
@@ -95,7 +95,7 @@ def test_the_nearest_vertex_wins_when_two_are_in_tolerance():
 
 
 def test_entities_in_box_returns_three_sets():
-    from pluton.viewport.picking import entities_in_box
+    from bermake.viewport.picking import entities_in_box
 
     w, h = 800, 600
     cam = _camera(w, h)
@@ -109,7 +109,7 @@ def test_entities_in_box_returns_three_sets():
 
 
 def test_entities_in_box_collects_vertices_when_asked():
-    from pluton.viewport.picking import entities_in_box
+    from bermake.viewport.picking import entities_in_box
 
     w, h = 800, 600
     cam = _camera(w, h)

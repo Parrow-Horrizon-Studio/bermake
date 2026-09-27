@@ -5,7 +5,7 @@ M3b XY-only earcut latent bug recurring on merged loops."""
 from __future__ import annotations
 
 import numpy as np
-from pluton.scene.scene import Scene
+from bermake.scene.scene import Scene
 
 
 def test_merged_hexagon_face_has_triangles():

@@ -8,7 +8,7 @@ from PySide6.QtGui import QKeyEvent
 
 
 def _snap(world):  # noqa: ANN001
-    from pluton.viewport.snap_engine import SnapKind, SnapResult
+    from bermake.viewport.snap_engine import SnapKind, SnapResult
 
     return SnapResult(
         kind=SnapKind.GRID,
@@ -24,8 +24,8 @@ def _key(qt_key):  # noqa: ANN001
 
 
 def _make_tool(scene):  # noqa: ANN001
-    from pluton.tools import ToolContext
-    from pluton.tools.polygon_tool import PolygonTool
+    from bermake.tools import ToolContext
+    from bermake.tools.polygon_tool import PolygonTool
 
     tool = PolygonTool()
     tool.activate(ToolContext(scene=scene))
@@ -33,7 +33,7 @@ def _make_tool(scene):  # noqa: ANN001
 
 
 def test_polygon_default_six_sides():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)
@@ -45,7 +45,7 @@ def test_polygon_default_six_sides():
 
 
 def test_polygon_up_down_adjusts_side_count():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)
@@ -58,7 +58,7 @@ def test_polygon_up_down_adjusts_side_count():
 
 
 def test_polygon_sides_clamped_to_min_three():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)
@@ -70,7 +70,7 @@ def test_polygon_sides_clamped_to_min_three():
 
 
 def test_polygon_side_count_remembered_across_gestures():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)
@@ -84,7 +84,7 @@ def test_polygon_side_count_remembered_across_gestures():
 
 
 def test_polygon_vertices_inscribed_at_radius():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)
@@ -95,7 +95,7 @@ def test_polygon_vertices_inscribed_at_radius():
 
 
 def test_polygon_esc_mid_gesture_resets():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     tool = _make_tool(scene)

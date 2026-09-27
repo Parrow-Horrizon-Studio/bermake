@@ -1,6 +1,6 @@
 import numpy as np
-from pluton.model.model import Model
-from pluton.commands.instance_lifecycle_commands import (
+from bermake.model.model import Model
+from bermake.commands.instance_lifecycle_commands import (
     DeleteInstanceCommand, MakeUniqueCommand,
 )
 

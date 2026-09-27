@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from pluton.commands.gltf_commands import ImportGltfCommand
-from pluton.io.gltf_scene import GltfMesh, GltfNode, GltfSceneData
-from pluton.model.model import Model
+from bermake.commands.gltf_commands import ImportGltfCommand
+from bermake.io.gltf_scene import GltfMesh, GltfNode, GltfSceneData
+from bermake.model.model import Model
 
 TRI = ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
 IDENT = (1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from pluton.geometry import circle, polygon
+from bermake.geometry import circle, polygon
 
 
 def test_circle_has_segment_count_points_on_radius():
@@ -35,7 +35,7 @@ def test_ring_winding_is_ccw():
 
 
 def test_arc_semicircle_lies_on_circle():
-    from pluton.geometry import arc_2pt
+    from bermake.geometry import arc_2pt
 
     pts = arc_2pt(np.array([-1.0, 0.0]), np.array([1.0, 0.0]), np.array([0.0, 1.0]), segments=12)
     assert pts.shape == (13, 2)
@@ -46,7 +46,7 @@ def test_arc_semicircle_lies_on_circle():
 
 
 def test_arc_general_samples_on_common_circle():
-    from pluton.geometry import arc_2pt
+    from bermake.geometry import arc_2pt
 
     start, end, bulge = np.array([0.0, 0.0]), np.array([2.0, 0.0]), np.array([1.0, 0.5])
     pts = arc_2pt(start, end, bulge, segments=16)
@@ -57,7 +57,7 @@ def test_arc_general_samples_on_common_circle():
 
 
 def test_arc_flat_bulge_returns_straight_chord():
-    from pluton.geometry import arc_2pt
+    from bermake.geometry import arc_2pt
 
     pts = arc_2pt(np.array([0.0, 0.0]), np.array([2.0, 0.0]), np.array([1.0, 0.0]))
     assert pts.shape == (2, 2)
@@ -65,14 +65,14 @@ def test_arc_flat_bulge_returns_straight_chord():
 
 
 def test_arc_degenerate_chord_returns_single_point():
-    from pluton.geometry import arc_2pt
+    from bermake.geometry import arc_2pt
 
     pts = arc_2pt(np.array([1.0, 1.0]), np.array([1.0, 1.0]), np.array([2.0, 2.0]))
     assert pts.shape == (1, 2)
 
 
 def test_semicircle_snap_pulls_near_semicircle_exact():
-    from pluton.geometry import semicircle_snap
+    from bermake.geometry import semicircle_snap
 
     start, end = np.array([-1.0, 0.0]), np.array([1.0, 0.0])
     snapped = semicircle_snap(start, end, np.array([0.0, 0.97]))
@@ -82,7 +82,7 @@ def test_semicircle_snap_pulls_near_semicircle_exact():
 
 
 def test_arc_semicircle_negative_sagitta_bows_below_chord():
-    from pluton.geometry import arc_2pt
+    from bermake.geometry import arc_2pt
 
     pts = arc_2pt(np.array([-1.0, 0.0]), np.array([1.0, 0.0]), np.array([0.0, -1.0]), segments=12)
     assert pts.shape == (13, 2)
@@ -92,7 +92,7 @@ def test_arc_semicircle_negative_sagitta_bows_below_chord():
 
 
 def test_semicircle_snap_negative_sagitta_snaps_below():
-    from pluton.geometry import semicircle_snap
+    from bermake.geometry import semicircle_snap
 
     start, end = np.array([-1.0, 0.0]), np.array([1.0, 0.0])
     snapped = semicircle_snap(start, end, np.array([0.0, -0.97]))

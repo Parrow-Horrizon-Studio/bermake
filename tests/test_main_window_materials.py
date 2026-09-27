@@ -4,8 +4,8 @@ import struct
 import zlib
 
 import pytest
-from pluton.ui.main_window import MainWindow
-from pluton.ui.materials_page import MaterialsPage
+from bermake.ui.main_window import MainWindow
+from bermake.ui.materials_page import MaterialsPage
 
 
 @pytest.fixture
@@ -79,7 +79,7 @@ def test_undoing_a_texture_import_queues_it_for_renderer_eviction(win, tmp_path)
     # TextureCache.invalidate() straight from this slot would be a silent
     # no-op on WGL that also forgets the handle, permanently, which is worse
     # than doing nothing.
-    from pluton.viewport.texture_cache import TextureCache
+    from bermake.viewport.texture_cache import TextureCache
 
     win._viewport.scene_renderer._texture_cache = TextureCache(gl=_RecordingGL())
     page = win._materials_page
@@ -119,7 +119,7 @@ def test_paint_tool_status_text_refreshes_without_error(win):
     # status-bar join on every mouse move. It must resolve to a plain string.
     import inspect
 
-    from pluton.tools.paint_tool import PaintTool
+    from bermake.tools.paint_tool import PaintTool
 
     assert isinstance(inspect.getattr_static(PaintTool, "status_text"), property)
     win._activate("paint")  # activates Paint AND sets the status-bar tool name

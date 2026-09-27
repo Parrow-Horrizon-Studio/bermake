@@ -1,7 +1,7 @@
 import numpy as np
-from pluton.io.obj_codec import ObjDocument, ObjFace, ObjObject
-from pluton.io.obj_io import build_obj_into_model, model_to_objdoc
-from pluton.model.model import Model
+from bermake.io.obj_codec import ObjDocument, ObjFace, ObjObject
+from bermake.io.obj_io import build_obj_into_model, model_to_objdoc
+from bermake.model.model import Model
 
 
 def _add_quad(scene):

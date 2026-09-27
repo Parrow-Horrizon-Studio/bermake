@@ -6,9 +6,9 @@ import struct
 import zlib
 
 import numpy as np
-from pluton.model.texture import TextureLibrary
-from pluton.viewport import texture_cache
-from pluton.viewport.texture_cache import (
+from bermake.model.texture import TextureLibrary
+from bermake.viewport import texture_cache
+from bermake.viewport.texture_cache import (
     TextureCache,
     decode_image,
     gl_row_order,
@@ -60,7 +60,7 @@ def test_decoding_needs_no_qapplication():
     import sys
 
     code = (
-        "from pluton.viewport.texture_cache import decode_image\n"
+        "from bermake.viewport.texture_cache import decode_image\n"
         f"img = decode_image({_CUTOUT!r})\n"
         "assert img is not None\n"
         "assert (img.width, img.height) == (2, 2)\n"

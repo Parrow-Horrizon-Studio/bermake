@@ -14,11 +14,11 @@ test_main_window_scenes.test_render_style_persists_through_save_new_open, but
 follows self._doc.environment instead of self._render_style.
 """
 
-from pluton.viewport.environment import DEFAULT_ENVIRONMENT, PLAIN_WHITE, STUDIO
+from bermake.viewport.environment import DEFAULT_ENVIRONMENT, PLAIN_WHITE, STUDIO
 
 
 def _make_window(qtbot):
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     win = MainWindow()
     qtbot.addWidget(win)
@@ -28,7 +28,7 @@ def _make_window(qtbot):
 def test_environment_persists_through_save_new_open(qtbot, tmp_path):
     win = _make_window(qtbot)
     win._doc.set_environment(PLAIN_WHITE)
-    path = str(tmp_path / "environment.pluton")
+    path = str(tmp_path / "environment.berm")
     assert win._save_to(path) is True
 
     win._on_file_new()
@@ -42,7 +42,7 @@ def test_environment_persists_through_save_new_open(qtbot, tmp_path):
     win._doc.set_environment(STUDIO)
 
     # Re-open and confirm the saved environment is adopted, not just accepted:
-    from pluton.io.pluton_file import load_document
+    from bermake.io.bermake_file import load_document
 
     loaded = load_document(path)
     win._reset_document(

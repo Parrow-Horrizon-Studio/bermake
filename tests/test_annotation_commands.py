@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import pytest
-from pluton.commands.annotation_commands import (
+from bermake.commands.annotation_commands import (
     CreateAnnotationCommand,
     DeleteAnnotationsCommand,
     EditLabelTextCommand,
     MoveAnnotationsCommand,
 )
-from pluton.model.annotation import Dimension, Label
-from pluton.model.model import Model
+from bermake.model.annotation import Dimension, Label
+from bermake.model.model import Model
 
 
 def _dim(model):

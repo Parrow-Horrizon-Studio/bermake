@@ -8,7 +8,7 @@ from PySide6.QtGui import QKeyEvent, QMouseEvent
 
 
 def _cam(w, h):
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
     c = Camera()
     c.aspect = float(w) / float(h)
     return c
@@ -25,7 +25,7 @@ def _release(x, y, mods=Qt.KeyboardModifier.NoModifier):
 
 
 def _scene_with_quad():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
     s = Scene()
     a = s.add_vertex(np.array([-1, -1, 0], dtype=np.float32))
     b = s.add_vertex(np.array([1, -1, 0], dtype=np.float32))
@@ -37,8 +37,8 @@ def _scene_with_quad():
 
 
 def _make_tool(scene, sel, w=800, h=600):
-    from pluton.tools import ToolContext
-    from pluton.tools.select_tool import SelectTool
+    from bermake.tools import ToolContext
+    from bermake.tools.select_tool import SelectTool
     cam = _cam(w, h)
     tool = SelectTool()
     tool.activate(ToolContext(scene=scene, camera=cam,
@@ -53,7 +53,7 @@ def _click(tool, cam, world, w=800, h=600, mods=Qt.KeyboardModifier.NoModifier):
 
 
 def test_click_selects_edge_under_cursor(qtbot):
-    from pluton.selection import Selection
+    from bermake.selection import Selection
     scene, fid, e_ab = _scene_with_quad()
     sel = Selection()
     tool, cam = _make_tool(scene, sel)
@@ -63,7 +63,7 @@ def test_click_selects_edge_under_cursor(qtbot):
 
 
 def test_click_face_interior_selects_face(qtbot):
-    from pluton.selection import Selection
+    from bermake.selection import Selection
     scene, fid, e_ab = _scene_with_quad()
     sel = Selection()
     tool, cam = _make_tool(scene, sel)
@@ -72,7 +72,7 @@ def test_click_face_interior_selects_face(qtbot):
 
 
 def test_plain_click_replaces(qtbot):
-    from pluton.selection import Selection
+    from bermake.selection import Selection
     scene, fid, e_ab = _scene_with_quad()
     sel = Selection()
     sel.replace(faces=[fid])
@@ -83,7 +83,7 @@ def test_plain_click_replaces(qtbot):
 
 
 def test_shift_click_toggles(qtbot):
-    from pluton.selection import Selection
+    from bermake.selection import Selection
     scene, fid, e_ab = _scene_with_quad()
     sel = Selection()
     tool, cam = _make_tool(scene, sel)
@@ -96,7 +96,7 @@ def test_shift_click_toggles(qtbot):
 
 
 def test_empty_click_clears(qtbot):
-    from pluton.selection import Selection
+    from bermake.selection import Selection
     scene, fid, e_ab = _scene_with_quad()
     sel = Selection()
     sel.replace(faces=[fid])
@@ -107,7 +107,7 @@ def test_empty_click_clears(qtbot):
 
 
 def test_esc_clears_selection(qtbot):
-    from pluton.selection import Selection
+    from bermake.selection import Selection
     scene, fid, e_ab = _scene_with_quad()
     sel = Selection()
     sel.replace(faces=[fid])
@@ -133,7 +133,7 @@ def _box_drag(tool, cam, p_start, p_end, w=800, h=600, mods=Qt.KeyboardModifier.
 
 
 def test_box_left_to_right_is_window_encloses_only(qtbot):
-    from pluton.selection import Selection
+    from bermake.selection import Selection
     scene, fid, e_ab = _scene_with_quad()
     sel = Selection()
     tool, cam = _make_tool(scene, sel)
@@ -144,7 +144,7 @@ def test_box_left_to_right_is_window_encloses_only(qtbot):
 
 
 def test_box_right_to_left_is_crossing(qtbot):
-    from pluton.selection import Selection
+    from bermake.selection import Selection
     scene, fid, e_ab = _scene_with_quad()
     sel = Selection()
     tool, cam = _make_tool(scene, sel)
@@ -153,7 +153,7 @@ def test_box_right_to_left_is_crossing(qtbot):
 
 
 def test_box_overlay_sets_box_rect_during_drag(qtbot):
-    from pluton.selection import Selection
+    from bermake.selection import Selection
     scene, fid, e_ab = _scene_with_quad()
     sel = Selection()
     tool, cam = _make_tool(scene, sel)
@@ -168,7 +168,7 @@ def test_box_overlay_sets_box_rect_during_drag(qtbot):
 
 
 def test_shift_box_adds_to_existing_selection(qtbot):
-    from pluton.selection import Selection
+    from bermake.selection import Selection
     scene, fid, e_ab = _scene_with_quad()
     sel = Selection()
     sel.replace(faces=[fid])  # pre-existing selection
@@ -186,8 +186,8 @@ def test_shift_box_adds_to_existing_selection(qtbot):
 
 def _make_vertex_tool(scene, sel, w=800, h=600):
     """A SelectTool with View > Select Vertices on."""
-    from pluton.tools import ToolContext
-    from pluton.tools.select_tool import SelectTool
+    from bermake.tools import ToolContext
+    from bermake.tools.select_tool import SelectTool
 
     cam = _cam(w, h)
     tool = SelectTool()
@@ -219,7 +219,7 @@ def test_click_on_a_corner_selects_the_vertex_when_the_mode_is_on(qtbot):
     """The mode was reachable by drag (box-select) and by double-click, but
     not by the most obvious gesture of all: a plain click still selected the
     edge because the release-path pick_selectable call omitted the flag."""
-    from pluton.selection import Selection
+    from bermake.selection import Selection
 
     scene, _fid, _e_ab = _scene_with_quad()
     sel = Selection()
@@ -235,7 +235,7 @@ def test_a_vertex_hit_never_lands_in_the_face_set(qtbot):
     `elif hit[0] == "edge": ... else: replace(faces=[hit[1]])`, so a
     ("vertex", id) hit fell into the face branch. Ids are allocated per kind
     here, so that id names a real and unrelated face often enough to matter."""
-    from pluton.selection import Selection
+    from bermake.selection import Selection
 
     scene, fid, _e_ab = _scene_with_quad()
     sel = Selection()
@@ -247,8 +247,8 @@ def test_a_vertex_hit_never_lands_in_the_face_set(qtbot):
 
 def test_click_on_a_corner_still_selects_the_edge_when_the_mode_is_off(qtbot):
     """Regression guard on the default. Vertex picking is opt-in, so an
-    untouched pluton must click exactly as it did before M7.6c."""
-    from pluton.selection import Selection
+    untouched bermake must click exactly as it did before M7.6c."""
+    from bermake.selection import Selection
 
     scene, _fid, _e_ab = _scene_with_quad()
     sel = Selection()
@@ -264,7 +264,7 @@ def test_click_on_a_corner_still_selects_the_edge_when_the_mode_is_off(qtbot):
 def test_shift_click_toggles_a_vertex(qtbot):
     """Shift composes for vertices the way it already does for edges and
     faces: on, then off."""
-    from pluton.selection import Selection
+    from bermake.selection import Selection
 
     scene, _fid, _e_ab = _scene_with_quad()
     sel = Selection()
@@ -277,7 +277,7 @@ def test_shift_click_toggles_a_vertex(qtbot):
 
 
 def test_shift_click_a_vertex_keeps_an_existing_edge_selection(qtbot):
-    from pluton.selection import Selection
+    from bermake.selection import Selection
 
     scene, _fid, e_ab = _scene_with_quad()
     sel = Selection()
@@ -291,7 +291,7 @@ def test_shift_click_a_vertex_keeps_an_existing_edge_selection(qtbot):
 def test_hover_reports_a_vertex_when_the_mode_is_on(qtbot):
     """Pre-highlight is the promise the click then keeps, so hover has to
     pick the same entity the click will."""
-    from pluton.selection import Selection
+    from bermake.selection import Selection
 
     scene, _fid, _e_ab = _scene_with_quad()
     tool, cam = _make_vertex_tool(scene, Selection())
@@ -301,7 +301,7 @@ def test_hover_reports_a_vertex_when_the_mode_is_on(qtbot):
 
 
 def test_hover_on_a_corner_still_reports_the_edge_when_the_mode_is_off(qtbot):
-    from pluton.selection import Selection
+    from bermake.selection import Selection
 
     scene, _fid, _e_ab = _scene_with_quad()
     tool, cam = _make_tool(scene, Selection())
@@ -315,7 +315,7 @@ def test_a_hovered_vertex_draws_no_rubber_band_and_no_face_fill(qtbot):
     have been handed to `face_loop`. Ids are per kind, so on this scene the
     vertex id 0 and the face id 0 both exist and the hover highlight would
     have lit an unrelated polygon."""
-    from pluton.selection import Selection
+    from bermake.selection import Selection
 
     scene, _fid, _e_ab = _scene_with_quad()
     tool, cam = _make_vertex_tool(scene, Selection())

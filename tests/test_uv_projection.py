@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pluton.viewport.uv_projection import (
+from bermake.viewport.uv_projection import (
     apply_placement,
     apply_placements,
     plane_bases,
@@ -319,8 +319,8 @@ def test_the_module_imports_nothing_from_model_scene_qt_or_gl():
     import sys
 
     code = (
-        "import pluton.viewport.uv_projection, sys; "
-        "bad = [m for m in sys.modules if m.startswith(('PySide6','OpenGL','pluton.model','pluton.scene'))]; "
+        "import bermake.viewport.uv_projection, sys; "
+        "bad = [m for m in sys.modules if m.startswith(('PySide6','OpenGL','bermake.model','bermake.scene'))]; "
         "print(bad)"
     )
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)

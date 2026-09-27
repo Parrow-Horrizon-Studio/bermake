@@ -5,15 +5,15 @@ from __future__ import annotations
 import subprocess
 import sys
 
-from pluton.ui import icons
-from pluton.ui.panel_icons import TAB_ICONS
-from pluton.ui.panels import PROPERTIES_TABS
+from bermake.ui import icons
+from bermake.ui.panel_icons import TAB_ICONS
+from bermake.ui.panels import PROPERTIES_TABS
 
 
 def test_importing_the_table_loads_no_qt():
     # Same rule actions.py follows: the UI taxonomy must be inspectable
     # without a QApplication.
-    code = "import sys; import pluton.ui.panels; print(any(m.startswith('PySide6') for m in sys.modules))"
+    code = "import sys; import bermake.ui.panels; print(any(m.startswith('PySide6') for m in sys.modules))"
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
     assert out.stdout.strip() == "False"
 

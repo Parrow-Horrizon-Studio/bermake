@@ -8,8 +8,8 @@ instead of a real QPainter (keeping the suite headless).
 from __future__ import annotations
 
 import numpy as np
-from pluton.annotations.draw_plan import AnnotationDraw, TextDraw
-from pluton.viewport.annotation_painter import paint_annotation_plans
+from bermake.annotations.draw_plan import AnnotationDraw, TextDraw
+from bermake.viewport.annotation_painter import paint_annotation_plans
 
 # M7.6b Task 9 fix round 3: this file used to hand-roll its own
 # `_FakeViewport`, which is exactly how it drifted from the real
@@ -270,7 +270,7 @@ class _FakeContext:
 
 
 class _FakeModel:
-    """Stands in for pluton.model.model.Model: exposes exactly what
+    """Stands in for bermake.model.model.Model: exposes exactly what
     collect_annotation_plans (called by the real _paint_annotations) reads --
     traverse_visible() and definition_is_dimmed() -- for a single, root-only
     context with no groups. active_path is empty, so definition_is_dimmed
@@ -296,7 +296,7 @@ def test_paint_annotations_defaults_to_real_units_when_no_provider_set(monkeypat
     fix, _paint_annotations passed units=None straight through to
     plan_annotation -> _plan_dimension -> format_length(measured, None),
     which crashes: AttributeError: 'NoneType' object has no attribute
-    'system'. It must default to a real pluton.units.Units() instead,
+    'system'. It must default to a real bermake.units.Units() instead,
     matching every other units provider in the codebase (wall/opening/roof
     options bars).
 
@@ -305,9 +305,9 @@ def test_paint_annotations_defaults_to_real_units_when_no_provider_set(monkeypat
     actual QPaintDevice -- to keep the test headless with no QApplication or
     real window.
     """
-    from pluton.model.annotation import Dimension
-    from pluton.viewport.camera import Camera
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.model.annotation import Dimension
+    from bermake.viewport.camera import Camera
+    from bermake.viewport.viewport_widget import ViewportWidget
     from PySide6 import QtGui
 
     monkeypatch.setattr(QtGui, "QPainter", _RecordingQPainter)
@@ -333,11 +333,11 @@ def test_paint_annotations_paints_the_hovered_annotation_with_the_hover_pen(monk
     QApplication, or ToolManager needed.
     """
     import numpy as np
-    from pluton.model.annotation import Dimension
-    from pluton.tools.select_tool import _HOVER_EDGE_COLOR
-    from pluton.tools.tool import ToolOverlay
-    from pluton.viewport.camera import Camera
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.model.annotation import Dimension
+    from bermake.tools.select_tool import _HOVER_EDGE_COLOR
+    from bermake.tools.tool import ToolOverlay
+    from bermake.viewport.camera import Camera
+    from bermake.viewport.viewport_widget import ViewportWidget
     from PySide6 import QtGui
     from PySide6.QtGui import QColor
 

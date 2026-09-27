@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from pluton.commands.command_stack import CommandStack
-from pluton.scene.scene import Scene
-from pluton.tools.push_pull_tool import PushPullTool
+from bermake.commands.command_stack import CommandStack
+from bermake.scene.scene import Scene
+from bermake.tools.push_pull_tool import PushPullTool
 
 
 def _draw_rectangle(scene: Scene, w: float = 1.0, h: float = 1.0) -> int:

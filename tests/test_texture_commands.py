@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.commands.material_commands import (
+from bermake.commands.material_commands import (
     AddTextureCommand,
     DeleteTextureCommand,
     SetFacePlacementCommand,
     SetMaterialTextureCommand,
 )
-from pluton.model.material import MaterialLibrary
-from pluton.model.texture import TextureLibrary
-from pluton.scene.scene import DEFAULT_PLACEMENT, Scene, Side, TexturePlacement
+from bermake.model.material import MaterialLibrary
+from bermake.model.texture import TextureLibrary
+from bermake.scene.scene import DEFAULT_PLACEMENT, Scene, Side, TexturePlacement
 
 _PNG = b"\x89PNG\r\n\x1a\nbytes"
 

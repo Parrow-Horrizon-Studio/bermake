@@ -6,8 +6,8 @@ import subprocess
 import sys
 
 import numpy as np
-from pluton.scene.scene import Scene
-from pluton.tools.sweep_support import loft_between_loops, offset_polygon, seam_merge
+from bermake.scene.scene import Scene
+from bermake.tools.sweep_support import loft_between_loops, offset_polygon, seam_merge
 
 
 def _square(scene, z=0.0):
@@ -25,7 +25,7 @@ def test_importing_sweep_support_loads_no_qt():
     # Same guarantee selection_controller carries: this maths must be
     # testable with no QApplication.
     code = (
-        "import sys; import pluton.tools.sweep_support; "
+        "import sys; import bermake.tools.sweep_support; "
         "print(any(m.startswith('PySide6') for m in sys.modules))"
     )
     out = subprocess.run(

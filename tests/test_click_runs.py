@@ -8,7 +8,7 @@ from __future__ import annotations
 
 
 def _runs(interval_ms=400.0, move_tolerance_px=4.0):
-    from pluton.viewport.click_runs import ClickRuns
+    from bermake.viewport.click_runs import ClickRuns
 
     return ClickRuns(interval_ms=interval_ms, move_tolerance_px=move_tolerance_px)
 
@@ -87,7 +87,7 @@ def test_reset_drops_the_run_so_the_next_press_is_run_one():
 def test_the_module_imports_no_qt():
     """The counter is a value, not a widget. Keeping Qt out is what lets the
     whole triple-click gesture be tested without a QApplication."""
-    import pluton.viewport.click_runs as mod
+    import bermake.viewport.click_runs as mod
 
     source = open(mod.__file__, encoding="utf-8").read()
     assert "PySide6" not in source

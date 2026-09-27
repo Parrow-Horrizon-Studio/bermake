@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.commands.command_stack import CommandStack
-from pluton.commands.scene_commands import TransformVerticesCommand
-from pluton.scene.scene import Scene
+from bermake.commands.command_stack import CommandStack
+from bermake.commands.scene_commands import TransformVerticesCommand
+from bermake.scene.scene import Scene
 
 
 def _two_verts(s: Scene):

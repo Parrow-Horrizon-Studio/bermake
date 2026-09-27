@@ -6,7 +6,7 @@ import math
 
 import numpy as np
 import pytest
-from pluton.geometry.transforms import rotate, scale, translate
+from bermake.geometry.transforms import rotate, scale, translate
 
 
 def test_translate_known():

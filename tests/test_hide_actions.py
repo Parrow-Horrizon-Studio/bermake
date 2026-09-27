@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pluton.ui import actions
-from pluton.ui.context_menu import is_enabled
+from bermake.ui import actions
+from bermake.ui.context_menu import is_enabled
 
 
 def _square(window):

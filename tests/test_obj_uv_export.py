@@ -3,11 +3,11 @@ import sys
 
 import numpy as np
 import pytest
-from pluton.io.obj_codec import parse_obj
-from pluton.io.obj_io import export_obj, model_to_objdoc
-from pluton.model.model import Model
-from pluton.scene.scene import Side
-from pluton.viewport.uv_resolve import resolve_face_uvs
+from bermake.io.obj_codec import parse_obj
+from bermake.io.obj_io import export_obj, model_to_objdoc
+from bermake.model.model import Model
+from bermake.scene.scene import Side
+from bermake.viewport.uv_resolve import resolve_face_uvs
 
 FAKE_PNG = b"\x89PNG\r\n\x1a\n-fake-bytes"
 
@@ -139,15 +139,15 @@ def test_a_round_trip_preserves_the_uvs(tmp_path):
 
 
 def test_obj_io_imports_without_qt():
-    """pluton.io must never reach Qt, even transitively.
+    """bermake.io must never reach Qt, even transitively.
 
-    export_obj imports resolve_face_uvs lazily so pluton/io stays Qt-free at
+    export_obj imports resolve_face_uvs lazily so bermake/io stays Qt-free at
     module scope. This runs the check in a clean subprocess interpreter so it
     is not polluted by anything the test session has already imported.
     """
     code = (
         "import sys\n"
-        "import pluton.io.obj_io\n"
+        "import bermake.io.obj_io\n"
         "qt = [m for m in sys.modules if 'PySide6' in m]\n"
         "assert qt == [], qt\n"
     )

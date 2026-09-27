@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import pytest
-from pluton.model.tag import TagLibrary
-from pluton.ui.tags_page import TagsPage
+from bermake.model.tag import TagLibrary
+from bermake.ui.tags_page import TagsPage
 from PySide6.QtCore import Qt
 
 

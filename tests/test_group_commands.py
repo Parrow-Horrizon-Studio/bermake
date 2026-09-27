@@ -1,6 +1,6 @@
 import numpy as np
-from pluton.model.model import Model
-from pluton.commands.group_commands import MakeGroupCommand
+from bermake.model.model import Model
+from bermake.commands.group_commands import MakeGroupCommand
 
 
 def _triangle(scene):

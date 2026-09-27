@@ -7,7 +7,7 @@ fixture style already used by tests/test_main_window_scenes.py.
 from __future__ import annotations
 
 import numpy as np
-from pluton.model.annotation import Dimension, Label
+from bermake.model.annotation import Dimension, Label
 from PySide6.QtWidgets import QInputDialog
 
 

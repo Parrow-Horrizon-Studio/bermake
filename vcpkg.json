@@ -1,8 +1,8 @@
 {
-    "name": "pluton",
+    "name": "bermake",
     "version": "0.0.1",
     "description": "Polygonal 3D modeler for architecture",
-    "homepage": "https://pluton3d.org",
+    "homepage": "https://bermake.org",
     "license": "GPL-3.0-or-later",
     "dependencies": [
         "gtest",

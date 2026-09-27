@@ -1,7 +1,7 @@
 # tests/test_explode_command.py
 import numpy as np
-from pluton.model.model import Model
-from pluton.commands.explode_command import ExplodeInstanceCommand
+from bermake.model.model import Model
+from bermake.commands.explode_command import ExplodeInstanceCommand
 
 
 def test_explode_bakes_geometry_into_parent_at_transformed_positions():

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.scene.scene import Side, TexturePlacement
+from bermake.scene.scene import Side, TexturePlacement
 
 
 def test_a_drag_shifts_the_offset_of_the_face_under_the_cursor(main_window_with_square):

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.model.entity_info import EntitySummary
-from pluton.model.material import MaterialLibrary
-from pluton.model.tag import TagLibrary
-from pluton.ui.entity_info_page import EntityInfoPage
-from pluton.units import UnitSystem, Units
+from bermake.model.entity_info import EntitySummary
+from bermake.model.material import MaterialLibrary
+from bermake.model.tag import TagLibrary
+from bermake.ui.entity_info_page import EntityInfoPage
+from bermake.units import UnitSystem, Units
 
 
 def _page(qtbot):

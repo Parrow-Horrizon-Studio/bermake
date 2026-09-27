@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.annotations.picking import pick_annotation
-from pluton.model.annotation import Dimension, Label
-from pluton.model.model import Model
-from pluton.selection import Selection
-from pluton.units import Units
+from bermake.annotations.picking import pick_annotation
+from bermake.model.annotation import Dimension, Label
+from bermake.model.model import Model
+from bermake.selection import Selection
+from bermake.units import Units
 
 
 class _FlatCamera:
@@ -163,9 +163,9 @@ def test_click_on_a_guide_line_hits_it():
     """Task 6: guides are hit-tested through the same plan the picker always
     uses. _FlatCamera above has no position/target/near, so a real Camera is
     needed here for the near-plane clip _plan_guide performs."""
-    from pluton.annotations.draw_plan import plan_annotation
-    from pluton.model.annotation import Guide
-    from pluton.viewport.camera import Camera
+    from bermake.annotations.draw_plan import plan_annotation
+    from bermake.model.annotation import Guide
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.aspect = 640 / 480
@@ -190,9 +190,9 @@ def test_a_diagonal_guide_does_not_hit_empty_space_far_from_its_line():
     is (-3, 230.9, 1283, 637.0) -- 5120 of 10240 probed viewport cells would
     return this guide's id. (1200, 600) sits well inside that box (~325px
     perpendicular from the actual line) and must not be picked."""
-    from pluton.annotations.draw_plan import plan_annotation
-    from pluton.model.annotation import Guide
-    from pluton.viewport.camera import Camera
+    from bermake.annotations.draw_plan import plan_annotation
+    from bermake.model.annotation import Guide
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.aspect = 1280 / 800
@@ -208,9 +208,9 @@ def test_a_diagonal_guide_does_not_hit_empty_space_far_from_its_line():
 
 
 def test_click_on_a_guide_point_cross_hits_it():
-    from pluton.annotations.draw_plan import plan_annotation
-    from pluton.model.annotation import GuidePoint
-    from pluton.viewport.camera import Camera
+    from bermake.annotations.draw_plan import plan_annotation
+    from bermake.model.annotation import GuidePoint
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.aspect = 640 / 480

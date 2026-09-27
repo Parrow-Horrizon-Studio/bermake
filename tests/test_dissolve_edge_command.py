@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.commands.scene_commands import DissolveEdgeCommand
-from pluton.scene.scene import Scene
+from bermake.commands.scene_commands import DissolveEdgeCommand
+from bermake.scene.scene import Scene
 
 
 def _two_quads_sharing_edge(scene: Scene) -> tuple[int, int, int]:
@@ -123,8 +123,8 @@ def test_undo_inside_composite_with_sibling_addface():
     sibling AddFaceCommand in the same composite must restore that face to its
     ORIGINAL id, so the sibling's undo (remove_face by cached id) succeeds.
     Reproduces the Task 8 atomic-undo bug."""
-    from pluton.commands.command import CompositeCommand
-    from pluton.commands.scene_commands import AddFaceCommand
+    from bermake.commands.command import CompositeCommand
+    from bermake.commands.scene_commands import AddFaceCommand
 
     scene = Scene()
     v0 = scene.add_vertex(np.array([0, 0, 0], dtype=np.float32))

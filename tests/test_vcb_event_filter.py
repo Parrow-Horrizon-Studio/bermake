@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pluton.ui.main_window import MainWindow
+from bermake.ui.main_window import MainWindow
 from PySide6.QtCore import QEvent, Qt
 from PySide6.QtGui import QKeyEvent
 

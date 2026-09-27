@@ -8,12 +8,12 @@ import numpy as np
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
 
-from pluton.commands.command_stack import CommandStack
-from pluton.scene.scene import Scene
-from pluton.selection import Selection
-from pluton.tools.move_tool import MoveTool
-from pluton.tools.tool import ToolContext
-from pluton.viewport.snap_engine import SnapKind
+from bermake.commands.command_stack import CommandStack
+from bermake.scene.scene import Scene
+from bermake.selection import Selection
+from bermake.tools.move_tool import MoveTool
+from bermake.tools.tool import ToolContext
+from bermake.viewport.snap_engine import SnapKind
 
 
 def _press(x=0.0, y=0.0):

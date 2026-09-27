@@ -10,10 +10,10 @@ from __future__ import annotations
 
 import numpy as np
 
-from pluton.commands import CommandStack, CompositeCommand
-from pluton.commands.explode_command import ExplodeInstanceCommand
-from pluton.commands.instance_lifecycle_commands import MakeUniqueCommand
-from pluton.model.model import Model
+from bermake.commands import CommandStack, CompositeCommand
+from bermake.commands.explode_command import ExplodeInstanceCommand
+from bermake.commands.instance_lifecycle_commands import MakeUniqueCommand
+from bermake.model.model import Model
 
 
 def _build_scene():

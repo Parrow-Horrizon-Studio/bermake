@@ -20,12 +20,12 @@ incidental symmetry hid the distinction the test existed to prove.
 
 import numpy as np
 
-from pluton.commands.command_stack import CommandStack
-from pluton.commands.explode_command import ExplodeInstanceCommand
-from pluton.commands.group_commands import MakeGroupCommand
-from pluton.commands.instance_lifecycle_commands import MakeUniqueCommand
-from pluton.model.model import Model
-from pluton.scene.scene import Side, TexturePlacement
+from bermake.commands.command_stack import CommandStack
+from bermake.commands.explode_command import ExplodeInstanceCommand
+from bermake.commands.group_commands import MakeGroupCommand
+from bermake.commands.instance_lifecycle_commands import MakeUniqueCommand
+from bermake.model.model import Model
+from bermake.scene.scene import Side, TexturePlacement
 
 # Two quads, side by side in the XY plane, sharing no vertices.
 _QUAD_A = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)]

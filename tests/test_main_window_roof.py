@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pluton.tools.roof_tool import RoofTool
-from pluton.ui.main_window import MainWindow
+from bermake.tools.roof_tool import RoofTool
+from bermake.ui.main_window import MainWindow
 
 
 def test_roof_tool_registered_with_o(qtbot):

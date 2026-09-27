@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from pluton.geometry import DrawingPlane
+from bermake.geometry import DrawingPlane
 
 
 def _orthonormal(plane: DrawingPlane) -> None:
@@ -55,7 +55,7 @@ def test_from_normal_rejects_degenerate():
 
 
 def test_from_face_uses_scene_face_normal():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     a = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))

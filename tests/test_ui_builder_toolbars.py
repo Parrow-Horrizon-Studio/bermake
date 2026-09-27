@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pluton.ui import actions
+from bermake.ui import actions
 
 
 def test_all_seven_toolbars_exist(qtbot, main_window):
@@ -105,7 +105,7 @@ def test_reset_toolbars_restores_a_hidden_toolbar(qtbot, main_window):
 
 
 def test_every_handler_name_now_exists(qtbot):
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     missing = sorted({s.handler for s in actions.ACTIONS if not hasattr(MainWindow, s.handler)})
     assert missing == []
@@ -119,8 +119,8 @@ def test_a_missing_icon_asset_does_not_stop_the_window_from_building(qtbot, monk
     labelled, working, icon-less button instead of an unhandled KeyError
     out of MainWindow.__init__.
     """
-    from pluton.ui import icons as icons_module
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui import icons as icons_module
+    from bermake.ui.main_window import MainWindow
 
     real = icons_module.icon
 
@@ -129,7 +129,7 @@ def test_a_missing_icon_asset_does_not_stop_the_window_from_building(qtbot, monk
             raise KeyError(stem)
         return real(stem, color)
 
-    monkeypatch.setattr("pluton.ui.ui_builder.icon", _one_missing)
+    monkeypatch.setattr("bermake.ui.ui_builder.icon", _one_missing)
 
     window = MainWindow()
     qtbot.addWidget(window)

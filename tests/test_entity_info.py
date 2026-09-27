@@ -6,10 +6,10 @@ import math
 
 import numpy as np
 import pytest
-from pluton.model.entity_info import entity_summary
-from pluton.model.model_queries import selection_bounds
-from pluton.selection import Selection
-from pluton.units import Units, UnitSystem, format_area
+from bermake.model.entity_info import entity_summary
+from bermake.model.model_queries import selection_bounds
+from bermake.selection import Selection
+from bermake.units import Units, UnitSystem, format_area
 
 
 def _square(model, size=1.0):

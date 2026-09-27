@@ -22,9 +22,9 @@ def _make_event(pos=(100.0, 100.0)):
 
 def _make_tool_with_unit_rect():
     """Same helper as in test_push_pull_tool.py; duplicated here to keep tests independent."""
-    from pluton.scene import Scene
-    from pluton.tools.push_pull_tool import PushPullTool
-    from pluton.tools.tool import ToolContext
+    from bermake.scene import Scene
+    from bermake.tools.push_pull_tool import PushPullTool
+    from bermake.tools.tool import ToolContext
 
     scene = Scene()
     v0 = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -146,10 +146,10 @@ class TestPushPullOverlayWorldLift:
     def _make_tool_inside_translated_group(self, tx: float = 10.0):
         """Build a Model with one group translated by (tx, 0, 0), enter it,
         then activate PushPullTool against the group's scene."""
-        from pluton.model.model import Model
-        from pluton.scene import Scene
-        from pluton.tools.push_pull_tool import PushPullTool
-        from pluton.tools.tool import ToolContext
+        from bermake.model.model import Model
+        from bermake.scene import Scene
+        from bermake.tools.push_pull_tool import PushPullTool
+        from bermake.tools.tool import ToolContext
 
         model = Model()
 

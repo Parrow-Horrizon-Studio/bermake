@@ -6,7 +6,7 @@ import numpy as np
 
 
 def _three_vertex_scene():
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -16,8 +16,8 @@ def _three_vertex_scene():
 
 
 def test_add_vertex_command_round_trip():
-    from pluton.commands.scene_commands import AddVertexCommand
-    from pluton.scene import Scene
+    from bermake.commands.scene_commands import AddVertexCommand
+    from bermake.scene import Scene
 
     s = Scene()
     pos = np.array([3.0, 4.0, 0.0], dtype=np.float32)
@@ -34,8 +34,8 @@ def test_add_vertex_command_round_trip():
 
 
 def test_add_edge_command_round_trip():
-    from pluton.commands.scene_commands import AddEdgeCommand
-    from pluton.scene import Scene
+    from bermake.commands.scene_commands import AddEdgeCommand
+    from bermake.scene import Scene
 
     s = Scene()
     v0 = s.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -50,8 +50,8 @@ def test_add_edge_command_round_trip():
 
 
 def test_add_face_command_round_trip():
-    from pluton.commands.scene_commands import AddFaceCommand
-    from pluton.scene import Scene
+    from bermake.commands.scene_commands import AddFaceCommand
+    from bermake.scene import Scene
 
     s, v0, v1, v2 = _three_vertex_scene()
     s.add_edge(v0, v1); s.add_edge(v1, v2); s.add_edge(v2, v0)
@@ -65,8 +65,8 @@ def test_add_face_command_round_trip():
 
 
 def test_remove_face_command_round_trip():
-    from pluton.commands.scene_commands import AddFaceCommand, RemoveFaceCommand
-    from pluton.scene import Scene
+    from bermake.commands.scene_commands import AddFaceCommand, RemoveFaceCommand
+    from bermake.scene import Scene
 
     s, v0, v1, v2 = _three_vertex_scene()
     s.add_edge(v0, v1); s.add_edge(v1, v2); s.add_edge(v2, v0)
@@ -84,8 +84,8 @@ def test_remove_face_command_round_trip():
 
 
 def test_remove_edge_command_round_trip():
-    from pluton.commands.scene_commands import AddEdgeCommand, RemoveEdgeCommand
-    from pluton.scene import Scene
+    from bermake.commands.scene_commands import AddEdgeCommand, RemoveEdgeCommand
+    from bermake.scene import Scene
 
     s, v0, v1, _ = _three_vertex_scene()
     add = AddEdgeCommand(v0, v1)
@@ -101,8 +101,8 @@ def test_remove_edge_command_round_trip():
 
 
 def test_remove_vertex_command_round_trip():
-    from pluton.commands.scene_commands import RemoveVertexCommand
-    from pluton.scene import Scene
+    from bermake.commands.scene_commands import RemoveVertexCommand
+    from bermake.scene import Scene
 
     s = Scene()
     v = s.add_vertex(np.array([1.0, 2.0, 0.0], dtype=np.float32))
@@ -119,8 +119,8 @@ def test_remove_vertex_command_round_trip():
 
 
 def test_clear_scene_command_captures_and_restores():
-    from pluton.commands.scene_commands import ClearSceneCommand
-    from pluton.scene import Scene
+    from bermake.commands.scene_commands import ClearSceneCommand
+    from bermake.scene import Scene
 
     s, v0, v1, v2 = _three_vertex_scene()
     s.add_edge(v0, v1); s.add_edge(v1, v2); s.add_edge(v2, v0)
@@ -150,7 +150,7 @@ def test_add_vertex_command_undo_leaves_a_deduped_vertex_alone():
     # Scene.add_vertex is idempotent on exact position, so a command aimed at
     # an occupied position resolves onto the EXISTING vertex. It never created
     # it, so undo must not delete it out from under whoever owns it.
-    from pluton.commands.scene_commands import AddVertexCommand
+    from bermake.commands.scene_commands import AddVertexCommand
 
     s, v0, _v1, _v2 = _three_vertex_scene()
     before = {v.id for v in s.vertices_iter()}
@@ -173,7 +173,7 @@ def test_add_vertex_command_undo_leaves_a_deduped_vertex_alone():
 
 
 def test_add_edge_command_undo_leaves_a_deduped_edge_alone():
-    from pluton.commands.scene_commands import AddEdgeCommand
+    from bermake.commands.scene_commands import AddEdgeCommand
 
     s, v0, v1, _v2 = _three_vertex_scene()
     e0 = s.add_edge(v0, v1)
@@ -199,7 +199,7 @@ def test_add_vertex_and_edge_commands_still_own_what_they_actually_create():
     # The ownership guard must not turn a genuine creation into a no-op:
     # do -> undo -> redo -> undo on freshly-minted geometry still round-trips,
     # id-preserving, exactly as before.
-    from pluton.commands.scene_commands import AddEdgeCommand, AddVertexCommand
+    from bermake.commands.scene_commands import AddEdgeCommand, AddVertexCommand
 
     s, v0, _v1, _v2 = _three_vertex_scene()
     v_cmd = AddVertexCommand(np.array([9.0, 9.0, 9.0], dtype=np.float32))

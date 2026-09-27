@@ -4,7 +4,7 @@ from __future__ import annotations
 
 
 def test_status_bar_starts_empty(qtbot):
-    from pluton.ui.status_bar import StatusBar
+    from bermake.ui.status_bar import StatusBar
 
     bar = StatusBar()
     qtbot.addWidget(bar)
@@ -12,7 +12,7 @@ def test_status_bar_starts_empty(qtbot):
 
 
 def test_status_bar_shows_tool_only_when_no_snap(qtbot):
-    from pluton.ui.status_bar import StatusBar
+    from bermake.ui.status_bar import StatusBar
 
     bar = StatusBar()
     qtbot.addWidget(bar)
@@ -22,7 +22,7 @@ def test_status_bar_shows_tool_only_when_no_snap(qtbot):
 
 
 def test_status_bar_shows_tool_and_snap(qtbot):
-    from pluton.ui.status_bar import StatusBar
+    from bermake.ui.status_bar import StatusBar
 
     bar = StatusBar()
     qtbot.addWidget(bar)
@@ -32,7 +32,7 @@ def test_status_bar_shows_tool_and_snap(qtbot):
 
 
 def test_status_bar_clear_tool_blanks_everything(qtbot):
-    from pluton.ui.status_bar import StatusBar
+    from bermake.ui.status_bar import StatusBar
 
     bar = StatusBar()
     qtbot.addWidget(bar)
@@ -53,7 +53,7 @@ def test_the_status_chip_is_opaque_enough_to_read_over_a_white_viewport():
     over white, dark and sky beats a second dependency from the status bar to
     document state (spec D10).
     """
-    from pluton.ui.status_bar import _BOX_ALPHA, _BOX_STYLE, _CHIP_ALPHA, _FIELD_STYLE
+    from bermake.ui.status_bar import _BOX_ALPHA, _BOX_STYLE, _CHIP_ALPHA, _FIELD_STYLE
 
     assert _CHIP_ALPHA >= 0.70
     assert _BOX_ALPHA >= _CHIP_ALPHA

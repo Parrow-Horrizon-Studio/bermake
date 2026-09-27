@@ -1,7 +1,7 @@
-from pluton.model.tag import TagLibrary
-from pluton.viewport.camera import Camera
-from pluton.viewport.render_style import FaceStyle, RenderStyle
-from pluton.views.capture import apply_tags_and_style, apply_view, capture_view
+from bermake.model.tag import TagLibrary
+from bermake.viewport.camera import Camera
+from bermake.viewport.render_style import FaceStyle, RenderStyle
+from bermake.views.capture import apply_tags_and_style, apply_view, capture_view
 
 
 def _tags():
@@ -47,7 +47,7 @@ def test_apply_tolerates_unknown_tag_id():
     cam = Camera()
     v = capture_view(0, "V", cam, tags, style)
     # Inject a stale id that no longer exists in this library:
-    from pluton.views.saved_view import SavedView
+    from bermake.views.saved_view import SavedView
     stale = SavedView(v.id, v.name, v.camera, {999: False}, v.face_style,
                       v.xray)
     apply_view(stale, cam, tags, style)   # must not raise

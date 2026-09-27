@@ -1,7 +1,7 @@
 # tests/test_obj_commands.py
-from pluton.commands.obj_commands import ImportObjCommand
-from pluton.io.obj_codec import ObjDocument, ObjFace, ObjObject
-from pluton.model.model import Model
+from bermake.commands.obj_commands import ImportObjCommand
+from bermake.io.obj_codec import ObjDocument, ObjFace, ObjObject
+from bermake.model.model import Model
 
 
 def _grouped_doc():

@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
 
-from pluton.io.document_codec import geometry_from_dict, geometry_to_dict
-from pluton.io.errors import PlutonFormatError
-from pluton.io.pluton_file import SCHEMA_VERSION
-from pluton.scene.scene import Scene, Side
+from bermake.io.document_codec import geometry_from_dict, geometry_to_dict
+from bermake.io.errors import BermakeFormatError
+from bermake.io.bermake_file import SCHEMA_VERSION
+from bermake.scene.scene import Scene, Side
 
 
 def _quad(scene, z=0.0):
@@ -70,7 +70,7 @@ def test_a_wrong_length_uv_array_is_corruption_not_a_fallback():
     _quad(s)
     data = geometry_to_dict(s)
     data["face_uvs"] = {"0": [0.0, 0.0, 1.0, 0.0]}  # 2 corners for a 4-corner face
-    with pytest.raises(PlutonFormatError, match="face_uvs"):
+    with pytest.raises(BermakeFormatError, match="face_uvs"):
         geometry_from_dict(Scene(), data)
 
 
@@ -79,7 +79,7 @@ def test_an_odd_length_uv_array_is_rejected():
     _quad(s)
     data = geometry_to_dict(s)
     data["face_uvs"] = {"0": [0.0, 0.0, 1.0]}
-    with pytest.raises(PlutonFormatError, match="face_uvs"):
+    with pytest.raises(BermakeFormatError, match="face_uvs"):
         geometry_from_dict(Scene(), data)
 
 
@@ -88,7 +88,7 @@ def test_an_out_of_range_face_index_is_rejected():
     _quad(s)
     data = geometry_to_dict(s)
     data["face_uvs"] = {"9": [0.0, 0.0] * 4}
-    with pytest.raises(PlutonFormatError, match="face_uvs"):
+    with pytest.raises(BermakeFormatError, match="face_uvs"):
         geometry_from_dict(Scene(), data)
 
 
@@ -97,7 +97,7 @@ def test_a_non_integer_face_index_is_rejected():
     _quad(s)
     data = geometry_to_dict(s)
     data["face_uvs"] = {"abc": [0.0, 0.0] * 4}
-    with pytest.raises(PlutonFormatError, match="face_uvs"):
+    with pytest.raises(BermakeFormatError, match="face_uvs"):
         geometry_from_dict(Scene(), data)
 
 

@@ -16,15 +16,15 @@ import types
 
 import numpy as np
 import pytest
-from pluton.commands.annotation_commands import EditLabelTextCommand, MoveAnnotationsCommand
-from pluton.commands.command_stack import CommandStack
-from pluton.model.annotation import Dimension, Label
-from pluton.model.model import Model
-from pluton.selection import Selection
-from pluton.tools.move_tool import MoveTool
-from pluton.tools.select_tool import SelectTool
-from pluton.tools.tool import ToolContext
-from pluton.viewport.snap_engine import SnapKind
+from bermake.commands.annotation_commands import EditLabelTextCommand, MoveAnnotationsCommand
+from bermake.commands.command_stack import CommandStack
+from bermake.model.annotation import Dimension, Label
+from bermake.model.model import Model
+from bermake.selection import Selection
+from bermake.tools.move_tool import MoveTool
+from bermake.tools.select_tool import SelectTool
+from bermake.tools.tool import ToolContext
+from bermake.viewport.snap_engine import SnapKind
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
 
@@ -364,7 +364,7 @@ def test_move_annotation_only_typed_value_applies_local_delta(qtbot):
     """apply_typed_value (VCB path) is the OTHER point the tool commits a
     translation delta -- must compose the annotation move the same way."""
     model = Model()
-    from pluton.units import Units
+    from bermake.units import Units
     dim = Dimension(model.new_annotation_id(), (0.0, 0.0, 0.0), (4.0, 0.0, 0.0), (0.0, -2.0, 0.0))
     model.active_context.annotations.append(dim)
 

@@ -12,7 +12,7 @@ from PySide6.QtGui import QMouseEvent
 
 
 def _camera(w, h):
-    from pluton.viewport.camera import Camera
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     cam.aspect = float(w) / float(h)
@@ -21,7 +21,7 @@ def _camera(w, h):
 
 def _quad_pair_scene():
     """Two coplanar quads sharing one edge, at z=0."""
-    from pluton.scene import Scene
+    from bermake.scene import Scene
 
     scene = Scene()
     a = scene.add_vertex(np.array([0.0, 0.0, 0.0], dtype=np.float32))
@@ -36,9 +36,9 @@ def _quad_pair_scene():
 
 
 def _tool(scene, w=800, h=600):
-    from pluton.selection import Selection
-    from pluton.tools.select_tool import SelectTool
-    from pluton.tools.tool import ToolContext
+    from bermake.selection import Selection
+    from bermake.tools.select_tool import SelectTool
+    from bermake.tools.tool import ToolContext
 
     sel = Selection()
     cam = _camera(w, h)
@@ -125,9 +125,9 @@ def test_double_click_on_empty_space_leaves_the_selection_alone():
 
 
 def _tool_with_vertices(scene, w=800, h=600):
-    from pluton.selection import Selection
-    from pluton.tools.select_tool import SelectTool
-    from pluton.tools.tool import ToolContext
+    from bermake.selection import Selection
+    from bermake.tools.select_tool import SelectTool
+    from bermake.tools.tool import ToolContext
 
     sel = Selection()
     cam = _camera(w, h)

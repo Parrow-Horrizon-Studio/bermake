@@ -16,9 +16,9 @@ blank for an annotation-only selection.
 
 from __future__ import annotations
 
-from pluton.tools.dimension_tool import DimensionTool
-from pluton.tools.text_tool import TextTool
-from pluton.ui.main_window import MainWindow
+from bermake.tools.dimension_tool import DimensionTool
+from bermake.tools.text_tool import TextTool
+from bermake.ui.main_window import MainWindow
 
 
 def test_dimension_tool_registered_with_i(qtbot):
@@ -92,7 +92,7 @@ def test_selection_status_blank_when_nothing_selected(qtbot):
 
 
 def test_selection_status_annotation_only(qtbot):
-    from pluton.model.annotation import Dimension
+    from bermake.model.annotation import Dimension
 
     w = MainWindow()
     qtbot.addWidget(w)
@@ -108,7 +108,7 @@ def test_selection_status_annotation_only(qtbot):
 
 
 def test_selection_status_mixed_lists_all_kinds(qtbot):
-    from pluton.model.annotation import Dimension
+    from bermake.model.annotation import Dimension
 
     w = MainWindow()
     qtbot.addWidget(w)

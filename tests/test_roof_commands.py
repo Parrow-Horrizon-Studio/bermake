@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.commands.roof_commands import CreateRoofCommand
-from pluton.model.model import Model
+from bermake.commands.roof_commands import CreateRoofCommand
+from bermake.model.model import Model
 
 
 def _cmd(model, kind="gable"):

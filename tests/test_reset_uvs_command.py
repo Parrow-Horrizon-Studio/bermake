@@ -1,7 +1,7 @@
 import numpy as np
 
-from pluton.commands.material_commands import ResetFaceUvsCommand
-from pluton.scene.scene import Scene, Side, TexturePlacement
+from bermake.commands.material_commands import ResetFaceUvsCommand
+from bermake.scene.scene import Scene, Side, TexturePlacement
 
 
 def _quad_with_uvs(scene, side=Side.FRONT):

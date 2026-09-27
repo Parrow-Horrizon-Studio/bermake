@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import pytest
-from pluton.model.material import MaterialLibrary
-from pluton.ui.materials_page import MaterialsPage
+from bermake.model.material import MaterialLibrary
+from bermake.ui.materials_page import MaterialsPage
 
 
 @pytest.fixture

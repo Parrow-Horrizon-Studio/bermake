@@ -1,9 +1,9 @@
 import numpy as np
-from pluton.annotations.draw_plan import collect_annotation_plans, plan_annotation
-from pluton.model.annotation import Dimension
-from pluton.model.model import Model
-from pluton.units import Units
-from pluton.viewport.camera import Camera
+from bermake.annotations.draw_plan import collect_annotation_plans, plan_annotation
+from bermake.model.annotation import Dimension
+from bermake.model.model import Model
+from bermake.units import Units
+from bermake.viewport.camera import Camera
 
 # M7.6b Task 9 fix round 3: this file used to hand-roll its own
 # `_FakeViewport`, missing every attribute Task 9 added a read for
@@ -132,7 +132,7 @@ def test_paint_annotations_still_draws_the_groups_dimension_from_the_root(monkey
     """The actual regression under test (#95): ViewportWidget._paint_annotations
     must not vanish a dimension living inside a group just because the root
     (not the group) is the active context."""
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.viewport.viewport_widget import ViewportWidget
     from PySide6 import QtGui
 
     monkeypatch.setattr(QtGui, "QPainter", _RecordingQPainter)

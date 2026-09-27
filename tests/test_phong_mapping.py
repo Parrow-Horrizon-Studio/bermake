@@ -6,7 +6,7 @@ from itertools import pairwise
 
 import numpy as np
 import pytest
-from pluton.viewport.render_style import (
+from bermake.viewport.render_style import (
     _DIELECTRIC_F0,
     _MAX_SHININESS,
     _MIN_SHININESS,
@@ -138,7 +138,7 @@ def test_an_opaque_material_still_writes_depth():
 
 
 def test_the_back_default_is_distinct_from_the_front_default():
-    from pluton.model.material import _DEFAULT_SWATCH_COLOR
+    from bermake.model.material import _DEFAULT_SWATCH_COLOR
 
     assert BACK_DEFAULT_COLOR != _DEFAULT_SWATCH_COLOR
     # and distinguishable, not a near-identical shade
@@ -175,7 +175,7 @@ def _unit(v):
 
 def _shade(material, normal, view_dir):
     """phong.frag main(), transcribed. Returns one RGB pixel in 0..255."""
-    from pluton.viewport.scene_renderer import _LIGHT_COLOR, _LIGHT_DIR
+    from bermake.viewport.scene_renderer import _LIGHT_COLOR, _LIGHT_DIR
 
     n, lv, v = _unit(normal), _unit(_LIGHT_DIR), _unit(view_dir)
     r = lv - 2.0 * np.dot(lv, n) * n

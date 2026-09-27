@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.io.document_codec import model_from_dict, model_to_dict
-from pluton.io.pluton_file import SCHEMA_VERSION
+from bermake.io.document_codec import model_from_dict, model_to_dict
+from bermake.io.bermake_file import SCHEMA_VERSION
 
 
 def _square(model):

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.io.document_codec import geometry_from_dict, geometry_to_dict
-from pluton.scene.scene import Scene, Side
+from bermake.io.document_codec import geometry_from_dict, geometry_to_dict
+from bermake.scene.scene import Scene, Side
 
 
 def _square(scene, z=0.0):
@@ -59,7 +59,7 @@ def test_unpainted_backs_are_not_written():
 def test_schema_version_is_five():
     # M7.7 bumped SCHEMA_VERSION to 9 (per-document viewport environment); this
     # pin necessarily tracks whatever is current, same as every prior bump.
-    from pluton.io.pluton_file import SCHEMA_VERSION
+    from bermake.io.bermake_file import SCHEMA_VERSION
 
     assert SCHEMA_VERSION == 9
 
@@ -144,23 +144,23 @@ def test_face_materials_survive_when_face_ids_and_indices_diverge():
     assert rebuilt.face_material(untouched, Side.BACK) == 0
 
 
-def test_real_pluton_file_round_trips_two_sided_materials(tmp_path):
+def test_real_bermake_file_round_trips_two_sided_materials(tmp_path):
     # The container path (zip + json.dumps/loads), not just the in-memory
     # codec dict -- a codec bug that only shows up after a JSON string
     # round trip (e.g. int keys silently becoming strings twice) would slip
     # past the dict-level tests above.
-    from pluton.document import DocumentSettings
-    from pluton.io import load_document, save_document
-    from pluton.model.model import Model
-    from pluton.viewport.camera import Camera
-    from pluton.viewport.render_style import RenderStyle
+    from bermake.document import DocumentSettings
+    from bermake.io import load_document, save_document
+    from bermake.model.model import Model
+    from bermake.viewport.camera import Camera
+    from bermake.viewport.render_style import RenderStyle
 
     model = Model()
     fid = _square(model.root.mesh)
     model.root.mesh.set_face_material(fid, 3, Side.FRONT)
     model.root.mesh.set_face_material(fid, 5, Side.BACK)
 
-    path = tmp_path / "two_sided.pluton"
+    path = tmp_path / "two_sided.berm"
     save_document(path, model, Camera(), DocumentSettings(), RenderStyle())
     loaded = load_document(path)
 
@@ -170,9 +170,9 @@ def test_real_pluton_file_round_trips_two_sided_materials(tmp_path):
 
 
 def test_a_hand_crafted_v6_0_shaped_document_opens_through_the_real_container(tmp_path):
-    """Stands in for an actual v0.6.0 .pluton file (see Task 12 report for
+    """Stands in for an actual v0.6.0 .berm file (see Task 12 report for
     why a real one wasn't produced from the tag). document_codec.py and
-    pluton_file.py are byte-identical between the v0.6.0 tag and this
+    bermake_file.py are byte-identical between the v0.6.0 tag and this
     milestone's starting point -- Tasks 1/3/11 touched material.py, scene.py
     and tag.py only -- so a hand-built document matching exactly what
     v0.6.0's to_records()/geometry_to_dict()/ViewLibrary.to_records()/
@@ -182,7 +182,7 @@ def test_a_hand_crafted_v6_0_shaped_document_opens_through_the_real_container(tm
 
     Includes real top-level "scenes" and "style" keys, shaped exactly as
     v0.6.0's document_to_dict() unconditionally wrote them (confirmed via
-    `git show v0.6.0:python/pluton/io/document_codec.py`): one saved Scene
+    `git show v0.6.0:python/bermake/io/document_codec.py`): one saved Scene
     from ViewLibrary.to_records() and a non-default RenderStyle from
     render_style_to_dict(). A fixture omitting those keys is not a faithful
     v0.6.0 shape -- it only happens to load because document_from_dict()'s
@@ -199,7 +199,7 @@ def test_a_hand_crafted_v6_0_shaped_document_opens_through_the_real_container(tm
     import json
     import zipfile
 
-    from pluton.io.pluton_file import load_document
+    from bermake.io.bermake_file import load_document
 
     doc_data = {
         "units": {
@@ -281,9 +281,9 @@ def test_a_hand_crafted_v6_0_shaped_document_opens_through_the_real_container(tm
             ],
         },
     }
-    manifest = {"format": "pluton", "schema_version": 4, "app_version": "0.6.0"}
+    manifest = {"format": "bermake", "schema_version": 4, "app_version": "0.6.0"}
 
-    path = tmp_path / "v0_6_0_shaped.pluton"
+    path = tmp_path / "v0_6_0_shaped.berm"
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("manifest.json", json.dumps(manifest, separators=(",", ":")))
         zf.writestr("document.json", json.dumps(doc_data, separators=(",", ":")))

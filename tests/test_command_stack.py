@@ -20,7 +20,7 @@ class _RecordingCommand:
 
 
 def test_composite_do_runs_children_in_order():
-    from pluton.commands import CompositeCommand
+    from bermake.commands import CompositeCommand
 
     log: list[str] = []
     composite = CompositeCommand(
@@ -32,7 +32,7 @@ def test_composite_do_runs_children_in_order():
 
 
 def test_composite_undo_runs_children_in_reverse_order():
-    from pluton.commands import CompositeCommand
+    from bermake.commands import CompositeCommand
 
     log: list[str] = []
     composite = CompositeCommand(
@@ -44,7 +44,7 @@ def test_composite_undo_runs_children_in_reverse_order():
 
 
 def test_command_stack_starts_empty():
-    from pluton.commands import CommandStack
+    from bermake.commands import CommandStack
 
     s = CommandStack()
     assert not s.can_undo
@@ -52,7 +52,7 @@ def test_command_stack_starts_empty():
 
 
 def test_execute_runs_do_and_pushes_to_undo_stack():
-    from pluton.commands import CommandStack, CompositeCommand
+    from bermake.commands import CommandStack, CompositeCommand
 
     log: list[str] = []
     cmd = CompositeCommand(name="C", children=[_RecordingCommand("x", log)])
@@ -64,7 +64,7 @@ def test_execute_runs_do_and_pushes_to_undo_stack():
 
 
 def test_push_executed_appends_without_calling_do():
-    from pluton.commands import CommandStack, CompositeCommand
+    from bermake.commands import CommandStack, CompositeCommand
 
     log: list[str] = []
     cmd = CompositeCommand(name="C", children=[_RecordingCommand("x", log)])
@@ -75,7 +75,7 @@ def test_push_executed_appends_without_calling_do():
 
 
 def test_undo_calls_command_undo_and_moves_to_redo():
-    from pluton.commands import CommandStack, CompositeCommand
+    from bermake.commands import CommandStack, CompositeCommand
 
     log: list[str] = []
     cmd = CompositeCommand(name="C", children=[_RecordingCommand("x", log)])
@@ -89,7 +89,7 @@ def test_undo_calls_command_undo_and_moves_to_redo():
 
 
 def test_redo_runs_do_again():
-    from pluton.commands import CommandStack, CompositeCommand
+    from bermake.commands import CommandStack, CompositeCommand
 
     log: list[str] = []
     cmd = CompositeCommand(name="C", children=[_RecordingCommand("x", log)])
@@ -102,7 +102,7 @@ def test_redo_runs_do_again():
 
 
 def test_new_execute_clears_redo_stack():
-    from pluton.commands import CommandStack, CompositeCommand
+    from bermake.commands import CommandStack, CompositeCommand
 
     log: list[str] = []
     s = CommandStack()
@@ -116,14 +116,14 @@ def test_new_execute_clears_redo_stack():
 
 
 def test_undo_on_empty_returns_false():
-    from pluton.commands import CommandStack
+    from bermake.commands import CommandStack
 
     s = CommandStack()
     assert s.undo() is False
 
 
 def test_redo_on_empty_returns_false():
-    from pluton.commands import CommandStack
+    from bermake.commands import CommandStack
 
     s = CommandStack()
     assert s.redo() is False
@@ -135,7 +135,7 @@ def test_redo_on_empty_returns_false():
 
 
 def test_undo_listener_fires_once_after_successful_undo():
-    from pluton.commands import CommandStack, CompositeCommand
+    from bermake.commands import CommandStack, CompositeCommand
 
     log: list[str] = []
     cmd = CompositeCommand(name="C", children=[_RecordingCommand("x", log)])
@@ -154,7 +154,7 @@ def test_undo_listener_fires_once_after_successful_undo():
 
 
 def test_redo_listener_fires_once_after_successful_redo():
-    from pluton.commands import CommandStack, CompositeCommand
+    from bermake.commands import CommandStack, CompositeCommand
 
     log: list[str] = []
     cmd = CompositeCommand(name="C", children=[_RecordingCommand("x", log)])
@@ -176,7 +176,7 @@ def test_redo_listener_fires_once_after_successful_redo():
 
 
 def test_undo_listener_does_not_fire_on_empty_stack():
-    from pluton.commands import CommandStack
+    from bermake.commands import CommandStack
 
     s = CommandStack()
 
@@ -190,7 +190,7 @@ def test_undo_listener_does_not_fire_on_empty_stack():
 
 
 def test_redo_listener_does_not_fire_on_empty_stack():
-    from pluton.commands import CommandStack
+    from bermake.commands import CommandStack
 
     s = CommandStack()
 
@@ -222,7 +222,7 @@ class _Recorder:
 
 
 def test_stack_threads_per_command_target():
-    from pluton.commands import CommandStack
+    from bermake.commands import CommandStack
 
     log = []
     s = CommandStack()
@@ -236,7 +236,7 @@ def test_stack_threads_per_command_target():
 
 
 def test_push_executed_remembers_target():
-    from pluton.commands import CommandStack
+    from bermake.commands import CommandStack
 
     log = []
     s = CommandStack()
@@ -248,7 +248,7 @@ def test_push_executed_remembers_target():
 def test_listener_fire_counts_across_full_undo_redo_cycle():
     """Execute one command, undo (listener fires), redo (listener fires),
     then undo back to empty and call undo again — no additional undo-listener fire."""
-    from pluton.commands import CommandStack, CompositeCommand
+    from bermake.commands import CommandStack, CompositeCommand
 
     log: list[str] = []
     cmd = CompositeCommand(name="C", children=[_RecordingCommand("x", log)])
@@ -295,7 +295,7 @@ class _NoOpCmd:
 
 
 def test_change_listener_fires_on_every_mutation():
-    from pluton.commands.command_stack import CommandStack
+    from bermake.commands.command_stack import CommandStack
 
     stack = CommandStack()
     calls = []
@@ -312,7 +312,7 @@ def test_change_listener_fires_on_every_mutation():
 
 
 def test_clear_empties_both_stacks():
-    from pluton.commands.command_stack import CommandStack
+    from bermake.commands.command_stack import CommandStack
 
     stack = CommandStack()
     stack.execute(_NoOpCmd(), object())
@@ -328,7 +328,7 @@ def test_clear_does_not_fire_the_change_listener():
     documents, where the caller resets UI state through a different path).
     Guard that against a future change silently wiring clear() into
     _fire_change() and double-notifying listeners on document swap."""
-    from pluton.commands.command_stack import CommandStack
+    from bermake.commands.command_stack import CommandStack
 
     stack = CommandStack()
     stack.execute(_NoOpCmd(), object())

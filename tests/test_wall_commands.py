@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pluton.commands.wall_commands import CreateWallCommand
-from pluton.model.model import Model
+from bermake.commands.wall_commands import CreateWallCommand
+from bermake.model.model import Model
 
 
 def test_do_adds_wall_group_then_undo_removes_it():

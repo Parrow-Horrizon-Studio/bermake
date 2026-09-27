@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.commands.material_commands import PaintFaceCommand
-from pluton.scene.scene import Scene
+from bermake.commands.material_commands import PaintFaceCommand
+from bermake.scene.scene import Scene
 
 
 def _one_face_scene():

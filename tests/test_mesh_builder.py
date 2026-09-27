@@ -24,10 +24,10 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-import pluton._core as core
-from pluton.commands import CommandStack, CompositeCommand
-from pluton.scene.mesh_builder import build_mesh_into_scene
-from pluton.scene.scene import Scene
+import bermake._core as core
+from bermake.commands import CommandStack, CompositeCommand
+from bermake.scene.mesh_builder import build_mesh_into_scene
+from bermake.scene.scene import Scene
 
 
 def _make_box():

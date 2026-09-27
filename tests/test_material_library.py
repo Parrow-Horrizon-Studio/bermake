@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import FrozenInstanceError
 
 import pytest
-from pluton.model.material import Material, MaterialLibrary
+from bermake.model.material import Material, MaterialLibrary
 
 
 def test_default_material_is_first_with_default_id():

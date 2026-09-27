@@ -8,9 +8,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-import pluton._core as core
-from pluton.io.gltf_export import export_gltf
-from pluton.model.model import Model
+import bermake._core as core
+from bermake.io.gltf_export import export_gltf
+from bermake.model.model import Model
 
 DATA = Path(__file__).parent / "data" / "gltf"
 
@@ -46,7 +46,7 @@ def test_avocado_draco_uvs_decode_CI_GATE():  # noqa: N802 (permanent CI gate ma
 def test_assimp_already_flips_v_CI_GATE():  # noqa: N802 (permanent CI gate marker)
     """PERMANENT GATE: Assimp's glTF2 importer applies 1 - v itself. Never skip.
 
-    Pluton's v = 0 is the image's BOTTOM (viewport/texture_cache.gl_row_order
+    Bermake's v = 0 is the image's BOTTOM (viewport/texture_cache.gl_row_order
     reverses Qt's top-down rows for OpenGL's bottom-left origin); glTF's v = 0
     is the image's TOP. Assimp does that conversion before the bridge sees a
     coordinate, so import deliberately performs NO flip of its own and export

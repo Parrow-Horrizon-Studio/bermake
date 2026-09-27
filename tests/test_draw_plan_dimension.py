@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pluton.annotations.draw_plan import (
+from bermake.annotations.draw_plan import (
     _EXT_GAP_PX,
     _EXT_OVERSHOOT_PX,
     _TEXT_GAP_PX,
@@ -11,8 +11,8 @@ from pluton.annotations.draw_plan import (
     FONT_PX,
     plan_annotation,
 )
-from pluton.model.annotation import Dimension
-from pluton.units import Units
+from bermake.model.annotation import Dimension
+from bermake.units import Units
 
 
 class _FlatCamera:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
-from pluton.scene.scene import Side
+from bermake.scene.scene import Side
 
 
 def _faces(scene):
@@ -178,11 +178,11 @@ def test_clicking_from_either_side_paints_that_side_and_only_that_side():
     that ignores the ray (a constant side, or a side read from the normal
     alone) paints the same slot twice and leaves the other at Default.
     """
-    from pluton.model.material import MaterialLibrary
-    from pluton.scene.scene import Scene
-    from pluton.tools.paint_tool import PaintTool
-    from pluton.tools.tool import ToolContext
-    from pluton.viewport.camera import Camera
+    from bermake.model.material import MaterialLibrary
+    from bermake.scene.scene import Scene
+    from bermake.tools.paint_tool import PaintTool
+    from bermake.tools.tool import ToolContext
+    from bermake.viewport.camera import Camera
     from PySide6.QtCore import QPointF, Qt
 
     class _Event:
@@ -250,7 +250,7 @@ def test_clicking_from_either_side_paints_that_side_and_only_that_side():
 
 
 def test_side_for_ray_reads_the_normal_direction():
-    from pluton.tools.paint_tool import side_for_ray
+    from bermake.tools.paint_tool import side_for_ray
 
     normal = np.array([0.0, 0.0, 1.0])
     # looking down at a face whose normal points up: we see the FRONT
@@ -260,7 +260,7 @@ def test_side_for_ray_reads_the_normal_direction():
 
 
 def test_side_for_ray_is_not_fooled_by_a_grazing_angle():
-    from pluton.tools.paint_tool import side_for_ray
+    from bermake.tools.paint_tool import side_for_ray
 
     normal = np.array([0.0, 0.0, 1.0])
     nearly_edge_on = np.array([1.0, 0.0, -0.01])
@@ -289,8 +289,8 @@ def test_resolve_side_uses_the_inverse_transpose_under_non_uniform_scale():
     So this test fails if PaintTool._resolve_side is changed to use the plain
     linear block instead of the inverse-transpose.
     """
-    from pluton.tools.paint_tool import PaintTool
-    from pluton.tools.tool import ToolContext
+    from bermake.tools.paint_tool import PaintTool
+    from bermake.tools.tool import ToolContext
 
     class _FakeScene:
         def face_normal(self, fid):

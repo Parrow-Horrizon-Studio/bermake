@@ -1,11 +1,11 @@
 """The background reaching both of its sinks: glClearColor and Hidden Line's fill."""
 
 import pytest
-from pluton.model.material import MaterialLibrary
-from pluton.viewport.environment import PLAIN_WHITE, STUDIO
-from pluton.viewport.face_batches import FaceBatch
-from pluton.viewport.render_style import FaceStyle, RenderStyle
-from pluton.viewport.scene_renderer import resolve_batch_sides
+from bermake.model.material import MaterialLibrary
+from bermake.viewport.environment import PLAIN_WHITE, STUDIO
+from bermake.viewport.face_batches import FaceBatch
+from bermake.viewport.render_style import FaceStyle, RenderStyle
+from bermake.viewport.scene_renderer import resolve_batch_sides
 
 
 def test_hidden_line_on_a_white_environment_fills_faces_white():

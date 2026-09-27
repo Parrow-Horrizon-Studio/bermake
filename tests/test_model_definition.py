@@ -1,6 +1,6 @@
 import numpy as np
-from pluton.model.definition import Definition
-from pluton.model.instance import Instance
+from bermake.model.definition import Definition
+from bermake.model.instance import Instance
 
 
 def test_definition_defaults_to_empty_scene():

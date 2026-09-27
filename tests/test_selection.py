@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pluton.selection import Selection
+from bermake.selection import Selection
 
 
 def test_starts_empty():

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from pluton.tools.sweep_support import offset_polygon
+from bermake.tools.sweep_support import offset_polygon
 
 Z = np.array([0.0, 0.0, 1.0], dtype=np.float64)
 

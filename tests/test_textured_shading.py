@@ -16,15 +16,15 @@ import zlib
 from pathlib import Path
 
 import numpy as np
-from pluton.model.material import MaterialLibrary
-from pluton.model.texture import TextureLibrary
-from pluton.viewport import scene_renderer as sr
-from pluton.viewport.environment import STUDIO
-from pluton.viewport.face_batches import FaceBatch
-from pluton.viewport.render_style import FaceStyle, RenderStyle
-from pluton.viewport.scene_renderer import _PHONG_UNIFORMS, resolve_batch_sides
+from bermake.model.material import MaterialLibrary
+from bermake.model.texture import TextureLibrary
+from bermake.viewport import scene_renderer as sr
+from bermake.viewport.environment import STUDIO
+from bermake.viewport.face_batches import FaceBatch
+from bermake.viewport.render_style import FaceStyle, RenderStyle
+from bermake.viewport.scene_renderer import _PHONG_UNIFORMS, resolve_batch_sides
 
-_SHADERS = Path(__file__).resolve().parents[1] / "python" / "pluton" / "viewport" / "shaders"
+_SHADERS = Path(__file__).resolve().parents[1] / "python" / "bermake" / "viewport" / "shaders"
 _VERT = (_SHADERS / "phong.vert").read_text(encoding="utf-8")
 _FRAG = (_SHADERS / "phong.frag").read_text(encoding="utf-8")
 
@@ -473,9 +473,9 @@ def _square(scene, z=0.0):
 
 
 def _rendered(monkeypatch, *, transparent: bool, style: RenderStyle | None = None):
-    from pluton.model.model import Model
-    from pluton.viewport.camera import Camera
-    from pluton.viewport.scene_renderer import _ENVIRONMENT_UNIFORMS, _LINE_UNIFORMS, SceneRenderer
+    from bermake.model.model import Model
+    from bermake.viewport.camera import Camera
+    from bermake.viewport.scene_renderer import _ENVIRONMENT_UNIFORMS, _LINE_UNIFORMS, SceneRenderer
 
     recorder = _GLRecorder()
     monkeypatch.setattr(sr, "GL", recorder)

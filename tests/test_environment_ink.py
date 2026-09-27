@@ -1,7 +1,7 @@
 """Grid and edge ink following the environment, without a GL context."""
 
-from pluton.viewport.environment import PLAIN_WHITE, STUDIO
-from pluton.viewport.scene_renderer import _GRID_HALF_EXTENT, _build_grid_vertex_array
+from bermake.viewport.environment import PLAIN_WHITE, STUDIO
+from bermake.viewport.scene_renderer import _GRID_HALF_EXTENT, _build_grid_vertex_array
 
 
 def _row_is_centerline(row) -> bool:
@@ -81,7 +81,7 @@ def test_init_grid_buffers_passes_the_colours_in_order(monkeypatch):
     _upload_interleaved_lines then carries grid_color on the centre-line rows
     and grid_centerline_color everywhere else.
     """
-    from pluton.viewport.scene_renderer import SceneRenderer
+    from bermake.viewport.scene_renderer import SceneRenderer
 
     renderer = SceneRenderer()
     assert renderer._grid_vao == 0
@@ -110,7 +110,7 @@ def test_switching_environment_marks_the_grid_for_rebuild():
     evictions _flush_pending_texture_evictions exists for, so the rebuild is
     deferred to the next frame rather than done in the setter.
     """
-    from pluton.viewport.scene_renderer import SceneRenderer
+    from bermake.viewport.scene_renderer import SceneRenderer
 
     renderer = SceneRenderer()
     renderer._grid_dirty = False
@@ -120,7 +120,7 @@ def test_switching_environment_marks_the_grid_for_rebuild():
 
 def test_setting_the_same_environment_does_not_mark_the_grid_dirty():
     """A redundant menu click must not queue a re-upload every time."""
-    from pluton.viewport.scene_renderer import SceneRenderer
+    from bermake.viewport.scene_renderer import SceneRenderer
 
     renderer = SceneRenderer()
     renderer.set_environment(PLAIN_WHITE)
@@ -141,7 +141,7 @@ def test_a_definition_with_no_edges_still_records_the_colour_it_was_uploaded_und
     forever-stale bug this recording exists to prevent, is
     test_a_zero_edge_definition_does_not_re_upload_every_frame below.
     """
-    from pluton.viewport.scene_renderer import _DefBuffers, _edge_buffer_is_stale
+    from bermake.viewport.scene_renderer import _DefBuffers, _edge_buffer_is_stale
 
     buf = _DefBuffers()
     buf.edge_count = 0
@@ -152,7 +152,7 @@ def test_a_definition_with_no_edges_still_records_the_colour_it_was_uploaded_und
 
 def test_a_never_uploaded_buffer_is_stale():
     """The default of None must read as stale, so the first frame uploads."""
-    from pluton.viewport.scene_renderer import _DefBuffers, _edge_buffer_is_stale
+    from bermake.viewport.scene_renderer import _DefBuffers, _edge_buffer_is_stale
 
     assert _edge_buffer_is_stale(_DefBuffers(), STUDIO.edge_color) is True
 
@@ -168,11 +168,11 @@ def test_the_real_upload_records_the_environments_edge_colour(monkeypatch):
     Discriminates: comment out `buf.edge_color = edge_color` in
     _upload_definition and this fails, because buf.edge_color stays None.
     """
-    from pluton._core import make_box
-    from pluton.model.model import Model
-    from pluton.scene.mesh_builder import build_mesh_into_scene
-    from pluton.viewport import scene_renderer
-    from pluton.viewport.scene_renderer import SceneRenderer, _DefBuffers
+    from bermake._core import make_box
+    from bermake.model.model import Model
+    from bermake.scene.mesh_builder import build_mesh_into_scene
+    from bermake.viewport import scene_renderer
+    from bermake.viewport.scene_renderer import SceneRenderer, _DefBuffers
 
     model = Model()
     build_mesh_into_scene(make_box(2.0, 2.0, 2.0), model.root.mesh)
@@ -199,9 +199,9 @@ def test_a_zero_edge_definition_does_not_re_upload_every_frame(monkeypatch):
     Discriminates: comment out `buf.edge_color = edge_color` in
     _upload_definition and this fails (the second call re-uploads).
     """
-    from pluton.model.model import Model
-    from pluton.viewport import scene_renderer
-    from pluton.viewport.scene_renderer import SceneRenderer, _DefBuffers
+    from bermake.model.model import Model
+    from bermake.viewport import scene_renderer
+    from bermake.viewport.scene_renderer import SceneRenderer, _DefBuffers
 
     model = Model()  # empty scene: no faces, no edges
     monkeypatch.setattr(scene_renderer.GL, "glBindBuffer", lambda *a: None)

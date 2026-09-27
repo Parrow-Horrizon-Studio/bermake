@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from pluton.ui.actions import ContextTarget
-from pluton.ui.context_menu import build_context_menu
+from bermake.ui.actions import ContextTarget
+from bermake.ui.context_menu import build_context_menu
 
 
 def _labels(menu):
@@ -105,7 +105,7 @@ def test_right_click_on_an_already_selected_face_keeps_the_multi_selection(
     """Right-clicking one of several selected faces must not collapse the
     selection to just that face -- SketchUp's behaviour, and the guard
     _selection_contains/_select_only exist to preserve."""
-    import pluton.ui.context_menu as context_menu_module
+    import bermake.ui.context_menu as context_menu_module
 
     window = main_window
     scene = window._model.active_context.mesh
@@ -146,7 +146,7 @@ def test_reenabling_is_registry_wide_not_scoped_to_the_closed_menu(
     lists it. A sweep scoped to the closed menu's own entries would leave
     it stuck disabled; only a whole-registry sweep brings it back.
     """
-    from pluton.ui import context_menu as context_menu_module
+    from bermake.ui import context_menu as context_menu_module
 
     window = main_window
     close_group = window._actions["edit_close_group"]
@@ -178,7 +178,7 @@ def test_reenabling_survives_a_raise_while_the_menu_is_being_built(
     """build_context_menu disables entries as it goes, so it must run inside
     the try -- otherwise a raise partway through strands whatever it had
     already disabled."""
-    from pluton.ui import context_menu as context_menu_module
+    from bermake.ui import context_menu as context_menu_module
 
     window = main_window
     close_group = window._actions["edit_close_group"]
@@ -228,7 +228,7 @@ def test_right_click_is_suppressed_while_a_tool_is_mid_gesture(
     assert seen, "an idle Line tool must not suppress the context menu"
 
     seen.clear()
-    from pluton.tools.line_tool import _State
+    from bermake.tools.line_tool import _State
 
     line._state = _State.DRAWING  # mid multi-click draw
     assert line.has_active_gesture
@@ -282,7 +282,7 @@ def test_context_menu_does_not_clobber_a_disable_it_did_not_make(
     Save on a clean document -- a blanket re-enable would silently undo it
     on the next right-click.
     """
-    from pluton.ui import context_menu as context_menu_module
+    from bermake.ui import context_menu as context_menu_module
 
     window = main_window
     monkeypatch.setattr(window, "_exec_context_menu", lambda menu, pos: None)
@@ -321,7 +321,7 @@ def test_edit_group_is_disabled_for_a_multi_instance_selection(qtbot, main_windo
 def test_edit_text_is_disabled_for_a_dimension(qtbot, main_window):
     """_on_edit_label_text returns early for any annotation that is not a
     Label, so a Dimension must not offer it enabled."""
-    from pluton.model.annotation import Dimension, Label
+    from bermake.model.annotation import Dimension, Label
 
     window = main_window
     context = window._model.active_context

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pluton.ui.tool_settings_page import ToolSettingsPage
+from bermake.ui.tool_settings_page import ToolSettingsPage
 
 
 def test_an_unknown_key_shows_the_empty_page(qtbot):
@@ -114,7 +114,7 @@ def test_the_reparented_roof_bar_still_writes_to_its_tool(main_window):
 
 
 def test_the_reparented_opening_bar_still_writes_to_its_tool(main_window):
-    # Field/attribute confirmed from python/pluton/ui/opening_options_bar.py:
+    # Field/attribute confirmed from python/bermake/ui/opening_options_bar.py:
     # `_width_edit` -> `_commit(self._width_edit, "width")` -> DoorWindowTool.width
     # (metres; parsed through parse_length, same as the Wall bar's thickness).
     main_window._activate("door_window")

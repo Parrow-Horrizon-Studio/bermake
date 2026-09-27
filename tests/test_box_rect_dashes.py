@@ -6,14 +6,14 @@ import numpy as np
 
 
 def test_a_solid_rect_is_still_four_segments():
-    from pluton.viewport.scene_renderer import _box_rect_ndc_segments
+    from bermake.viewport.scene_renderer import _box_rect_ndc_segments
 
     segs = _box_rect_ndc_segments((10, 10, 110, 60), 800, 600)
     assert segs.shape == (8, 3)
 
 
 def test_a_dashed_rect_has_more_segments_than_a_solid_one():
-    from pluton.viewport.scene_renderer import _box_rect_ndc_segments
+    from bermake.viewport.scene_renderer import _box_rect_ndc_segments
 
     solid = _box_rect_ndc_segments((10, 10, 410, 310), 800, 600)
     dashed = _box_rect_ndc_segments((10, 10, 410, 310), 800, 600, dashed=True)
@@ -21,7 +21,7 @@ def test_a_dashed_rect_has_more_segments_than_a_solid_one():
 
 
 def test_dash_segments_come_in_pairs():
-    from pluton.viewport.scene_renderer import _box_rect_ndc_segments
+    from bermake.viewport.scene_renderer import _box_rect_ndc_segments
 
     dashed = _box_rect_ndc_segments((10, 10, 410, 310), 800, 600, dashed=True)
     assert dashed.shape[0] % 2 == 0
@@ -29,7 +29,7 @@ def test_dash_segments_come_in_pairs():
 
 
 def test_dashes_stay_inside_the_rect_in_ndc():
-    from pluton.viewport.scene_renderer import _box_rect_ndc_segments
+    from bermake.viewport.scene_renderer import _box_rect_ndc_segments
 
     w, h = 800, 600
     rect = (100, 100, 500, 400)
@@ -49,7 +49,7 @@ def test_dashes_stay_inside_the_rect_in_ndc():
 def test_the_dash_period_is_stable_in_pixels_not_in_rect_fractions():
     """A dash period defined as a fraction of the rect would make dashes grow
     with the drag, which reads as a different line style at each size."""
-    from pluton.viewport.scene_renderer import _box_rect_ndc_segments
+    from bermake.viewport.scene_renderer import _box_rect_ndc_segments
 
     small = _box_rect_ndc_segments((0, 0, 100, 100), 800, 600, dashed=True)
     large = _box_rect_ndc_segments((0, 0, 400, 400), 800, 600, dashed=True)
@@ -59,18 +59,18 @@ def test_the_dash_period_is_stable_in_pixels_not_in_rect_fractions():
 
 
 def test_a_degenerate_rect_does_not_hang_or_divide_by_zero():
-    from pluton.viewport.scene_renderer import _box_rect_ndc_segments
+    from bermake.viewport.scene_renderer import _box_rect_ndc_segments
 
     segs = _box_rect_ndc_segments((50, 50, 50, 50), 800, 600, dashed=True)
     assert np.all(np.isfinite(segs))
 
 
 def test_the_overlay_carries_the_dashed_flag_for_crossing_mode():
-    from pluton.scene import Scene
-    from pluton.selection import Selection
-    from pluton.tools.select_tool import SelectTool
-    from pluton.tools.tool import ToolContext
-    from pluton.viewport.camera import Camera
+    from bermake.scene import Scene
+    from bermake.selection import Selection
+    from bermake.tools.select_tool import SelectTool
+    from bermake.tools.tool import ToolContext
+    from bermake.viewport.camera import Camera
 
     cam = Camera()
     tool = SelectTool()

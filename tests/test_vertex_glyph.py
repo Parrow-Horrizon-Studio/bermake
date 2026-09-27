@@ -10,7 +10,7 @@ import numpy as np
 
 
 def _widget_with_quad(qtbot):
-    from pluton.ui.main_window import MainWindow
+    from bermake.ui.main_window import MainWindow
 
     w = MainWindow()
     qtbot.addWidget(w)
@@ -90,7 +90,7 @@ def test_paint_vertex_glyphs_is_called_from_paintgl_not_from_paint_annotations(q
     would never fire here, because _paint_annotations no longer does
     anything.
     """
-    from pluton.viewport.viewport_widget import ViewportWidget
+    from bermake.viewport.viewport_widget import ViewportWidget
 
     w, _ids = _widget_with_quad(qtbot)
     viewport = w._viewport
