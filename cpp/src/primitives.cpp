@@ -1,4 +1,4 @@
-#include "pluton/primitives.h"
+#include "bermake/primitives.h"
 
 #include <cmath>
 #include <cstdint>
@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace pluton {
+namespace bermake {
 
 namespace {
 
@@ -254,4 +254,4 @@ HalfEdgeMesh make_sphere(float radius, int rings, int segments) {
     return mesh;
 }
 
-}  // namespace pluton
+}  // namespace bermake

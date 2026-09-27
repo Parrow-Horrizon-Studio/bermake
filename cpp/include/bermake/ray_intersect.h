@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <optional>
 
-#include "pluton/halfedge.h"
+#include "bermake/halfedge.h"
 
-namespace pluton {
+namespace bermake {
 
 /// Result of a ray-mesh intersection.
 struct RayMeshHit {
@@ -30,4 +30,4 @@ std::optional<RayMeshHit> ray_intersect_mesh(const HalfEdgeMesh& mesh,
                                              const std::array<float, 3>& origin,
                                              const std::array<float, 3>& direction);
 
-}  // namespace pluton
+}  // namespace bermake

@@ -5,8 +5,8 @@
 #include <cstdint>
 #include <stdexcept>
 
-#include "pluton/halfedge.h"
-#include "pluton/primitives.h"
+#include "bermake/halfedge.h"
+#include "bermake/primitives.h"
 
 namespace {
 
@@ -16,12 +16,12 @@ namespace {
 }
 
 // Number of live faces in a freshly built HalfEdgeMesh (nothing removed).
-std::size_t FaceCount(const pluton::HalfEdgeMesh& m) {
+std::size_t FaceCount(const bermake::HalfEdgeMesh& m) {
     return m.face_slab_size();
 }
 
 // Number of live vertices in a freshly built HalfEdgeMesh (nothing removed).
-std::size_t VertexCount(const pluton::HalfEdgeMesh& m) {
+std::size_t VertexCount(const bermake::HalfEdgeMesh& m) {
     return m.vertex_slab_size();
 }
 
@@ -32,8 +32,8 @@ std::size_t VertexCount(const pluton::HalfEdgeMesh& m) {
 // add_face_from_loop throw (or, if it still succeeds, leaves the mismatched
 // edge unclaimed on the side the backwards face should have covered) — both
 // show up here as a missing face.
-bool IsWatertight(const pluton::HalfEdgeMesh& m) {
-    using pluton::HalfEdgeMesh;
+bool IsWatertight(const bermake::HalfEdgeMesh& m) {
+    using bermake::HalfEdgeMesh;
     for (std::uint32_t e = m.next_live_edge(0); e != HalfEdgeMesh::INVALID_ID;
          e = m.next_live_edge(e + 1)) {
         const std::uint32_t f0 = m.halfedge_face(2 * e);
@@ -47,7 +47,7 @@ bool IsWatertight(const pluton::HalfEdgeMesh& m) {
 }  // namespace
 
 TEST(PrimitivesCube, CountsAreCorrect) {
-    const auto cube = pluton::make_cube(1.0f);
+    const auto cube = bermake::make_cube(1.0f);
     EXPECT_EQ(cube.vertex_count(), 24u);
     EXPECT_EQ(cube.triangle_count(), 12u);
     EXPECT_EQ(cube.indices.size(), 36u);
@@ -57,7 +57,7 @@ TEST(PrimitivesCube, CountsAreCorrect) {
 
 TEST(PrimitivesCube, BottomOnGroundCentered) {
     const float size = 2.5f;
-    const auto cube = pluton::make_cube(size);
+    const auto cube = bermake::make_cube(size);
 
     for (std::size_t i = 0; i < cube.vertex_count(); ++i) {
         const float x = cube.positions[3 * i + 0];
@@ -73,7 +73,7 @@ TEST(PrimitivesCube, BottomOnGroundCentered) {
 }
 
 TEST(PrimitivesCube, AllNormalsAreUnitLength) {
-    const auto cube = pluton::make_cube(1.0f);
+    const auto cube = bermake::make_cube(1.0f);
     for (std::size_t i = 0; i < cube.vertex_count(); ++i) {
         const float nx = cube.normals[3 * i + 0];
         const float ny = cube.normals[3 * i + 1];
@@ -84,7 +84,7 @@ TEST(PrimitivesCube, AllNormalsAreUnitLength) {
 }
 
 TEST(PrimitivesCube, IndicesAreInRange) {
-    const auto cube = pluton::make_cube(1.0f);
+    const auto cube = bermake::make_cube(1.0f);
     for (std::uint32_t idx : cube.indices) {
         EXPECT_LT(idx, cube.vertex_count());
     }
@@ -98,7 +98,7 @@ TEST(PrimitivesCube, IndicesAreInRange) {
 // (e.g. to support a primitive with a variable vertex count per face), this
 // test's `4 * f + v` indexing assumption must change with it.
 TEST(PrimitivesCube, EachFaceHasOneNormal) {
-    const auto cube = pluton::make_cube(1.0f);
+    const auto cube = bermake::make_cube(1.0f);
     for (std::size_t f = 0; f < 6; ++f) {
         const float nx0 = cube.normals[3 * (4 * f + 0) + 0];
         const float ny0 = cube.normals[3 * (4 * f + 0) + 1];
@@ -117,7 +117,7 @@ TEST(PrimitivesBox, CountsAreCorrect) {
     // Distinct width/depth/height: a generator that confuses one axis for
     // another still produces 8 vertices and 6 faces, so this test is paired
     // with BoxRespectsDistinctDimensions below to catch that case.
-    const auto box = pluton::make_box(1.0f, 2.0f, 3.0f);
+    const auto box = bermake::make_box(1.0f, 2.0f, 3.0f);
     EXPECT_EQ(VertexCount(box), 8u);
     EXPECT_EQ(FaceCount(box), 6u);
 }
@@ -126,10 +126,10 @@ TEST(PrimitivesBox, RespectsDistinctDimensions) {
     // A generator that swaps width/depth/height (or ignores one of them)
     // fails these per-axis bounds even though counts above still pass.
     const float width = 1.0f, depth = 2.0f, height = 3.0f;
-    const auto box = pluton::make_box(width, depth, height);
+    const auto box = bermake::make_box(width, depth, height);
 
     float min_x = 1e9f, max_x = -1e9f, min_y = 1e9f, max_y = -1e9f, min_z = 1e9f, max_z = -1e9f;
-    for (std::uint32_t v = box.next_live_vertex(0); v != pluton::HalfEdgeMesh::INVALID_ID;
+    for (std::uint32_t v = box.next_live_vertex(0); v != bermake::HalfEdgeMesh::INVALID_ID;
          v = box.next_live_vertex(v + 1)) {
         const auto p = box.vertex_position(v);
         min_x = std::min(min_x, p[0]);
@@ -152,12 +152,12 @@ TEST(PrimitivesBox, RespectsDistinctDimensions) {
 TEST(Primitives, CylinderFaceCountFollowsSegments) {
     // Eight sides plus two caps. A generator that hardcodes segment count
     // (e.g. always 24) fails this at segments=8.
-    const auto m = pluton::make_cylinder(1.0f, 2.0f, 8);
+    const auto m = bermake::make_cylinder(1.0f, 2.0f, 8);
     EXPECT_EQ(FaceCount(m), 10u);
 }
 
 TEST(Primitives, CylinderFaceCountFollowsDifferentSegments) {
-    const auto m = pluton::make_cylinder(1.0f, 2.0f, 6);
+    const auto m = bermake::make_cylinder(1.0f, 2.0f, 6);
     EXPECT_EQ(FaceCount(m), 8u);
 }
 
@@ -168,8 +168,8 @@ TEST(Primitives, CylinderVerticesLieOnRadiusAndHeightRange) {
     // `radius` from the z-axis and within [0, height] in z.
     const float radius = 1.5f;
     const float height = 2.0f;
-    const auto m = pluton::make_cylinder(radius, height, 8);
-    for (std::uint32_t v = m.next_live_vertex(0); v != pluton::HalfEdgeMesh::INVALID_ID;
+    const auto m = bermake::make_cylinder(radius, height, 8);
+    for (std::uint32_t v = m.next_live_vertex(0); v != bermake::HalfEdgeMesh::INVALID_ID;
          v = m.next_live_vertex(v + 1)) {
         const auto p = m.vertex_position(v);
         const float r = std::sqrt(p[0] * p[0] + p[1] * p[1]);
@@ -184,21 +184,21 @@ TEST(Primitives, CylinderVerticesLieOnRadiusAndHeightRange) {
 TEST(Primitives, ConeFaceCountFollowsSegments) {
     // Eight sides plus one base. A generator that hardcodes segment count
     // fails this at segments=8.
-    const auto m = pluton::make_cone(1.0f, 2.0f, 8);
+    const auto m = bermake::make_cone(1.0f, 2.0f, 8);
     EXPECT_EQ(FaceCount(m), 9u);
 }
 
 TEST(Primitives, ConeFaceCountFollowsDifferentSegments) {
-    const auto m = pluton::make_cone(1.0f, 2.0f, 5);
+    const auto m = bermake::make_cone(1.0f, 2.0f, 5);
     EXPECT_EQ(FaceCount(m), 6u);
 }
 
 TEST(Primitives, ConeBaseOnRadiusApexAtHeight) {
     const float radius = 1.5f;
     const float height = 3.0f;
-    const auto m = pluton::make_cone(radius, height, 10);
+    const auto m = bermake::make_cone(radius, height, 10);
     bool found_apex = false;
-    for (std::uint32_t v = m.next_live_vertex(0); v != pluton::HalfEdgeMesh::INVALID_ID;
+    for (std::uint32_t v = m.next_live_vertex(0); v != bermake::HalfEdgeMesh::INVALID_ID;
          v = m.next_live_vertex(v + 1)) {
         const auto p = m.vertex_position(v);
         if (NearlyEqual(p[2], height, 1e-4f)) {
@@ -219,7 +219,7 @@ TEST(Primitives, ConeBaseOnRadiusApexAtHeight) {
 // --- make_sphere -----------------------------------------------------------
 
 TEST(Primitives, SphereHasNoDegenerateFaces) {
-    const auto m = pluton::make_sphere(1.0f, 6, 8);
+    const auto m = bermake::make_sphere(1.0f, 6, 8);
     EXPECT_GT(FaceCount(m), 0u);
 }
 
@@ -227,9 +227,9 @@ TEST(Primitives, SphereFaceCountFollowsRingsAndSegments) {
     // rings * segments faces (2 pole fans of `segments` triangles each, plus
     // (rings - 2) interior latitude bands of `segments` quads each). A
     // generator that ignores rings or segments fails this.
-    const auto m6x8 = pluton::make_sphere(1.0f, 6, 8);
+    const auto m6x8 = bermake::make_sphere(1.0f, 6, 8);
     EXPECT_EQ(FaceCount(m6x8), 48u);
-    const auto m4x10 = pluton::make_sphere(1.0f, 4, 10);
+    const auto m4x10 = bermake::make_sphere(1.0f, 4, 10);
     EXPECT_EQ(FaceCount(m4x10), 40u);
 }
 
@@ -239,8 +239,8 @@ TEST(Primitives, SphereVerticesLieOnSurface) {
     // generator with a wrong latitude formula (e.g. linear in z instead of
     // cos(phi)) produces the right vertex/face counts but fails this.
     const float radius = 2.0f;
-    const auto m = pluton::make_sphere(radius, 8, 12);
-    for (std::uint32_t v = m.next_live_vertex(0); v != pluton::HalfEdgeMesh::INVALID_ID;
+    const auto m = bermake::make_sphere(radius, 8, 12);
+    for (std::uint32_t v = m.next_live_vertex(0); v != bermake::HalfEdgeMesh::INVALID_ID;
          v = m.next_live_vertex(v + 1)) {
         const auto p = m.vertex_position(v);
         const float dx = p[0];
@@ -257,10 +257,10 @@ TEST(Primitives, EveryPrimitiveIsWatertight) {
     // Every edge borders exactly two faces on a closed solid. Distinct
     // width/depth/height on the box rules out a coincidental pass from
     // symmetry.
-    EXPECT_TRUE(IsWatertight(pluton::make_box(1.0f, 2.0f, 3.0f)));
-    EXPECT_TRUE(IsWatertight(pluton::make_cylinder(1.0f, 2.0f, 12)));
-    EXPECT_TRUE(IsWatertight(pluton::make_cone(1.0f, 2.0f, 12)));
-    EXPECT_TRUE(IsWatertight(pluton::make_sphere(1.0f, 8, 12)));
+    EXPECT_TRUE(IsWatertight(bermake::make_box(1.0f, 2.0f, 3.0f)));
+    EXPECT_TRUE(IsWatertight(bermake::make_cylinder(1.0f, 2.0f, 12)));
+    EXPECT_TRUE(IsWatertight(bermake::make_cone(1.0f, 2.0f, 12)));
+    EXPECT_TRUE(IsWatertight(bermake::make_sphere(1.0f, 8, 12)));
 }
 
 // --- Argument validation ----------------------------------------------
@@ -272,43 +272,43 @@ TEST(Primitives, EveryPrimitiveIsWatertight) {
 // from Python). These generators must reject such values instead.
 
 TEST(Primitives, CylinderRejectsTooFewSegments) {
-    EXPECT_THROW(pluton::make_cylinder(1.0f, 1.0f, 2), std::invalid_argument);
-    EXPECT_THROW(pluton::make_cylinder(1.0f, 1.0f, 0), std::invalid_argument);
-    EXPECT_THROW(pluton::make_cylinder(1.0f, 1.0f, -1), std::invalid_argument);
+    EXPECT_THROW(bermake::make_cylinder(1.0f, 1.0f, 2), std::invalid_argument);
+    EXPECT_THROW(bermake::make_cylinder(1.0f, 1.0f, 0), std::invalid_argument);
+    EXPECT_THROW(bermake::make_cylinder(1.0f, 1.0f, -1), std::invalid_argument);
 }
 
 TEST(Primitives, CylinderAcceptsMinimumSegments) {
     // 3 is the smallest segment count that encloses a volume instead of
     // collapsing the side quads and caps onto a plane.
-    const auto m = pluton::make_cylinder(1.0f, 1.0f, 3);
+    const auto m = bermake::make_cylinder(1.0f, 1.0f, 3);
     EXPECT_TRUE(IsWatertight(m));
     EXPECT_EQ(FaceCount(m), 5u);  // 3 sides + top + bottom
 }
 
 TEST(Primitives, ConeRejectsTooFewSegments) {
-    EXPECT_THROW(pluton::make_cone(1.0f, 1.0f, 2), std::invalid_argument);
-    EXPECT_THROW(pluton::make_cone(1.0f, 1.0f, 0), std::invalid_argument);
-    EXPECT_THROW(pluton::make_cone(1.0f, 1.0f, -1), std::invalid_argument);
+    EXPECT_THROW(bermake::make_cone(1.0f, 1.0f, 2), std::invalid_argument);
+    EXPECT_THROW(bermake::make_cone(1.0f, 1.0f, 0), std::invalid_argument);
+    EXPECT_THROW(bermake::make_cone(1.0f, 1.0f, -1), std::invalid_argument);
 }
 
 TEST(Primitives, ConeAcceptsMinimumSegments) {
-    const auto m = pluton::make_cone(1.0f, 1.0f, 3);
+    const auto m = bermake::make_cone(1.0f, 1.0f, 3);
     EXPECT_TRUE(IsWatertight(m));
     EXPECT_EQ(FaceCount(m), 4u);  // 3 sides + base
 }
 
 TEST(Primitives, SphereRejectsTooFewRingsOrSegments) {
-    EXPECT_THROW(pluton::make_sphere(1.0f, 1, 8), std::invalid_argument);
-    EXPECT_THROW(pluton::make_sphere(1.0f, 0, 8), std::invalid_argument);
-    EXPECT_THROW(pluton::make_sphere(1.0f, 6, 2), std::invalid_argument);
-    EXPECT_THROW(pluton::make_sphere(1.0f, 6, 0), std::invalid_argument);
+    EXPECT_THROW(bermake::make_sphere(1.0f, 1, 8), std::invalid_argument);
+    EXPECT_THROW(bermake::make_sphere(1.0f, 0, 8), std::invalid_argument);
+    EXPECT_THROW(bermake::make_sphere(1.0f, 6, 2), std::invalid_argument);
+    EXPECT_THROW(bermake::make_sphere(1.0f, 6, 0), std::invalid_argument);
 }
 
 TEST(Primitives, SphereAcceptsMinimumRingsAndSegments) {
     // rings = 2 leaves a single interior (equatorial) ring shared by both
     // pole fans and no interior bands — a valid bipyramid, not degenerate.
     // segments = 3 is the smallest polygon a fan/cap can close.
-    const auto m = pluton::make_sphere(1.0f, 2, 3);
+    const auto m = bermake::make_sphere(1.0f, 2, 3);
     EXPECT_TRUE(IsWatertight(m));
     EXPECT_EQ(FaceCount(m), 6u);  // 2 pole fans * 3 segments, no interior bands
 }

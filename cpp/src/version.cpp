@@ -1,9 +1,9 @@
-#include "pluton/version.h"
+#include "bermake/version.h"
 
-namespace pluton {
+namespace bermake {
 
 std::string version() {
     return "0.13.0";
 }
 
-}  // namespace pluton
+}  // namespace bermake

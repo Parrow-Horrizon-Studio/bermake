@@ -11,7 +11,7 @@ if(CMAKE_HOST_WIN32 AND NOT DEFINED VCPKG_TARGET_TRIPLET)
 endif()
 
 # Project metadata
-project(pluton
+project(bermake
     VERSION 0.13.0
     DESCRIPTION "Polygonal 3D modeler for architecture"
     LANGUAGES CXX

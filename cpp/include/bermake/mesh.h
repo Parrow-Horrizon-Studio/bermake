@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace pluton {
+namespace bermake {
 
 /// A polygonal mesh stored as three flat, GPU-ready arrays.
 ///
@@ -50,4 +50,4 @@ public:
     }
 };
 
-}  // namespace pluton
+}  // namespace bermake

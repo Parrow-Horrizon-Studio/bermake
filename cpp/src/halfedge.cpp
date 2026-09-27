@@ -1,4 +1,4 @@
-#include "pluton/halfedge.h"
+#include "bermake/halfedge.h"
 
 #include <algorithm>
 #include <cassert>
@@ -6,7 +6,7 @@
 #include <cstring>
 #include <unordered_set>
 
-namespace pluton {
+namespace bermake {
 
 // --- Static helpers ----------------------------------------------------
 
@@ -58,7 +58,7 @@ namespace {
 //     three sites write the same Face::normal field, and since M7.5b the
 //     renderer reads it out of face_triangle_buffer to build each face's
 //     TEXTURE PROJECTION BASIS (_face_uv_geometry in
-//     python/pluton/viewport/scene_renderer.py), on top of lighting, picking
+//     python/bermake/viewport/scene_renderer.py), on top of lighting, picking
 //     and coplanarity. One field with two different definitions of
 //     "degenerate" is how a value the geometric path would have rejected
 //     reached the renderer anyway. There is now one definition.
@@ -107,7 +107,7 @@ constexpr float kDegenerateAreaVectorLengthThreshold = 1e-7f;
 // FaceNormalNewellAgreesInSignWithFirstThreeOnRandomConvexFaces.
 //
 // Written as sum (p_i - p_i+1) x-paired with (p_i + p_i+1), the same form as
-// _newell_normal in python/pluton/scene/scene.py so the two implementations
+// _newell_normal in python/bermake/scene/scene.py so the two implementations
 // agree term for term; it is algebraically identical to sum p_i x p_i+1
 // because the p_i*p_i products telescope away around a closed loop.
 // Accumulated in double: the terms are products of coordinates, so a face far
@@ -167,7 +167,7 @@ AreaVector newell_area_vector(std::size_t n, PositionAt position_at) {
 // — and emits 6 corners. It is earcut on a genuinely collinear loop that
 // produces no triangles, which is a property of the triangulator and not of
 // this function. So the sentinel does reach consumers, and each one owns its
-// own guard: plane_bases in python/pluton/viewport/uv_projection.py answers a
+// own guard: plane_bases in python/bermake/viewport/uv_projection.py answers a
 // zero-length normal with the world XY basis, and phong.vert falls back to a
 // fixed direction for LIGHTING only (see the comment there).
 std::array<float, 3> unit_normal_from_area_vector(const AreaVector& a) {
@@ -543,7 +543,7 @@ inline float len3(std::array<float, 3> a) {
 // means. This function feeds faces_are_coplanar and recompute_face_normal
 // (reached from set_vertex_position on every interactive vertex drag), which
 // is where the robustness argument for the surviving threshold comes from.
-std::array<float, 3> compute_face_normal_geometric(const pluton::HalfEdgeMesh& m,
+std::array<float, 3> compute_face_normal_geometric(const bermake::HalfEdgeMesh& m,
                                                    std::uint32_t f_id) {
     auto loop = m.face_loop_vertices(f_id);
     if (loop.size() < 3) return {0, 0, 0};
@@ -571,7 +571,7 @@ std::vector<std::uint32_t> loop_with_inserted(const std::vector<std::uint32_t>& 
 
 }  // namespace
 
-void pluton::HalfEdgeMesh::recompute_face_normal(std::uint32_t f_id) {
+void bermake::HalfEdgeMesh::recompute_face_normal(std::uint32_t f_id) {
     if (!face_is_live(f_id)) return;
     auto n = compute_face_normal_geometric(*this, f_id);  // {0,0,0} if degenerate
     faces_[f_id].normal[0] = n[0];
@@ -579,7 +579,7 @@ void pluton::HalfEdgeMesh::recompute_face_normal(std::uint32_t f_id) {
     faces_[f_id].normal[2] = n[2];
 }
 
-void pluton::HalfEdgeMesh::set_vertex_position(std::uint32_t v_id, float x, float y, float z) {
+void bermake::HalfEdgeMesh::set_vertex_position(std::uint32_t v_id, float x, float y, float z) {
     if (v_id >= vertices_.size() || !vertices_[v_id].alive) {
         throw std::out_of_range("HalfEdgeMesh::set_vertex_position: v_id " + std::to_string(v_id) +
                                 " is not live");
@@ -608,8 +608,8 @@ void pluton::HalfEdgeMesh::set_vertex_position(std::uint32_t v_id, float x, floa
     dirty_ = true;
 }
 
-bool pluton::HalfEdgeMesh::faces_are_coplanar(std::uint32_t f1_id, std::uint32_t f2_id,
-                                              float angle_tol_cos, float dist_tol) const {
+bool bermake::HalfEdgeMesh::faces_are_coplanar(std::uint32_t f1_id, std::uint32_t f2_id,
+                                               float angle_tol_cos, float dist_tol) const {
     if (!face_is_live(f1_id) || !face_is_live(f2_id)) return false;
     auto n1 = compute_face_normal_geometric(*this, f1_id);
     auto n2 = compute_face_normal_geometric(*this, f2_id);
@@ -642,7 +642,7 @@ bool pluton::HalfEdgeMesh::faces_are_coplanar(std::uint32_t f1_id, std::uint32_t
     return check_side(n1, f1_id, f2_id) && check_side(n2, f2_id, f1_id);
 }
 
-std::uint32_t pluton::HalfEdgeMesh::dissolve_edge(std::uint32_t e_id) {
+std::uint32_t bermake::HalfEdgeMesh::dissolve_edge(std::uint32_t e_id) {
     // The two half-edges of edge e are at slab indices 2e and 2e+1.
     std::uint32_t he_a = 2u * e_id;
     std::uint32_t he_b = 2u * e_id + 1u;
@@ -805,7 +805,7 @@ std::uint32_t pluton::HalfEdgeMesh::dissolve_edge(std::uint32_t e_id) {
     return new_face;
 }
 
-std::array<std::uint32_t, 2> pluton::HalfEdgeMesh::split_face(
+std::array<std::uint32_t, 2> bermake::HalfEdgeMesh::split_face(
     std::uint32_t f_id, const std::vector<std::uint32_t>& loop_a,
     const std::vector<std::int32_t>& tris_a, const std::vector<std::uint32_t>& loop_b,
     const std::vector<std::int32_t>& tris_b) {
@@ -946,8 +946,8 @@ std::array<std::uint32_t, 2> pluton::HalfEdgeMesh::split_face(
     return {a, b};
 }
 
-std::optional<pluton::SplitEdgeResult> pluton::HalfEdgeMesh::split_edge(std::uint32_t e_id,
-                                                                        float t) {
+std::optional<bermake::SplitEdgeResult> bermake::HalfEdgeMesh::split_edge(std::uint32_t e_id,
+                                                                          float t) {
     if (!edge_is_live(e_id)) return std::nullopt;
     if (!(t > 0.0f && t < 1.0f)) return std::nullopt;
 
@@ -1069,4 +1069,4 @@ std::pair<std::vector<float>, std::vector<float>> HalfEdgeMesh::face_triangle_bu
     return {std::move(positions), std::move(normals)};
 }
 
-}  // namespace pluton
+}  // namespace bermake

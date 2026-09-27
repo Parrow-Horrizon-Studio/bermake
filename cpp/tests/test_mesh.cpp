@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 
-#include "pluton/mesh.h"
+#include "bermake/mesh.h"
 
 TEST(MeshTest, DefaultConstructedIsEmpty) {
-    pluton::Mesh m;
+    bermake::Mesh m;
     EXPECT_EQ(m.vertex_count(), 0u);
     EXPECT_EQ(m.triangle_count(), 0u);
     EXPECT_TRUE(m.positions.empty());
@@ -12,7 +12,7 @@ TEST(MeshTest, DefaultConstructedIsEmpty) {
 }
 
 TEST(MeshTest, CountsMatchArrayLengths) {
-    pluton::Mesh m;
+    bermake::Mesh m;
     // 3 vertices, 1 triangle
     m.positions = {0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f};
     m.normals = {0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 0.f, 0.f, 1.f};
@@ -23,12 +23,12 @@ TEST(MeshTest, CountsMatchArrayLengths) {
 }
 
 TEST(MeshTest, IsValidOnDefaultConstructed) {
-    pluton::Mesh m;
+    bermake::Mesh m;
     EXPECT_TRUE(m.is_valid());
 }
 
 TEST(MeshTest, IsValidOnWellFormedMesh) {
-    pluton::Mesh m;
+    bermake::Mesh m;
     m.positions = {0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f};
     m.normals = {0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 0.f, 0.f, 1.f};
     m.indices = {0u, 1u, 2u};
@@ -36,7 +36,7 @@ TEST(MeshTest, IsValidOnWellFormedMesh) {
 }
 
 TEST(MeshTest, IsInvalidWhenNormalsLengthMismatchesPositions) {
-    pluton::Mesh m;
+    bermake::Mesh m;
     m.positions = {0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f};  // 3 vertices
     m.normals = {0.f, 0.f, 1.f};                                  // 1 normal
     m.indices = {0u, 1u, 2u};
@@ -44,14 +44,14 @@ TEST(MeshTest, IsInvalidWhenNormalsLengthMismatchesPositions) {
 }
 
 TEST(MeshTest, IsInvalidWhenPositionsNotMultipleOfThree) {
-    pluton::Mesh m;
+    bermake::Mesh m;
     m.positions = {0.f, 0.f, 0.f, 1.f, 0.f};  // 5 floats — not a whole number of XYZ triples
     m.normals = {0.f, 0.f, 1.f, 0.f, 0.f};
     EXPECT_FALSE(m.is_valid());
 }
 
 TEST(MeshTest, IsInvalidWhenIndicesNotMultipleOfThree) {
-    pluton::Mesh m;
+    bermake::Mesh m;
     m.positions = {0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f};
     m.normals = {0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 0.f, 0.f, 1.f};
     m.indices = {0u, 1u};  // 2 indices — not a whole triangle

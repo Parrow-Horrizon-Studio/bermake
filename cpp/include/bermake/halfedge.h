@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-namespace pluton {
+namespace bermake {
 
 /// Result of HalfEdgeMesh::split_edge — the ids of the entities it created.
 /// face_a / face_b are INVALID_ID for a boundary edge's empty side.
@@ -21,7 +21,7 @@ struct SplitEdgeResult {
     std::uint32_t face_b;  // rebuilt face on he(2e+1) side, or INVALID_ID
 };
 
-/// Half-edge mesh — the topology source of truth for Pluton's M3+ kernel.
+/// Half-edge mesh — the topology source of truth for Bermake's M3+ kernel.
 ///
 /// Storage layout:
 ///   - Vertices, half-edges, and faces live in std::vector slabs.
@@ -189,4 +189,4 @@ private:
     void recompute_face_normal(std::uint32_t f_id);
 };
 
-}  // namespace pluton
+}  // namespace bermake

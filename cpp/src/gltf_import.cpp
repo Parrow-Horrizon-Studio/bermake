@@ -1,4 +1,4 @@
-#include "pluton/gltf_import.h"
+#include "bermake/gltf_import.h"
 
 #include <assimp/material.h>
 #include <assimp/postprocess.h>
@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <utility>
 
-namespace pluton {
+namespace bermake {
 
 namespace {
 
@@ -113,4 +113,4 @@ ImportedScene import_gltf(const std::string& path) {
     return result;
 }
 
-}  // namespace pluton
+}  // namespace bermake

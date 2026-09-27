@@ -8,19 +8,19 @@
 
 #include <cstdint>
 
-#include "pluton/gltf_import.h"
-#include "pluton/halfedge.h"
-#include "pluton/mesh.h"
-#include "pluton/primitives.h"
-#include "pluton/ray_intersect.h"
-#include "pluton/version.h"
+#include "bermake/gltf_import.h"
+#include "bermake/halfedge.h"
+#include "bermake/mesh.h"
+#include "bermake/primitives.h"
+#include "bermake/ray_intersect.h"
+#include "bermake/version.h"
 
 namespace nb = nanobind;
-using pluton::HalfEdgeMesh;
-using pluton::Mesh;
-using pluton::ray_intersect_mesh;
-using pluton::RayMeshHit;
-using pluton::SplitEdgeResult;
+using bermake::HalfEdgeMesh;
+using bermake::Mesh;
+using bermake::ray_intersect_mesh;
+using bermake::RayMeshHit;
+using bermake::SplitEdgeResult;
 
 namespace {
 
@@ -74,9 +74,9 @@ nb::ndarray<const std::uint32_t, nb::numpy, nb::shape<-1>> as_index_array(
 // the shutdown-time message as expected noise. See:
 // https://nanobind.readthedocs.io/en/latest/refleaks.html
 NB_MODULE(_core, m) {
-    m.doc() = "Pluton C++ core module";
+    m.doc() = "Bermake C++ core module";
 
-    m.def("version", &pluton::version, "Returns the Pluton library version as a string.");
+    m.def("version", &bermake::version, "Returns the Bermake library version as a string.");
 
     nb::class_<Mesh>(m, "Mesh", "Polygonal mesh: positions, normals, indices.")
         .def(nb::init<>())
@@ -95,7 +95,7 @@ NB_MODULE(_core, m) {
         .def_prop_ro("vertex_count", &Mesh::vertex_count, "Number of vertices.")
         .def_prop_ro("triangle_count", &Mesh::triangle_count, "Number of triangles.");
 
-    m.def("make_cube", &pluton::make_cube, nb::arg("size") = 1.0f,
+    m.def("make_cube", &bermake::make_cube, nb::arg("size") = 1.0f,
           "Create an axis-aligned cube of the given edge length, "
           "with its bottom face on the ground plane (z = 0).");
 
@@ -185,19 +185,19 @@ NB_MODULE(_core, m) {
 
         .def_ro_static("INVALID_ID", &HalfEdgeMesh::INVALID_ID);
 
-    m.def("make_box", &pluton::make_box, nb::arg("width") = 1.0f, nb::arg("depth") = 1.0f,
+    m.def("make_box", &bermake::make_box, nb::arg("width") = 1.0f, nb::arg("depth") = 1.0f,
           nb::arg("height") = 1.0f,
           "Create an axis-aligned box as a HalfEdgeMesh, centred on the origin "
           "in x and y with its base on the ground plane (z = 0).");
-    m.def("make_cylinder", &pluton::make_cylinder, nb::arg("radius") = 1.0f,
+    m.def("make_cylinder", &bermake::make_cylinder, nb::arg("radius") = 1.0f,
           nb::arg("height") = 1.0f, nb::arg("segments") = 24,
           "Create a cylinder as a HalfEdgeMesh, centred on the origin in x and "
           "y with its base on the ground plane (z = 0).");
-    m.def("make_cone", &pluton::make_cone, nb::arg("radius") = 1.0f, nb::arg("height") = 1.0f,
+    m.def("make_cone", &bermake::make_cone, nb::arg("radius") = 1.0f, nb::arg("height") = 1.0f,
           nb::arg("segments") = 24,
           "Create a cone as a HalfEdgeMesh, centred on the origin in x and y "
           "with its base on the ground plane (z = 0) and apex at z = height.");
-    m.def("make_sphere", &pluton::make_sphere, nb::arg("radius") = 1.0f, nb::arg("rings") = 12,
+    m.def("make_sphere", &bermake::make_sphere, nb::arg("radius") = 1.0f, nb::arg("rings") = 12,
           nb::arg("segments") = 24,
           "Create a UV-sphere as a HalfEdgeMesh, centred on the origin in x "
           "and y with its bottom pole on the ground plane (z = 0).");
@@ -209,7 +209,7 @@ NB_MODULE(_core, m) {
         .def_ro("face_a", &SplitEdgeResult::face_a)
         .def_ro("face_b", &SplitEdgeResult::face_b);
 
-    nb::class_<RayMeshHit>(m, "RayMeshHit", "Result of pluton::ray_intersect_mesh")
+    nb::class_<RayMeshHit>(m, "RayMeshHit", "Result of bermake::ray_intersect_mesh")
         .def_ro("face_id", &RayMeshHit::face_id)
         .def_ro("t", &RayMeshHit::t)
         .def_ro("point", &RayMeshHit::point, "Hit point in world coordinates (3-tuple).");
@@ -218,30 +218,30 @@ NB_MODULE(_core, m) {
           nb::arg("direction"), "Brute-force ray-mesh face picking. Returns RayMeshHit or None.");
 
     // M6c: glTF/GLB import bridge (Assimp) — neutral plain-data structs.
-    nb::class_<pluton::ImportedImage>(m, "ImportedImage")
-        .def_ro("name", &pluton::ImportedImage::name)
-        .def_ro("data", &pluton::ImportedImage::data)
-        .def_ro("format_hint", &pluton::ImportedImage::format_hint);
-    nb::class_<pluton::ImportedMaterial>(m, "ImportedMaterial")
-        .def_ro("name", &pluton::ImportedMaterial::name)
-        .def_ro("base_color", &pluton::ImportedMaterial::base_color)
-        .def_ro("texture_index", &pluton::ImportedMaterial::texture_index)
-        .def_ro("texture_uri", &pluton::ImportedMaterial::texture_uri);
-    nb::class_<pluton::ImportedMesh>(m, "ImportedMesh")
-        .def_ro("positions", &pluton::ImportedMesh::positions)
-        .def_ro("uvs", &pluton::ImportedMesh::uvs)
-        .def_ro("triangles", &pluton::ImportedMesh::triangles)
-        .def_ro("material_index", &pluton::ImportedMesh::material_index);
-    nb::class_<pluton::ImportedNode>(m, "ImportedNode")
-        .def_ro("name", &pluton::ImportedNode::name)
-        .def_ro("parent", &pluton::ImportedNode::parent)
-        .def_ro("transform", &pluton::ImportedNode::transform)
-        .def_ro("mesh_indices", &pluton::ImportedNode::mesh_indices);
-    nb::class_<pluton::ImportedScene>(m, "ImportedScene")
-        .def_ro("nodes", &pluton::ImportedScene::nodes)
-        .def_ro("meshes", &pluton::ImportedScene::meshes)
-        .def_ro("materials", &pluton::ImportedScene::materials)
-        .def_ro("images", &pluton::ImportedScene::images);
-    m.def("import_gltf", &pluton::import_gltf, nb::arg("path"),
+    nb::class_<bermake::ImportedImage>(m, "ImportedImage")
+        .def_ro("name", &bermake::ImportedImage::name)
+        .def_ro("data", &bermake::ImportedImage::data)
+        .def_ro("format_hint", &bermake::ImportedImage::format_hint);
+    nb::class_<bermake::ImportedMaterial>(m, "ImportedMaterial")
+        .def_ro("name", &bermake::ImportedMaterial::name)
+        .def_ro("base_color", &bermake::ImportedMaterial::base_color)
+        .def_ro("texture_index", &bermake::ImportedMaterial::texture_index)
+        .def_ro("texture_uri", &bermake::ImportedMaterial::texture_uri);
+    nb::class_<bermake::ImportedMesh>(m, "ImportedMesh")
+        .def_ro("positions", &bermake::ImportedMesh::positions)
+        .def_ro("uvs", &bermake::ImportedMesh::uvs)
+        .def_ro("triangles", &bermake::ImportedMesh::triangles)
+        .def_ro("material_index", &bermake::ImportedMesh::material_index);
+    nb::class_<bermake::ImportedNode>(m, "ImportedNode")
+        .def_ro("name", &bermake::ImportedNode::name)
+        .def_ro("parent", &bermake::ImportedNode::parent)
+        .def_ro("transform", &bermake::ImportedNode::transform)
+        .def_ro("mesh_indices", &bermake::ImportedNode::mesh_indices);
+    nb::class_<bermake::ImportedScene>(m, "ImportedScene")
+        .def_ro("nodes", &bermake::ImportedScene::nodes)
+        .def_ro("meshes", &bermake::ImportedScene::meshes)
+        .def_ro("materials", &bermake::ImportedScene::materials)
+        .def_ro("images", &bermake::ImportedScene::images);
+    m.def("import_gltf", &bermake::import_gltf, nb::arg("path"),
           "Load a glTF/GLB file into a neutral ImportedScene (M6c import bridge).");
 }

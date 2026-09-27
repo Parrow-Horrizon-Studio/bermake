@@ -1,9 +1,9 @@
 #pragma once
 
-#include "pluton/halfedge.h"
-#include "pluton/mesh.h"
+#include "bermake/halfedge.h"
+#include "bermake/mesh.h"
 
-namespace pluton {
+namespace bermake {
 
 /// Axis-aligned cube primitive.
 ///
@@ -67,4 +67,4 @@ HalfEdgeMesh make_cone(float radius = 1.0f, float height = 1.0f, int segments = 
 ///         longitude steps collapse each ring onto a degenerate line/point).
 HalfEdgeMesh make_sphere(float radius = 1.0f, int rings = 12, int segments = 24);
 
-}  // namespace pluton
+}  // namespace bermake

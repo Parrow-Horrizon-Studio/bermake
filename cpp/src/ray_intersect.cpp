@@ -1,9 +1,9 @@
-#include "pluton/ray_intersect.h"
+#include "bermake/ray_intersect.h"
 
 #include <cmath>
 #include <limits>
 
-namespace pluton {
+namespace bermake {
 
 namespace {
 
@@ -99,4 +99,4 @@ std::optional<RayMeshHit> ray_intersect_mesh(const HalfEdgeMesh& mesh,
     return best;
 }
 
-}  // namespace pluton
+}  // namespace bermake

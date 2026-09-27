@@ -2,9 +2,9 @@
 
 #include <string>
 
-namespace pluton {
+namespace bermake {
 
-/// Returns the Pluton library version as a string (e.g., "0.0.1").
+/// Returns the Bermake library version as a string (e.g., "0.0.1").
 std::string version();
 
-}  // namespace pluton
+}  // namespace bermake

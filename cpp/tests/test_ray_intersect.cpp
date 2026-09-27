@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include "pluton/halfedge.h"
-#include "pluton/ray_intersect.h"
+#include "bermake/halfedge.h"
+#include "bermake/ray_intersect.h"
 
-using pluton::HalfEdgeMesh;
-using pluton::ray_intersect_mesh;
-using pluton::RayMeshHit;
+using bermake::HalfEdgeMesh;
+using bermake::ray_intersect_mesh;
+using bermake::RayMeshHit;
 
 namespace {
 
