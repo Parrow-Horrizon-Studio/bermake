@@ -12,7 +12,7 @@ endif()
 
 # Project metadata
 project(bermake
-    VERSION 0.13.0
+    VERSION 0.14.0
     DESCRIPTION "Polygonal 3D modeler for architecture"
     LANGUAGES CXX
 )
