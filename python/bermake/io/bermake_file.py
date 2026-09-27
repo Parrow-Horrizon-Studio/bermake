@@ -65,7 +65,14 @@ def load_document(path) -> LoadedDocument:
     try:
         with zipfile.ZipFile(path, "r") as zf:
             manifest = json.loads(zf.read(_MANIFEST))
-            if manifest.get("format") != "bermake":
+            fmt = manifest.get("format")
+            if fmt == "pluton":
+                raise BermakeFormatError(
+                    "this file was written by Pluton, the former name of Bermake. "
+                    "The format was renamed in v0.14.0 and there is no conversion "
+                    "path, so it cannot be opened."
+                )
+            if fmt != "bermake":
                 raise BermakeFormatError("not a Bermake file (bad 'format' in manifest)")
             ver = manifest.get("schema_version")
             # Equal-or-older than SCHEMA_VERSION is intentionally the accept path (no

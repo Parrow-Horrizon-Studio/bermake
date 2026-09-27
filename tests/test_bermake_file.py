@@ -71,6 +71,23 @@ def test_load_rejects_foreign_format(tmp_path):
         load_document(path)
 
 
+def test_a_pluton_file_is_rejected_with_a_message_that_names_pluton(tmp_path):
+    """Spec D2: the break is deliberate, so it has to explain itself.
+
+    A generic wrong-format message would leave a tester with a file that will
+    not open and no idea why. The assertion checks the message, not merely that
+    an exception was raised, because the message is the whole deliverable here.
+    """
+    path = tmp_path / "old.berm"
+    with zipfile.ZipFile(path, "w") as zf:
+        zf.writestr("manifest.json", json.dumps({"format": "pluton", "schema_version": 9}))
+        zf.writestr("document.json", "{}")
+
+    with pytest.raises(BermakeFormatError) as excinfo:
+        load_document(path)
+    assert "Pluton" in str(excinfo.value)
+
+
 def test_load_rejects_non_zip(tmp_path):
     path = tmp_path / "garbage.berm"
     path.write_text("not a zip at all")
