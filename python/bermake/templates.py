@@ -104,7 +104,7 @@ TEMPLATES: tuple[Template, ...] = (
     Template(
         key="studio",
         name="Studio",
-        description="Dark background, metres. Bermake's look through v0.12.",
+        description="Dark background, metres. The viewport's default before environment presets.",
         units=Units(
             system=UnitSystem.METRIC,
             metric_unit="m",

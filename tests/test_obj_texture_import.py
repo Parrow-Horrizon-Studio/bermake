@@ -226,6 +226,7 @@ def test_the_io_package_imports_no_qt():
     import pathlib
 
     root = pathlib.Path(__file__).resolve().parent.parent / "python" / "bermake" / "io"
+    assert root.is_dir()  # guard: a wrong derived path must fail loudly, not glob to nothing
     offenders = [
         p.name
         for p in root.glob("*.py")

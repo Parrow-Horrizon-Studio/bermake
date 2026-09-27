@@ -2197,7 +2197,7 @@ class MainWindow(QMainWindow):
         )
 
     def _prompt_open_path(
-        self, file_filter: str = "Bermake files (*.berm)", title: str = "Open"
+        self, file_filter: str = "Bermake files (*.berm);;All files (*)", title: str = "Open"
     ) -> str | None:
         """Return a chosen open path (or None). Overridable for testing."""
         from PySide6.QtWidgets import QFileDialog

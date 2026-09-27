@@ -153,3 +153,20 @@ def test_open_failure_keeps_current_model(app, monkeypatch):
     win._on_file_open()
     assert win._model.root is before_root      # unchanged
     assert shown.get("called") is True         # error surfaced
+
+
+def test_open_dialog_default_filter_includes_all_files():
+    """The Open dialog's default filter must offer an all-files entry.
+
+    A document written by the old (pre-rename) application does not match
+    "*.berm". Without an all-files entry alongside it, that document would
+    simply not appear in the dialog: the user would see an empty folder,
+    read it as lost work, and never reach the error message that names the
+    old format and explains why it will not open.
+    """
+    import inspect
+
+    default_filter = inspect.signature(MainWindow._prompt_open_path).parameters["file_filter"].default
+    filters = [f.strip() for f in default_filter.split(";;")]
+    assert any(f.endswith("(*.berm)") for f in filters)
+    assert any(f.endswith("(*)") for f in filters)

@@ -7,6 +7,17 @@
 
 ---
 
+**A note on names throughout this document:** the project was named Pluton
+through v0.13.0 and renamed to Bermake at v0.14.0 (M7.8), which also renamed
+the native file extension (`.pluton` to `.berm`), the Python package and its
+modules (for example `bermake_file`, `bermake/io/`), and the CLI entry point.
+Passages below that describe milestones shipped before v0.14.0, including
+entries in section 6 and the open question in section 8, name these things
+by their current, post-rename identity rather than the name they carried at
+the time, unless a passage is explicitly about the rename itself.
+
+---
+
 ## 1. Vision
 
 **Bermake is an open-source, long-horizon, polygonal 3D modeler with CAD-like precision, aimed primarily at architectural 3D modeling. It is intended to be a free, self-hostable alternative to SketchUp Pro, following the Blender model of community-supported free software.**
@@ -172,12 +183,9 @@ Internal design principle: **the kernel knows about geometry, not the applicatio
 
 Bermake's development is organized into **6 Phases**. Phases 1–5 form a linear progression toward a feature-complete v1.0. Phase 6 is explicitly an **exploration tier** where priorities emerge from community needs.
 
-Version numbers are directional anchors, not commitments.
-
-A note on `.berm` before the milestones below: the native file extension was
-`.pluton` through v0.13.0 and became `.berm` at v0.14.0, when the project
-renamed to Bermake. Entries below that describe earlier milestones name the
-format's current identity rather than the name it carried at the time.
+Version numbers are directional anchors, not commitments. (See the note at
+the top of this document on names used in past-tense milestone entries
+below.)
 
 ### Phase 1 — Foundation *(v0.0 → v0.1)*
 
