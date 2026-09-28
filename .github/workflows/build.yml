@@ -3,11 +3,13 @@ name: Build & Test
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
     branches: [main]
 
-# Both jobs only read the repo: they check out, build, and run tests.
-# The github-script step below calls core.exportVariable only, never the API.
+# Every job only reads the repo, except release-draft, which runs on tags only
+# and is granted contents: write to create a draft release. The github-script
+# steps call core.exportVariable only, never the API.
 permissions:
   contents: read
 
@@ -105,6 +107,94 @@ jobs:
       - name: Run C++ tests
         working-directory: build/tests
         run: ctest --output-on-failure -C Release
+
+  package-windows:
+    name: Package (Windows)
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install Ninja
+        run: choco install ninja -y
+
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2  # v11.6
+        with:
+          vcpkgGitCommitId: "56bb2411609227288b70117ead2c47585ba07713"
+
+      - name: Set CMAKE_TOOLCHAIN_FILE
+        run: echo "CMAKE_TOOLCHAIN_FILE=$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake" >> $env:GITHUB_ENV
+
+      - name: Export GitHub Actions cache env for vcpkg
+        uses: actions/github-script@v8
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      # The archive is pinned by SHA-256 in tools/fetch_mesa.py, which verifies
+      # a restored copy exactly as it verifies a fresh download.
+      - name: Cache the pinned Mesa archive
+        uses: actions/cache@v6
+        with:
+          path: build/mesa-cache
+          key: mesa-26.2.3-3f3613adb43cfd0f
+
+      - name: Build the Windows package
+        env:
+          VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+        run: python tools/package_windows.py
+
+      - name: Upload the package
+        uses: actions/upload-artifact@v7
+        with:
+          name: bermake-windows
+          path: dist/*.zip
+          retention-days: 30
+          if-no-files-found: error
+
+  release-draft:
+    name: Draft release
+    needs: package-windows
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: The tag must match pyproject.toml
+        run: |
+          python3 - <<'EOF'
+          import os, sys, tomllib
+          declared = tomllib.load(open("pyproject.toml", "rb"))["project"]["version"]
+          tag = os.environ["GITHUB_REF_NAME"]
+          if tag != f"v{declared}":
+              sys.exit(f"tag {tag} does not match pyproject.toml version {declared}")
+          print(f"tag {tag} matches pyproject.toml")
+          EOF
+
+      - name: Download the package
+        uses: actions/download-artifact@v8
+        with:
+          name: bermake-windows
+          path: dist
+
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "$GITHUB_REF_NAME" dist/*.zip
+          --draft --verify-tag
+          --title "Bermake $GITHUB_REF_NAME"
+          --notes "Draft created by CI. Release notes to follow."
 
   lint:
     name: Lint
