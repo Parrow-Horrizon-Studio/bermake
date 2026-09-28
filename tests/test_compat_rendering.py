@@ -167,6 +167,46 @@ def test_a_checkout_relaunch_reuses_the_interpreter_arguments():
     assert command == ["C:/v/python.exe", "-m", "bermake.app"]
 
 
+def test_a_relaunch_also_drops_the_no_compatibility_flag():
+    """Both flags are one-launch overrides; the stored preference governs the
+    new process (final review I3)."""
+    command = cr.relaunch_command(
+        frozen=True,
+        executable="C:/B/Bermake.exe",
+        argv=["C:/B/Bermake.exe", "--no-compatibility-rendering", "C:/m/a.berm"],
+        orig_argv=["unused"],
+    )
+    assert command == ["C:/B/Bermake.exe", "C:/m/a.berm"]
+
+
+def test_a_failed_dll_load_leaves_pyopengl_untouched(tmp_path):
+    """enable_compatibility_rendering can fail (antivirus blocking the DLL);
+    app.py then carries on with the system driver, which only works if
+    PyOpenGL was not half re-pointed at Mesa (final review I3)."""
+    system_gl = object()
+    platform_module = SimpleNamespace(PLATFORM=SimpleNamespace(GL=system_gl))
+
+    def blocked_load(path):
+        raise OSError("[WinError 225] blocked")
+
+    with pytest.raises(OSError):
+        cr._redirect_pyopengl(
+            tmp_path / cr.MESA_LOADER, platform_module=platform_module, load=blocked_load
+        )
+    assert platform_module.PLATFORM.GL is system_gl
+
+
+def test_a_missing_symbol_leaves_pyopengl_untouched(tmp_path):
+    system_gl = object()
+    platform_module = SimpleNamespace(PLATFORM=SimpleNamespace(GL=system_gl))
+
+    with pytest.raises(AttributeError):
+        cr._redirect_pyopengl(
+            tmp_path / cr.MESA_LOADER, platform_module=platform_module, load=lambda p: object()
+        )
+    assert platform_module.PLATFORM.GL is system_gl
+
+
 def test_relaunch_starts_the_command_detached():
     started = []
 

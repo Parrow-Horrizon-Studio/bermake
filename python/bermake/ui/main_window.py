@@ -2341,30 +2341,13 @@ class MainWindow(QMainWindow):
             logger.error("failed to relaunch Bermake after closing for a rendering restart")
 
     def _prompt_gl_fallback(self, message: str, offer_restart: bool) -> bool:
-        """True to restart with compatibility rendering. Overridable for testing."""
-        from PySide6.QtWidgets import QMessageBox
+        """True to restart with compatibility rendering. Overridable for testing.
 
-        box = QMessageBox(self)
-        box.setIcon(QMessageBox.Icon.Warning)
-        box.setWindowTitle("Graphics problem")
-        box.setText("Bermake cannot draw the 3D view on this computer.")
-        if not offer_restart:
-            box.setInformativeText(
-                f"{message}\n\nDetails are in the log. Help > About Bermake shows where it is."
-            )
-            box.addButton(QMessageBox.StandardButton.Close)
-            box.exec()
-            return False
-        box.setInformativeText(
-            f"{message}\n\nBermake can restart using compatibility rendering, which works "
-            "on almost any computer but may be slower."
-        )
-        restart = box.addButton(
-            "Restart using compatibility rendering", QMessageBox.ButtonRole.AcceptRole
-        )
-        box.addButton(QMessageBox.StandardButton.Close)
-        box.exec()
-        return box.clickedButton() is restart
+        The dialog itself is shared with app.py's startup preflight.
+        """
+        from bermake.diagnostics.error_dialog import show_gl_fallback_dialog
+
+        return show_gl_fallback_dialog(message, offer_restart, self)
 
     def _prompt_restart_for_rendering(self, enabled: bool) -> bool:
         """True to restart now. Overridable for testing."""

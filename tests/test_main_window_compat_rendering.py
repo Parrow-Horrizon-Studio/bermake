@@ -169,3 +169,18 @@ def test_the_viewport_signal_reaches_the_window(main_window):
 def test_the_switch_is_in_the_help_menu(main_window):
     labels = [a.text() for a in main_window._menus["Help"].actions()]
     assert "Use Compatibility Rendering" in labels
+
+
+def test_the_window_uses_the_dialog_the_startup_preflight_uses(main_window, monkeypatch):
+    """One dialog for both checks (final review I1), parented to the window."""
+    import bermake.diagnostics.error_dialog as error_dialog
+
+    calls = []
+    monkeypatch.setattr(
+        error_dialog,
+        "show_gl_fallback_dialog",
+        lambda message, offer, parent=None: calls.append((message, offer, parent)) or True,
+    )
+
+    assert main_window._prompt_gl_fallback("no usable OpenGL", True) is True
+    assert calls == [("no usable OpenGL", True, main_window)]

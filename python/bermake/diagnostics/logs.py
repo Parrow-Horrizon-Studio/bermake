@@ -19,10 +19,12 @@ from __future__ import annotations
 
 import faulthandler
 import logging
+import os
 import platform
 import sys
 import threading
 from collections.abc import Callable
+from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from types import TracebackType
@@ -68,17 +70,38 @@ def configure_file_logging(
     return handler
 
 
-def enable_native_crash_log(log_dir: Path) -> TextIO:
-    """Point faulthandler at `native-crash.log`.
+def native_crash_session_line(version: str, *, now: datetime | None = None, pid: int) -> str:
+    """The line that opens each session in `native-crash.log`, so a trace in a
+    tester's attachment can be matched to the session that wrote it."""
+    stamp = (now or datetime.now().astimezone()).isoformat(timespec="seconds")
+    return f"--- Bermake {version or 'unknown version'} session {stamp} pid {pid} ---"
+
+
+def enable_native_crash_log(log_dir: Path, version: str = "") -> TextIO:
+    """Point faulthandler at `native-crash.log`, after a session line.
 
     The stream is returned so the caller can keep it alive: faulthandler holds
     only the file descriptor, and a closed stream would make the handler write
-    nowhere at the one moment it matters.
+    nowhere at the one moment it matters. Close it with close_native_crash_log.
     """
     log_dir.mkdir(parents=True, exist_ok=True)
     stream = (log_dir / NATIVE_CRASH_FILE_NAME).open("a", encoding="utf-8")
+    stream.write(native_crash_session_line(version, pid=os.getpid()) + "\n")
+    # faulthandler writes to the descriptor directly, past Python's buffer, so
+    # the session line must be on disk before any trace can follow it.
+    # CPython's faulthandler.enable() also flushes the file it is given; this
+    # flush keeps the order from depending on that detail.
+    stream.flush()
     faulthandler.enable(file=stream, all_threads=True)
     return stream
+
+
+def close_native_crash_log(stream: TextIO) -> None:
+    """Stop faulthandler before closing its file, never the other way round:
+    a crash in between would otherwise write to a closed descriptor, or to
+    whatever file reused its number."""
+    faulthandler.disable()
+    stream.close()
 
 
 class ErrorReporter:

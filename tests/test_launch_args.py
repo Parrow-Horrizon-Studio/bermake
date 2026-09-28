@@ -2,12 +2,13 @@
 
 from pathlib import Path
 
-from bermake.diagnostics.launch import COMPAT_FLAG, SMOKE_FLAG, parse_launch_args
+from bermake.diagnostics.launch import COMPAT_FLAG, NO_COMPAT_FLAG, SMOKE_FLAG, parse_launch_args
 
 
 def test_no_flags():
     args = parse_launch_args(["Bermake.exe"])
-    assert (args.compatibility_rendering, args.smoke_report) == (False, None)
+    assert (args.compatibility_rendering, args.no_compatibility_rendering) == (False, False)
+    assert args.smoke_report is None
     assert args.qt_argv == ["Bermake.exe"]
 
 
@@ -34,3 +35,23 @@ def test_an_abbreviated_flag_is_not_mistaken_for_ours():
     args = parse_launch_args(["Bermake.exe", "--compat"])
     assert args.compatibility_rendering is False
     assert args.qt_argv == ["Bermake.exe", "--compat"]
+
+
+def test_the_no_compatibility_flag_is_consumed():
+    args = parse_launch_args(["Bermake.exe", NO_COMPAT_FLAG, "C:/m/a.berm"])
+    assert args.no_compatibility_rendering is True
+    assert args.compatibility_rendering is False
+    assert args.qt_argv == ["Bermake.exe", "C:/m/a.berm"]
+
+
+def test_both_compatibility_flags_are_both_recorded():
+    """Parsing keeps both; app.wants_compatibility_rendering decides."""
+    args = parse_launch_args(["Bermake.exe", COMPAT_FLAG, NO_COMPAT_FLAG])
+    assert (args.compatibility_rendering, args.no_compatibility_rendering) == (True, True)
+    assert args.qt_argv == ["Bermake.exe"]
+
+
+def test_an_abbreviated_no_flag_is_not_mistaken_for_ours():
+    args = parse_launch_args(["Bermake.exe", "--no-compat"])
+    assert args.no_compatibility_rendering is False
+    assert args.qt_argv == ["Bermake.exe", "--no-compat"]

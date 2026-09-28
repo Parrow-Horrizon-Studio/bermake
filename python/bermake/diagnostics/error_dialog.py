@@ -1,4 +1,5 @@
-"""The dialog a tester sees when Bermake hits an uncaught error (M7.9, spec 2.4)."""
+"""The dialogs a tester sees when Bermake hits an uncaught error or cannot
+draw the 3D view (M7.9, spec 2.4)."""
 
 from __future__ import annotations
 
@@ -24,6 +25,38 @@ def show_error_dialog(log_dir: Path, parent=None) -> None:
     box.exec()
     if box.clickedButton() is open_folder:
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(log_dir)))
+
+
+def show_gl_fallback_dialog(message: str, offer_restart: bool, parent=None) -> bool:
+    """Explain an unusable OpenGL context; True to restart with compatibility rendering.
+
+    Shared by MainWindow (the viewport's own check) and app.py's preflight,
+    which runs before any window exists and so passes no parent. Modal and
+    synchronous, like show_error_dialog.
+    """
+    from PySide6.QtWidgets import QMessageBox
+
+    box = QMessageBox(parent)
+    box.setIcon(QMessageBox.Icon.Warning)
+    box.setWindowTitle("Graphics problem")
+    box.setText("Bermake cannot draw the 3D view on this computer.")
+    if not offer_restart:
+        box.setInformativeText(
+            f"{message}\n\nDetails are in the log. Help > About Bermake shows where it is."
+        )
+        box.addButton(QMessageBox.StandardButton.Close)
+        box.exec()
+        return False
+    box.setInformativeText(
+        f"{message}\n\nBermake can restart using compatibility rendering, which works "
+        "on almost any computer but may be slower."
+    )
+    restart = box.addButton(
+        "Restart using compatibility rendering", QMessageBox.ButtonRole.AcceptRole
+    )
+    box.addButton(QMessageBox.StandardButton.Close)
+    box.exec()
+    return box.clickedButton() is restart
 
 
 def _default_instance():

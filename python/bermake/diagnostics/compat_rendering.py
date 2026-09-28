@@ -37,11 +37,13 @@ import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
-from bermake.diagnostics.launch import COMPAT_FLAG
+from bermake.diagnostics.launch import COMPAT_FLAG, NO_COMPAT_FLAG
 
 MESA_DIR_NAME = "mesa"
 MESA_LOADER = "opengl32sw.dll"
 MESA_DRIVER = "libgallium_wgl.dll"
+# Flags that apply to one launch only, so a relaunch leaves them out.
+_ONE_LAUNCH_FLAGS = frozenset({COMPAT_FLAG, NO_COMPAT_FLAG})
 
 # python/bermake/diagnostics/compat_rendering.py -> repository root.
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -78,11 +80,13 @@ def _redirect_pyopengl(
 ) -> None:
     if platform_module is None:
         import OpenGL.platform as platform_module
+    # Everything that can fail (the DLL load, the symbol lookup) happens before
+    # anything is re-pointed, so a failure leaves PyOpenGL on the system
+    # driver, consistent with the Qt attribute not being set (final review I3).
     dll = (load or ctypes.WinDLL)(str(loader))
-    platform_module.PLATFORM.GL = dll
-
     get_current_context = dll.wglGetCurrentContext
     get_current_context.restype = ctypes.c_void_p
+    platform_module.PLATFORM.GL = dll
     platform_module.PLATFORM.GetCurrentContext = get_current_context
     platform_module.PLATFORM.CurrentContextIsValid = get_current_context
     platform_module.GetCurrentContext = get_current_context
@@ -124,15 +128,15 @@ def compatibility_rendering_active() -> bool:
 def relaunch_command(
     *, frozen: bool, executable: str, argv: Sequence[str], orig_argv: Sequence[str]
 ) -> list[str]:
-    """The command that started this process, minus the one-launch flag.
+    """The command that started this process, minus the one-launch flags.
 
     From a checkout the executable is the Python interpreter, so its own
     arguments (-m bermake.app, or a console-script launcher) come from
-    sys.orig_argv. The flag is stripped so the stored preference governs the
-    new process.
+    sys.orig_argv. Both compatibility flags are stripped so the stored
+    preference governs the new process.
     """
     arguments = argv[1:] if frozen else orig_argv[1:]
-    return [executable, *(a for a in arguments if a != COMPAT_FLAG)]
+    return [executable, *(a for a in arguments if a not in _ONE_LAUNCH_FLAGS)]
 
 
 def _start_detached(program: str, arguments: list[str]) -> bool:

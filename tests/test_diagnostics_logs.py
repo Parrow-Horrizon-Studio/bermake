@@ -161,3 +161,49 @@ def test_a_native_crash_leaves_a_stack_trace(tmp_path):
     text = (tmp_path / logs.NATIVE_CRASH_FILE_NAME).read_text(encoding="utf-8", errors="replace")
     assert "Fatal Python error" in text or "Windows fatal exception" in text
     assert "<string>" in text
+
+
+def test_the_native_crash_session_line_names_version_time_and_pid():
+    from datetime import UTC, datetime
+
+    line = logs.native_crash_session_line(
+        "9.9.9", now=datetime(2026, 9, 28, 12, 30, 5, tzinfo=UTC), pid=4242
+    )
+    assert line == "--- Bermake 9.9.9 session 2026-09-28T12:30:05+00:00 pid 4242 ---"
+
+
+def test_a_native_crash_trace_follows_its_session_line(tmp_path):
+    """The line is flushed before faulthandler is enabled, so it is on disk
+    ahead of the trace even though the process dies without cleanup (M3)."""
+    code = (
+        "import faulthandler, os\n"
+        "from pathlib import Path\n"
+        "from bermake.diagnostics import logs\n"
+        f"logs.enable_native_crash_log(Path({str(tmp_path)!r}), '9.9.9')\n"
+        "print(os.getpid(), flush=True)\n"
+        "faulthandler._sigsegv()\n"
+    )
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, timeout=120)
+
+    assert result.returncode != 0
+    pid = result.stdout.decode().strip()
+    text = (tmp_path / logs.NATIVE_CRASH_FILE_NAME).read_text(encoding="utf-8", errors="replace")
+    first_line = text.splitlines()[0]
+    assert first_line.startswith("--- Bermake 9.9.9 session ")
+    assert first_line.endswith(f" pid {pid} ---")
+    trace = max(text.find("Fatal Python error"), text.find("Windows fatal exception"))
+    assert trace > len(first_line)
+
+
+def test_closing_the_native_crash_log_disables_faulthandler_first(monkeypatch):
+    events = []
+
+    class FakeStream:
+        def close(self):
+            events.append("close")
+
+    monkeypatch.setattr(logs.faulthandler, "disable", lambda: events.append("disable"))
+
+    logs.close_native_crash_log(FakeStream())
+
+    assert events == ["disable", "close"]
