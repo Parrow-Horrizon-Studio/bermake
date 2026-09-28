@@ -25,6 +25,23 @@ class _FakeDll:
         self.wglGetCurrentContext = _FakeFunc()
 
 
+@pytest.fixture(autouse=True)
+def _isolated_environ(monkeypatch):
+    """No test in this file may leak GALLIUM_DRIVER (or anything else) into
+    the pytest process's real environment.
+
+    `enable_compatibility_rendering` writes through `os.environ.setdefault`,
+    and `monkeypatch.delenv(..., raising=False)` on a variable that was never
+    set records nothing to undo, so a plain delenv-then-call test leaks its
+    write past teardown. Swapping the whole mapping for a throwaway copy
+    means every read and write in the test, in this module or in
+    compat_rendering (same `os` module object), lands on the copy, and
+    monkeypatch's own teardown puts the real `os.environ` back regardless of
+    what happened to the copy.
+    """
+    monkeypatch.setattr(cr.os, "environ", dict(os.environ))
+
+
 def _mesa(folder, *, driver=True):
     folder.mkdir(parents=True)
     (folder / cr.MESA_LOADER).write_bytes(b"")
@@ -76,14 +93,25 @@ def test_redirect_repoints_pyopengls_context_lookup_at_the_mesa_loader(tmp_path)
 def test_enabling_sets_gallium_driver_to_llvmpipe_by_default(tmp_path, monkeypatch):
     """Mesa's Direct3D 12 driver terminates the process on its first draw
     without the dxil.dll Bermake does not bundle (spec amendment); llvmpipe
-    is the only driver that works without it."""
+    is the only driver that works without it.
+
+    A Mesa DLL reads GALLIUM_DRIVER from the environment at load time, so the
+    default has to be in place BEFORE the loader is loaded, not merely by the
+    time enable_compatibility_rendering returns. The injected set_gl_library
+    fake stands in for that load, so recording the variable from inside it
+    proves the order, not just the end state.
+    """
     monkeypatch.delitem(sys.modules, "OpenGL.GL", raising=False)
     monkeypatch.delenv("GALLIUM_DRIVER", raising=False)
+    seen_at_load = []
 
     cr.enable_compatibility_rendering(
-        tmp_path, set_gl_library=lambda path: None, set_attribute=lambda: None
+        tmp_path,
+        set_gl_library=lambda path: seen_at_load.append(os.environ.get("GALLIUM_DRIVER")),
+        set_attribute=lambda: None,
     )
 
+    assert seen_at_load == ["llvmpipe"]
     assert os.environ["GALLIUM_DRIVER"] == "llvmpipe"
 
 

@@ -64,6 +64,4 @@ def test_rendering_without_mesa_is_a_failure_not_a_skip(qapp, tmp_path, monkeypa
     assert smoke.run_smoke(tmp_path / "r.json") == 1
     report = json.loads((tmp_path / "r.json").read_text(encoding="utf-8"))
     rendering = [c for c in report["checks"] if c["name"] == "rendering"]
-    assert rendering == [
-        {"name": "rendering", "ok": False, "detail": "Mesa not found", "data": {}}
-    ]
+    assert rendering == [{"name": "rendering", "ok": False, "detail": "Mesa not found", "data": {}}]

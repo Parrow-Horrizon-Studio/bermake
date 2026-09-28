@@ -16,6 +16,10 @@ before QApplication exists:
    and the module-level copies must be re-pointed at the Mesa loader's own
    `wglGetCurrentContext`, or every stateful GL call (`glVertexAttribPointer`
    and friends) raises "no valid context" even though the context is current.
+   The redirect assumes nothing has already imported an OpenGL submodule that
+   computes one of the platform's own lazy properties (`getExtensionProcedure`
+   and similar) from the system driver; the guard below only checks for
+   `OpenGL.GL` itself.
 2. Qt.AA_UseSoftwareOpenGL, which Qt honours only before QApplication.
 
 Mesa then picks its own driver: Direct3D 12 on the real GPU where available,
@@ -69,7 +73,7 @@ def default_mesa_dir() -> Path | None:
 def _redirect_pyopengl(
     loader: Path,
     *,
-    platform_module=None,
+    platform_module: object | None = None,
     load: Callable[[str], object] | None = None,
 ) -> None:
     if platform_module is None:
