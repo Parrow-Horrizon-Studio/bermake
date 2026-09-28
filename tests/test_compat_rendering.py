@@ -4,10 +4,25 @@ Every Qt and PyOpenGL side effect is injected: the suite's own OpenGL state
 must not be redirected by a test.
 """
 
+import ctypes
+import os
 import sys
+from types import SimpleNamespace
 
 import pytest
 from bermake.diagnostics import compat_rendering as cr
+
+
+class _FakeFunc:
+    """Stands in for a ctypes function pointer: just needs a settable restype."""
+
+    def __init__(self):
+        self.restype = None
+
+
+class _FakeDll:
+    def __init__(self):
+        self.wglGetCurrentContext = _FakeFunc()
 
 
 def _mesa(folder, *, driver=True):
@@ -32,6 +47,55 @@ def test_checkouts_look_in_the_fetched_copy(tmp_path):
 def test_a_missing_driver_means_no_mesa(tmp_path):
     _mesa(tmp_path / "build" / "mesa", driver=False)
     assert cr.locate_mesa_dir(frozen=False, bundle_dir=None, repo_root=tmp_path) is None
+
+
+def test_redirect_repoints_pyopengls_context_lookup_at_the_mesa_loader(tmp_path):
+    """`contextdata` keys its cache off the module-level GetCurrentContext, not
+    PLATFORM.GetCurrentContext, so both must move (see the module docstring)."""
+    platform_module = SimpleNamespace(PLATFORM=SimpleNamespace())
+    fake_dll = _FakeDll()
+    loaded = []
+
+    def fake_load(path):
+        loaded.append(path)
+        return fake_dll
+
+    loader = tmp_path / cr.MESA_LOADER
+    cr._redirect_pyopengl(loader, platform_module=platform_module, load=fake_load)
+
+    assert loaded == [str(loader)]
+    assert platform_module.PLATFORM.GL is fake_dll
+    func = fake_dll.wglGetCurrentContext
+    assert platform_module.PLATFORM.GetCurrentContext is func
+    assert platform_module.PLATFORM.CurrentContextIsValid is func
+    assert platform_module.GetCurrentContext is func
+    assert platform_module.CurrentContextIsValid is func
+    assert func.restype is ctypes.c_void_p
+
+
+def test_enabling_sets_gallium_driver_to_llvmpipe_by_default(tmp_path, monkeypatch):
+    """Mesa's Direct3D 12 driver terminates the process on its first draw
+    without the dxil.dll Bermake does not bundle (spec amendment); llvmpipe
+    is the only driver that works without it."""
+    monkeypatch.delitem(sys.modules, "OpenGL.GL", raising=False)
+    monkeypatch.delenv("GALLIUM_DRIVER", raising=False)
+
+    cr.enable_compatibility_rendering(
+        tmp_path, set_gl_library=lambda path: None, set_attribute=lambda: None
+    )
+
+    assert os.environ["GALLIUM_DRIVER"] == "llvmpipe"
+
+
+def test_enabling_leaves_an_existing_gallium_driver_alone(tmp_path, monkeypatch):
+    monkeypatch.delitem(sys.modules, "OpenGL.GL", raising=False)
+    monkeypatch.setenv("GALLIUM_DRIVER", "d3d12")
+
+    cr.enable_compatibility_rendering(
+        tmp_path, set_gl_library=lambda path: None, set_attribute=lambda: None
+    )
+
+    assert os.environ["GALLIUM_DRIVER"] == "d3d12"
 
 
 def test_enabling_redirects_pyopengl_and_sets_the_qt_attribute(tmp_path, monkeypatch):

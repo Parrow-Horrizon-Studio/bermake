@@ -8,17 +8,27 @@ before QApplication exists:
    every GL call fails once Qt has switched to Mesa. Loading the bundled
    loader by full path also makes Windows resolve libgallium_wgl.dll from the
    same folder, and Qt's own later load of `opengl32sw.dll` by name returns
-   the module already in the process.
+   the module already in the process. Redirecting `PLATFORM.GL` alone is not
+   enough: importing `OpenGL.platform` already evaluated `GetCurrentContext`
+   and `CurrentContextIsValid` against the system driver and copied them into
+   the `OpenGL.platform` module namespace, which is what `contextdata`
+   actually calls to key its per-context cache. Both the `PLATFORM` attributes
+   and the module-level copies must be re-pointed at the Mesa loader's own
+   `wglGetCurrentContext`, or every stateful GL call (`glVertexAttribPointer`
+   and friends) raises "no valid context" even though the context is current.
 2. Qt.AA_UseSoftwareOpenGL, which Qt honours only before QApplication.
 
 Mesa then picks its own driver: Direct3D 12 on the real GPU where available,
-llvmpipe on the CPU otherwise. Setting GALLIUM_DRIVER=llvmpipe forces the
-latter.
+llvmpipe on the CPU otherwise. Direct3D 12 needs `dxil.dll`, which Bermake
+does not bundle, and terminates the process outright on the first draw
+without it, so compatibility rendering forces GALLIUM_DRIVER=llvmpipe unless
+something has already set it.
 """
 
 from __future__ import annotations
 
 import ctypes
+import os
 import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -56,10 +66,23 @@ def default_mesa_dir() -> Path | None:
     )
 
 
-def _redirect_pyopengl(loader: Path) -> None:
-    import OpenGL.platform
+def _redirect_pyopengl(
+    loader: Path,
+    *,
+    platform_module=None,
+    load: Callable[[str], object] | None = None,
+) -> None:
+    if platform_module is None:
+        import OpenGL.platform as platform_module
+    dll = (load or ctypes.WinDLL)(str(loader))
+    platform_module.PLATFORM.GL = dll
 
-    OpenGL.platform.PLATFORM.GL = ctypes.WinDLL(str(loader))
+    get_current_context = dll.wglGetCurrentContext
+    get_current_context.restype = ctypes.c_void_p
+    platform_module.PLATFORM.GetCurrentContext = get_current_context
+    platform_module.PLATFORM.CurrentContextIsValid = get_current_context
+    platform_module.GetCurrentContext = get_current_context
+    platform_module.CurrentContextIsValid = get_current_context
 
 
 def _set_software_attribute() -> None:
@@ -79,6 +102,11 @@ def enable_compatibility_rendering(
             "compatibility rendering must be enabled before OpenGL.GL is imported; "
             "PyOpenGL has already bound the system driver"
         )
+    # Mesa's Direct3D 12 driver terminates the process on its first draw
+    # without dxil.dll, which is not bundled; llvmpipe needs nothing extra.
+    # setdefault respects an existing value, so an advanced user can still
+    # choose a different Gallium driver.
+    os.environ.setdefault("GALLIUM_DRIVER", "llvmpipe")
     (set_gl_library or _redirect_pyopengl)(mesa_dir / MESA_LOADER)
     (set_attribute or _set_software_attribute)()
 
