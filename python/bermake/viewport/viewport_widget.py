@@ -10,11 +10,16 @@ Qt mouse events into:
 
 from __future__ import annotations
 
+import logging
+from collections.abc import Callable
+
 import numpy as np
-from PySide6.QtCore import QPoint, Qt, Signal
-from PySide6.QtGui import QMouseEvent, QWheelEvent
+from OpenGL import GL
+from PySide6.QtCore import QPoint, Qt, QTimer, Signal
+from PySide6.QtGui import QMouseEvent, QOpenGLContext, QWheelEvent
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 
+from bermake.diagnostics.gl_check import MIN_GL_VERSION, GlInfo, evaluate_gl
 from bermake.geometry.transforms import apply_mat, is_identity_transform, mat_invert
 from bermake.tools.select_tool import _HOVER_EDGE_COLOR, SelectTool
 from bermake.units import Units, format_coordinates
@@ -23,10 +28,17 @@ from bermake.viewport.inference import InferenceState, _default_now_ms
 from bermake.viewport.scene_renderer import SceneRenderer
 from bermake.viewport.snap_engine import SnapEngine, SnapKind
 
+logger = logging.getLogger(__name__)
+
 # M7.6b Task 7: annotation `kind`s that View > Guides hides/shows. Kept in
 # sync with (but not imported from) annotation_painter._GUIDE_KINDS -- that
 # one governs pen choice, this one governs whether a guide is painted at all.
 _GUIDE_KINDS = frozenset({"guide", "guide_point"})
+
+
+def _gl_string(name: int) -> str:
+    value = GL.glGetString(name)
+    return value.decode("utf-8", errors="replace") if value else "unknown"
 
 
 class ViewportWidget(QOpenGLWidget):
@@ -35,6 +47,10 @@ class ViewportWidget(QOpenGLWidget):
     # M7.2 Task 14: emitted on a right-click release with the event's widget-local
     # pixel position; MainWindow resolves it into a right-click menu.
     context_menu_requested = Signal(int, int)
+
+    # M7.9: emitted (from the event loop, not from inside initializeGL) with a
+    # user-facing explanation when the context cannot run Bermake's shaders.
+    gl_unavailable = Signal(str)
 
     def __init__(self, model=None, tool_manager=None, parent=None) -> None:
         super().__init__(parent)
@@ -101,6 +117,10 @@ class ViewportWidget(QOpenGLWidget):
         # ever moved over the viewport.
         self._last_cursor_px: tuple[float, float] | None = None
 
+        # M7.9: filled by initializeGL; read by the About dialog.
+        self.gl_info: GlInfo | None = None
+        self._gl_failed = False
+
     @property
     def scene(self):
         """The active scene from the model (delegates to model.active_scene)."""
@@ -156,13 +176,45 @@ class ViewportWidget(QOpenGLWidget):
     # --- GL lifecycle -----------------------------------------------------
 
     def initializeGL(self) -> None:
-        self.scene_renderer.initialize_gl()
+        fmt = QOpenGLContext.currentContext().format()
+        info = GlInfo(
+            version=(fmt.majorVersion(), fmt.minorVersion()),
+            version_string=_gl_string(GL.GL_VERSION),
+            renderer=_gl_string(GL.GL_RENDERER),
+        )
+        self._apply_gl_verdict(info, self.scene_renderer.initialize_gl)
+
+    def _apply_gl_verdict(self, info: GlInfo, initialize: Callable[[], None]) -> None:
+        """Initialise the renderer if the context can run it, or report why not.
+
+        Split from initializeGL so the decision is testable without a context.
+        The signal is deferred to the event loop because a modal dialog opened
+        from inside initializeGL would re-enter Qt's GL setup.
+        """
+        self.gl_info = info
+        shader_error = None
+        if info.version >= MIN_GL_VERSION:
+            try:
+                initialize()
+            except RuntimeError as exc:
+                shader_error = str(exc)
+        verdict = evaluate_gl(info, shader_error)
+        if verdict.ok:
+            return
+        self._gl_failed = True
+        logger.error("OpenGL unavailable: %s", verdict.message)
+        QTimer.singleShot(0, lambda: self.gl_unavailable.emit(verdict.message))
 
     def resizeGL(self, w: int, h: int) -> None:
         self.scene_renderer.resize(w, h)
         self.camera.aspect = float(w) / max(float(h), 1.0)
 
     def paintGL(self) -> None:
+        if self._gl_failed:
+            # Nothing initialised, so nothing can be drawn; clearing is GL 1.1.
+            GL.glClearColor(0.25, 0.25, 0.25, 1.0)
+            GL.glClear(GL.GL_COLOR_BUFFER_BIT)
+            return
         active = self.tool_manager.active if self.tool_manager is not None else None
         overlay = active.overlay() if active is not None else None
         self.scene_renderer.render(self.camera, self.model, overlay, self.selection)

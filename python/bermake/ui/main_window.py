@@ -20,6 +20,11 @@ from bermake.commands.view_commands import (
     ReorderViewCommand,
     UpdateViewCommand,
 )
+from bermake.diagnostics.compat_rendering import (
+    compatibility_rendering_active,
+    default_mesa_dir,
+    relaunch,
+)
 from bermake.document import DocumentSettings
 from bermake.io import (
     BermakeIOError,
@@ -190,6 +195,12 @@ class MainWindow(QMainWindow):
         # wire the camera + widget_size_provider into the context).
         self._viewport = ViewportWidget(self._model, self._tool_manager, self)
         self._viewport.selection = self._selection
+        # M7.9: an unusable OpenGL context reports itself here, once, from the
+        # event loop.
+        self._viewport.gl_unavailable.connect(self._on_gl_unavailable)
+        # Overridable for tests, like _prompt_discard.
+        self._relaunch = relaunch
+        self._mesa_available = default_mesa_dir() is not None
         # M7d, Task 13 (Part B): wire the annotation units provider (Task 4
         # carry-over) -- without this, _paint_annotations silently falls back
         # to a default Units() regardless of the document's unit setting.
@@ -496,6 +507,18 @@ class MainWindow(QMainWindow):
         # Reflect the saved theme choice (M7.7). Deferred to here, after
         # self._settings exists, rather than beside self._theme_actions above.
         self._theme_actions[preferences.read_theme(self._settings)].setChecked(True)
+
+        # M7.9: show the stored compatibility preference. Signals are blocked
+        # because this checkable action connects through `toggled`, and
+        # restoring the checkmark must not offer a restart at startup.
+        self._compat_action = self._actions["help_compatibility_rendering"]
+        self._set_compat_checkmark(preferences.read_compatibility_rendering(self._settings))
+        if not self._mesa_available:
+            self._compat_action.setEnabled(False)
+            self._compat_action.setToolTip(
+                "Unavailable: the bundled Mesa was not found. "
+                "From a source checkout, run tools/fetch_mesa.py."
+            )
 
         # Back-compat aliases for tests that read a named menu by attribute.
         self._file_menu = self._menus["File"]
@@ -2261,3 +2284,75 @@ class MainWindow(QMainWindow):
     def show_welcome_dialog(self) -> None:
         """Public entry point for app.py's startup call."""
         self._on_show_welcome()
+
+    # --- Compatibility rendering (M7.9) -----------------------------------
+
+    def _set_compat_checkmark(self, checked: bool) -> None:
+        self._compat_action.blockSignals(True)
+        self._compat_action.setChecked(checked)
+        self._compat_action.blockSignals(False)
+
+    def _on_toggle_compatibility_rendering(self, checked: bool) -> None:
+        preferences.write_compatibility_rendering(self._settings, checked)
+        self._settings.sync()
+        if self._prompt_restart_for_rendering(checked):
+            self._restart()
+
+    def _on_gl_unavailable(self, message: str) -> None:
+        offer = self._mesa_available and not compatibility_rendering_active()
+        if not self._prompt_gl_fallback(message, offer):
+            return
+        preferences.write_compatibility_rendering(self._settings, True)
+        self._settings.sync()
+        self._set_compat_checkmark(True)
+        self._restart()
+
+    def _restart(self) -> None:
+        """Close through the usual unsaved-changes guard, then relaunch.
+
+        Cancelling that prompt cancels the relaunch: two Bermakes must not be
+        left running with unsaved work in the first.
+        """
+        if not self.close():
+            return
+        self._relaunch()
+
+    def _prompt_gl_fallback(self, message: str, offer_restart: bool) -> bool:
+        """True to restart with compatibility rendering. Overridable for testing."""
+        from PySide6.QtWidgets import QMessageBox
+
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Warning)
+        box.setWindowTitle("Graphics problem")
+        box.setText("Bermake cannot draw the 3D view on this computer.")
+        if not offer_restart:
+            box.setInformativeText(
+                f"{message}\n\nDetails are in the log. Help > About Bermake shows where it is."
+            )
+            box.addButton(QMessageBox.StandardButton.Close)
+            box.exec()
+            return False
+        box.setInformativeText(
+            f"{message}\n\nBermake can restart using compatibility rendering, which works "
+            "on almost any computer but may be slower."
+        )
+        restart = box.addButton(
+            "Restart using compatibility rendering", QMessageBox.ButtonRole.AcceptRole
+        )
+        box.addButton(QMessageBox.StandardButton.Close)
+        box.exec()
+        return box.clickedButton() is restart
+
+    def _prompt_restart_for_rendering(self, enabled: bool) -> bool:
+        """True to restart now. Overridable for testing."""
+        from PySide6.QtWidgets import QMessageBox
+
+        state = "on" if enabled else "off"
+        reply = QMessageBox.question(
+            self,
+            "Restart Bermake",
+            f"Compatibility rendering will be {state} the next time Bermake starts. Restart now?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        return reply == QMessageBox.StandardButton.Yes
