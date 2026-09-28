@@ -18,7 +18,7 @@ import sys
 from collections.abc import Mapping
 from pathlib import Path
 
-from fetch_mesa import fetch_mesa
+from fetch_mesa import MESA_VERSION, fetch_mesa
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGING = ROOT / "packaging"
@@ -29,8 +29,50 @@ WORK = ROOT / "build" / "package"
 MESA_DIR = ROOT / "build" / "mesa"
 MESA_CACHE = ROOT / "build" / "mesa-cache"
 DIST = ROOT / "dist"
+WHEEL_BUILD = WORK / "wheel-build"
+NOTICES_TEMPLATE = PACKAGING / "THIRD-PARTY-NOTICES.txt"
+CHECKED_IN_LICENCES = PACKAGING / "licenses"
 DEFAULT_TOOLCHAIN = Path("C:/vcpkg/scripts/buildsystems/vcpkg.cmake")
 SIZE_CEILING_BYTES = 100 * 1024 * 1024
+
+# Bundled Python distributions the notices list, as display name ->
+# distribution name, in the order they are listed.
+BUNDLED_DISTRIBUTIONS = {
+    "PySide6": "PySide6",
+    "shiboken6": "shiboken6",
+    "numpy": "numpy",
+    "PyOpenGL": "PyOpenGL",
+    "mapbox-earcut": "mapbox_earcut",
+    "nanobind": "nanobind",
+    "PyInstaller bootloader": "pyinstaller",
+}
+# Distributions whose dist-info licence files are copied into licenses/. The
+# others are covered elsewhere: PySide6 and shiboken6 by licenses/LGPL-3.0.txt,
+# numpy by its dist-info, which ships in _internal, and PyOpenGL, whose wheel
+# carries no licence file, by the checked-in packaging/licenses/PyOpenGL/.
+COPY_LICENCES_OF = ("mapbox_earcut", "nanobind", "pyinstaller")
+# vcpkg ports installed for the C++ test suite only, never linked into _core.
+VCPKG_TEST_ONLY = {"gtest"}
+
+# Run in the build venv with -I, so it reads what is installed there and not
+# a source tree on the path.
+_PROBE = """
+import json, platform, sys
+from importlib.metadata import distribution
+from PySide6.QtCore import qVersion
+
+result = {"Python": platform.python_version(), "Qt": qVersion(),
+          "base_prefix": sys.base_prefix, "distributions": {}}
+for name in json.loads(sys.argv[1]):
+    dist = distribution(name)
+    licences = [
+        str(dist.locate_file(f)) for f in dist.files or []
+        if f.parts[0].endswith(".dist-info")
+        and ("licenses" in f.parts or f.name.upper().startswith(("LICENSE", "COPYING")))
+    ]
+    result["distributions"][name] = {"version": dist.version, "licences": licences}
+print(json.dumps(result))
+"""
 
 
 class PackagingError(RuntimeError):
@@ -111,6 +153,48 @@ def smoke_report_problems(report: dict, expected: dict[str, int]) -> list[str]:
     return problems
 
 
+def versions_section(versions: Mapping[str, str]) -> str:
+    """The generated tail of the shipped THIRD-PARTY-NOTICES.txt."""
+    title = "Versions in this build"
+    width = max(len(name) for name in versions)
+    lines = [title, "-" * len(title)]
+    lines += [f"{name.ljust(width)}  {version}" for name, version in versions.items()]
+    return "\n".join(lines) + "\n"
+
+
+def vcpkg_port_versions(status: str, triplet: str) -> dict[str, str]:
+    """Installed vcpkg ports for `triplet`, from vcpkg_installed/vcpkg/status.
+
+    Feature paragraphs (which carry no Version), vcpkg's own helper ports and
+    test-only ports are left out. A non-zero port version is appended the way
+    vcpkg writes it (1.3#2).
+    """
+    ports = {}
+    for paragraph in status.replace("\r\n", "\n").split("\n\n"):
+        fields = dict(line.split(": ", 1) for line in paragraph.splitlines() if ": " in line)
+        name = fields.get("Package", "")
+        if (
+            fields.get("Architecture") != triplet
+            or "Version" not in fields
+            or not fields.get("Status", "").endswith(" installed")
+            or name.startswith("vcpkg-")
+            or name in VCPKG_TEST_ONLY
+        ):
+            continue
+        version = fields["Version"]
+        if fields.get("Port-Version", "0") != "0":
+            version += f"#{fields['Port-Version']}"
+        ports[name] = version
+    return ports
+
+
+def unlisted_components(template: str, names: list[str]) -> list[str]:
+    """Names with no entry line (indented, name first) in the notices template."""
+    return [
+        name for name in names if not re.search(rf"^\s+{re.escape(name)}\s", template, re.MULTILINE)
+    ]
+
+
 def check_zip_size(path: Path, ceiling: int = SIZE_CEILING_BYTES) -> int:
     size = path.stat().st_size
     if size > ceiling:
@@ -124,6 +208,54 @@ def _stage(label: str) -> None:
 
 def _run(command: list, **kwargs) -> None:
     subprocess.run([str(part) for part in command], check=True, **kwargs)
+
+
+def _write_notices(app_dir: Path, probe: dict) -> None:
+    """THIRD-PARTY-NOTICES.txt with this build's versions, and licenses/."""
+    cache = (WHEEL_BUILD / "CMakeCache.txt").read_text(encoding="utf-8")
+    match = re.search(r"^VCPKG_TARGET_TRIPLET:STRING=(.+)$", cache, re.MULTILINE)
+    if match is None:
+        raise PackagingError("no VCPKG_TARGET_TRIPLET in the wheel build's CMakeCache.txt")
+    triplet = match.group(1).strip()
+    vcpkg_installed = WHEEL_BUILD / "vcpkg_installed"
+    status = (vcpkg_installed / "vcpkg" / "status").read_text(encoding="utf-8")
+    ports = vcpkg_port_versions(status, triplet)
+
+    template = NOTICES_TEMPLATE.read_text(encoding="utf-8")
+    unlisted = unlisted_components(template, sorted(ports))
+    if unlisted:
+        raise PackagingError(
+            f"linked into _core but missing from {NOTICES_TEMPLATE.name}: {unlisted}"
+        )
+    distributions = probe["distributions"]
+    versions = {"Python": probe["Python"], "Qt": probe["Qt"]}
+    for label, name in BUNDLED_DISTRIBUTIONS.items():
+        versions[label] = distributions[name]["version"]
+    versions["Mesa 3D"] = MESA_VERSION
+    versions.update({f"{name} (static)": version for name, version in ports.items()})
+    notices = template + "\n" + versions_section(versions)
+    (app_dir / "THIRD-PARTY-NOTICES.txt").write_text(notices, encoding="utf-8")
+
+    licences = app_dir / "licenses"
+    shutil.copytree(CHECKED_IN_LICENCES, licences, dirs_exist_ok=True)
+    python_licence = Path(probe["base_prefix"]) / "LICENSE.txt"
+    if not python_licence.is_file():
+        raise PackagingError(f"Python's licence file is missing: {python_licence}")
+    (licences / "Python").mkdir(parents=True, exist_ok=True)
+    shutil.copy2(python_licence, licences / "Python" / "LICENSE.txt")
+    for name in COPY_LICENCES_OF:
+        files = [Path(f) for f in distributions[name]["licences"]]
+        if not files:
+            raise PackagingError(f"{name} carries no licence file to ship")
+        (licences / name).mkdir(parents=True, exist_ok=True)
+        for file in files:
+            shutil.copy2(file, licences / name / file.name)
+    for name in ports:
+        copyright_file = vcpkg_installed / triplet / "share" / name / "copyright"
+        if not copyright_file.is_file():
+            raise PackagingError(f"vcpkg port {name} has no copyright file: {copyright_file}")
+        (licences / name).mkdir(parents=True, exist_ok=True)
+        shutil.copy2(copyright_file, licences / name / "copyright.txt")
 
 
 def main() -> int:
@@ -146,6 +278,8 @@ def main() -> int:
             CONSTRAINTS,
             "pyinstaller",
             "pyinstaller-hooks-contrib",
+            # Linked into _core; installed here only for its version and licence.
+            "nanobind",
         ]
     )
 
@@ -159,6 +293,10 @@ def main() -> int:
             "-q",
             "-c",
             CONSTRAINTS,
+            # pip 26.2 applies only build constraints inside the isolated
+            # build environment; PIP_CONSTRAINT and -c do not reach it.
+            "--build-constraint",
+            CONSTRAINTS,
             "--config-settings=build-dir=build/package/wheel-build",
             ROOT,
         ],
@@ -166,12 +304,22 @@ def main() -> int:
         cwd=ROOT,
     )
     version = subprocess.run(
-        [str(python), "-c", "import bermake; print(bermake.__version__)"],
+        [str(python), "-I", "-c", "import bermake; print(bermake.__version__)"],
         check=True,
         capture_output=True,
         text=True,
+        cwd=ROOT,
     ).stdout.strip()
     print(f"built Bermake {version}")
+    probe = json.loads(
+        subprocess.run(
+            [str(python), "-I", "-c", _PROBE, json.dumps(list(BUNDLED_DISTRIBUTIONS.values()))],
+            check=True,
+            capture_output=True,
+            text=True,
+            cwd=ROOT,
+        ).stdout
+    )
 
     _stage("3/6 Mesa")
     mesa_dir = fetch_mesa(MESA_DIR, MESA_CACHE)
@@ -218,7 +366,7 @@ def main() -> int:
 
     _stage("6/6 zip")
     shutil.copy2(PACKAGING / "README.txt", app_dir / "README.txt")
-    shutil.copy2(PACKAGING / "THIRD-PARTY-NOTICES.txt", app_dir / "THIRD-PARTY-NOTICES.txt")
+    _write_notices(app_dir, probe)
     shutil.copy2(ROOT / "LICENSE", app_dir / "LICENSE.txt")
     DIST.mkdir(exist_ok=True)
     archive = DIST / zip_name(version)
@@ -234,6 +382,6 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except PackagingError as error:
+    except (PackagingError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
         print(f"packaging failed: {error}", file=sys.stderr)
         sys.exit(1)

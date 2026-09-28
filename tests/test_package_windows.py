@@ -98,3 +98,60 @@ def test_the_size_ceiling(pw, tmp_path):
     assert pw.check_zip_size(archive, ceiling=100) == 10
     with pytest.raises(pw.PackagingError, match="ceiling"):
         pw.check_zip_size(archive, ceiling=5)
+
+
+def test_the_versions_section_lists_every_component(pw):
+    versions = {"Python": "3.13.1", "Qt": "6.11.1", "Mesa 3D": "26.2.3", "zlib (static)": "1.3.2"}
+    section = pw.versions_section(versions)
+    lines = section.splitlines()
+    assert lines[0] == "Versions in this build"
+    for name, version in versions.items():
+        assert any(line.startswith(name) and line.endswith(f"  {version}") for line in lines)
+
+
+_STATUS = """Package: vcpkg-cmake-get-vars
+Version: 2025-05-29
+Architecture: x64-windows-static-md
+Status: install ok installed
+
+Package: stb
+Version: 2024-07-29
+Architecture: x64-windows-static-md
+Status: purge ok not-installed
+
+Package: zlib
+Version: 1.3.2
+Architecture: x64-windows-static-md
+Status: install ok installed
+
+Package: assimp
+Version: 6.0.4
+Port-Version: 2
+Architecture: x64-windows-static-md
+Status: install ok installed
+
+Package: assimp
+Feature: draco
+Architecture: x64-windows-static-md
+Status: install ok installed
+
+Package: gtest
+Version: 1.17.0
+Architecture: x64-windows-static-md
+Status: install ok installed
+
+Package: zlib
+Version: 1.2.0
+Architecture: x64-windows
+Status: install ok installed
+"""
+
+
+def test_vcpkg_ports_are_read_for_the_triplet_without_helpers_or_tests(pw):
+    ports = pw.vcpkg_port_versions(_STATUS, "x64-windows-static-md")
+    assert ports == {"zlib": "1.3.2", "assimp": "6.0.4#2"}
+
+
+def test_a_linked_port_missing_from_the_notices_is_reported(pw):
+    template = "Statically linked:\n  minizip  zlib License\n  assimp   BSD\n"
+    assert pw.unlisted_components(template, ["assimp", "zlib", "draco"]) == ["zlib", "draco"]

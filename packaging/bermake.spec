@@ -10,8 +10,9 @@ MESA_DIR = Path(os.environ["BERMAKE_MESA_DIR"])
 VERSION_FILE = os.environ["BERMAKE_VERSION_FILE"]
 
 # The application imports QtCore, QtGui, QtWidgets, QtOpenGLWidgets and QtSvg.
-# Everything else PySide6 ships stays behind; the 100 MB ceiling in
-# tools/package_windows.py catches anything that slips through.
+# Excluding the other PySide6 modules keeps their Python bindings out, but
+# not the Qt libraries and plugins PySide6's hook collects regardless: the
+# QT_LIBRARIES and QT_PLUGINS allow-lists below decide which of those ship.
 UNUSED = [
     "tkinter",
     "PySide6.Qt3DCore",
@@ -32,6 +33,13 @@ UNUSED = [
     "PySide6.QtWebEngineWidgets",
 ]
 
+# OpenSSL (libssl-3.dll, libcrypto-3.dll) arrives only through _ssl and
+# _hashlib. Bermake makes no network connections. The standard library reaches
+# ssl only lazily (logging.handlers' HTTP and SMTP handlers, urllib), always
+# inside `except ImportError`, and hashlib, hmac and random fall back to
+# Python's built-in hash modules when _hashlib is absent.
+NO_OPENSSL = ["ssl", "_ssl", "_hashlib"]
+
 a = Analysis(
     [str(SPEC_DIR / "entry.py")],
     binaries=[
@@ -42,7 +50,7 @@ a = Analysis(
     # smoke test's version check. Compiled modules are binaries, not data.
     datas=collect_data_files("bermake", excludes=["**/*.pyd"]) + copy_metadata("bermake"),
     hiddenimports=collect_submodules("bermake"),
-    excludes=UNUSED,
+    excludes=UNUSED + NO_OPENSSL,
 )
 
 # The Mesa DLLs belong only in mesa/. PySide6's own opengl32sw.dll is Mesa
@@ -52,11 +60,10 @@ a = Analysis(
 # nothing loads.
 MESA_FILES = {"opengl32sw.dll", "libgallium_wgl.dll"}
 
-# Excluding the unused Python modules above does not stop PySide6's hook
-# collecting every Qt plugin, and plugins drag whole Qt libraries in as
-# binary dependencies: the virtual keyboard input context brings Qt6Quick,
-# Qt6Qml and Qt6Network, and the PDF image format brings Qt6Pdf. So the Qt
-# libraries are limited to what the five modules link against, and the
+# PySide6's hook collects every Qt plugin, and plugins drag whole Qt libraries
+# in as binary dependencies: the virtual keyboard input context brings
+# Qt6Quick, Qt6Qml and Qt6Network, and the PDF image format brings Qt6Pdf. So
+# the Qt libraries are limited to what the five modules link against, and the
 # plugins to the ones Bermake uses: the windows platform, the SVG and JPEG
 # image formats (JPEG textures decode through QImage), and the Windows 11
 # widget style, without which Qt falls back to the classic Windows look.
@@ -75,21 +82,49 @@ QT_PLUGINS = {
     "styles/qmodernwindowsstyle.dll",
 }
 
+# Collected but never loaded. PyOpenGL's hook bundles its whole DLLS folder
+# (freeglut and GLE, for OpenGL.GLUT and OpenGL.GLE, which Bermake does not
+# import), and the vc10 builds of those are the only users of MSVCR100.dll.
+# Bermake loads no Qt translations.
+UNUSED_PREFIXES = ("opengl/dlls/", "pyside6/translations/")
+UNUSED_NAMES = {"msvcr100.dll"}
+
+
+def _dest(entry):
+    return Path(entry[0]).as_posix().lower()
+
+
+def _qt_plugin(dest):
+    prefix = "pyside6/plugins/"
+    return dest[len(prefix) :] if dest.startswith(prefix) else None
+
 
 def _keep(entry):
-    dest = Path(entry[0])
-    name = dest.name.lower()
+    dest = _dest(entry)
+    name = dest.rsplit("/", 1)[-1]
+    if dest.startswith(UNUSED_PREFIXES) or name in UNUSED_NAMES:
+        return False
     if name in MESA_FILES:
-        return dest.parent.as_posix() == "mesa"
+        return dest.startswith("mesa/")
     if name.startswith("qt6") and name.endswith(".dll"):
         return name in QT_LIBRARIES
-    parts = [part.lower() for part in dest.parts]
-    if parts[:2] == ["pyside6", "plugins"]:
-        return "/".join(parts[2:]) in QT_PLUGINS
+    plugin = _qt_plugin(dest)
+    if plugin is not None:
+        return plugin in QT_PLUGINS
     return True
 
 
+# Fail loudly if an allow-list entry matches nothing, so a PySide6 upgrade
+# that renames a library or plugin cannot silently drop it from the bundle.
+_collected = {_dest(entry) for entry in a.binaries}
+_names = {dest.rsplit("/", 1)[-1] for dest in _collected}
+_plugins = {_qt_plugin(dest) for dest in _collected} - {None}
+_missing = sorted((QT_LIBRARIES - _names) | (QT_PLUGINS - _plugins))
+if _missing:
+    raise SystemExit(f"bermake.spec: allow-listed Qt files were not collected: {_missing}")
+
 a.binaries = [entry for entry in a.binaries if _keep(entry)]
+a.datas = [entry for entry in a.datas if _keep(entry)]
 
 pyz = PYZ(a.pure)
 exe = EXE(

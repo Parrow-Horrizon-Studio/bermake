@@ -3,26 +3,94 @@ Third-party components bundled with Bermake for Windows
 
 Bermake itself is licensed under the GNU General Public License v3.0 or later
 (LICENSE.txt). The Windows build also contains the following components,
-each under its own licence. Exact versions are pinned in
-packaging/constraints.txt and tools/fetch_mesa.py of the matching release.
+each under its own licence. The exact version of each is listed under
+"Versions in this build" at the end of this file, which is written when the
+build is made. Licence texts are in the licenses folder beside this file
+unless an entry says otherwise. Paths below are relative to this folder.
 
-Python runtime         Python Software Foundation License   https://www.python.org/
-Qt 6                   GNU LGPL v3                          https://www.qt.io/
-                       Qt is dynamically linked; its libraries are the Qt6*.dll
-                       files in this folder and may be replaced. Source code:
-                       https://download.qt.io/official_releases/qt/
-PySide6, shiboken6     GNU LGPL v3                          https://pypi.org/project/PySide6/
-numpy                  BSD 3-Clause                         https://numpy.org/
-PyOpenGL               BSD 3-Clause                         https://pypi.org/project/PyOpenGL/
-mapbox-earcut          ISC                                  https://pypi.org/project/mapbox-earcut/
-nanobind               BSD 3-Clause                         https://github.com/wjakob/nanobind
-Assimp                 BSD 3-Clause (statically linked)     https://github.com/assimp/assimp
-Draco                  Apache 2.0 (statically linked)       https://github.com/google/draco
-zlib                   zlib License (statically linked)     https://zlib.net/
-PyInstaller bootloader GPL v2 with bootloader exception     https://pyinstaller.org/
-Mesa 3D                MIT                                  https://mesa3d.org/
-                       Windows build by pal1000/mesa-dist-win:
-                       https://github.com/pal1000/mesa-dist-win
+The GNU Lesser General Public License v3 (licenses\LGPL-3.0.txt) is a set of
+additional permissions on top of the GNU GPL v3, whose text is LICENSE.txt.
+
+Qt 6
+  Licence: GNU LGPL v3 (licenses\LGPL-3.0.txt)
+  Files:   _internal\PySide6\Qt6*.dll and _internal\PySide6\plugins\
+  Source:  https://download.qt.io/official_releases/qt/
+  Qt is dynamically linked. Its libraries are the Qt6*.dll files and plugins
+  listed above, and you may replace them with your own builds of the same Qt
+  version.
+
+PySide6 and shiboken6
+  Licence: GNU LGPL v3 (licenses\LGPL-3.0.txt)
+  Files:   _internal\PySide6\*.pyd, _internal\PySide6\pyside6.abi3.dll,
+           _internal\shiboken6\
+  Source:  https://code.qt.io/cgit/pyside/pyside-setup.git/
+
+Python runtime
+  Licence: Python Software Foundation License Version 2
+  Text:    licenses\Python\LICENSE.txt, which also carries the licences of
+           components the Windows build of Python bundles, such as libffi
+           (MIT) and bzip2. The licences of the libraries compiled into
+           Python's standard library modules (expat, mpdecimal, liblzma and
+           others) are listed at https://docs.python.org/3.13/license.html
+  Files:   _internal\python313.dll, _internal\python3.dll,
+           _internal\base_library.zip, the standard library modules
+           _internal\*.pyd, and _internal\libffi-8.dll (libffi, MIT)
+  Source:  https://www.python.org/
+
+Microsoft Visual C++ runtime and Universal C runtime
+  Licence: Microsoft redistributable runtime files, shipped as part of the
+           Python, PySide6 and numpy builds under Microsoft's redistribution
+           terms (see licenses\Python\LICENSE.txt, "Additional Conditions for
+           this Windows binary build")
+  Files:   VCRUNTIME140*.dll, MSVCP140*.dll, ucrtbase.dll and
+           api-ms-win-*.dll in _internal\, _internal\PySide6\,
+           _internal\shiboken6\ and _internal\numpy.libs\
+  Source:  https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist
+
+numpy
+  Licence: BSD 3-Clause, with bundled parts under 0BSD, MIT, Zlib and CC0
+  Text:    _internal\numpy-<version>.dist-info\licenses\
+  Files:   _internal\numpy\ and _internal\numpy.libs\, which holds OpenBLAS
+           (BSD 3-Clause) as libscipy_openblas64_*.dll
+  Source:  https://numpy.org/
+
+PyOpenGL
+  Licence: BSD 3-Clause style (licenses\PyOpenGL\license.txt)
+  Files:   Python code inside Bermake.exe
+  Source:  https://github.com/mcfletch/pyopengl
+
+mapbox-earcut
+  Licence: ISC (licenses\mapbox_earcut\)
+  Files:   _internal\mapbox_earcut\
+  Source:  https://github.com/skogler/mapbox_earcut_python
+
+PyInstaller bootloader
+  Licence: GPL v2 or later with the bootloader exception
+           (licenses\pyinstaller\)
+  Files:   Bermake.exe
+  Source:  https://pyinstaller.org/
+
+Mesa 3D
+  Licence: MIT (text below)
+  Files:   _internal\mesa\opengl32sw.dll, _internal\mesa\libgallium_wgl.dll
+  Source:  https://mesa3d.org/
+           Windows build by pal1000/mesa-dist-win:
+           https://github.com/pal1000/mesa-dist-win
+
+Statically linked into Bermake's own module, _internal\bermake\_core.*.pyd.
+Each licence text is in licenses\<name>\.
+  nanobind         BSD 3-Clause         https://github.com/wjakob/nanobind
+  assimp           BSD 3-Clause         https://github.com/assimp/assimp
+  draco            Apache 2.0           https://github.com/google/draco
+  zlib             zlib License         https://zlib.net/
+  minizip          zlib License         https://github.com/madler/zlib
+  kubazip          MIT                  https://github.com/kuba--/zip
+  jhasse-poly2tri  BSD 3-Clause         https://github.com/jhasse/poly2tri
+  polyclipping     Boost 1.0            https://sourceforge.net/projects/polyclipping/
+  pugixml          MIT                  https://pugixml.org/
+  rapidjson        MIT                  https://rapidjson.org/
+  stb              MIT or public domain https://github.com/nothings/stb
+  utfcpp           Boost 1.0            https://github.com/nemtrif/utfcpp
 
 Mesa 3D licence (MIT)
 ---------------------

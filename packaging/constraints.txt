@@ -11,3 +11,15 @@ PyOpenGL==3.1.10
 mapbox_earcut==2.1.0
 pyinstaller==6.22.3
 pyinstaller-hooks-contrib==2026.7
+# PyInstaller's own dependencies, at the versions the build venv resolved.
+altgraph==0.17.5
+packaging==26.3
+pefile==2024.8.26
+pywin32-ctypes==0.2.3
+setuptools==84.0.0
+# The wheel's build backend. tools/package_windows.py passes this file to pip
+# as --build-constraint too, since pip 26.2 applies only build constraints
+# inside the isolated build environment. nanobind is also installed into the
+# build venv so its version and licence can be read for the notices.
+scikit-build-core==1.1.0
+nanobind==3.1.0
