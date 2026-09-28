@@ -32,8 +32,9 @@ offering six templates, and light/dark themes. v0.14.0 (M7.8) renamed the projec
 to Bermake, including the file extension (`.pluton` to `.berm`), the CLI entry point and the
 Python package, with no change in application behavior. v0.15.0 (M7.9) is the first Windows
 build a tester can just download and double-click: a portable zip with crash logging, an
-OpenGL 3.3 check with compatibility rendering for machines below it, and a Help > About Bermake
-dialog for reporting problems. Still missing: code signing, an installer, and macOS and Linux
+OpenGL 3.3 check that runs before the main window opens and offers compatibility rendering on
+machines below it (virtual machines, Remote Desktop), and a Help > About Bermake dialog for
+reporting problems. Still missing: code signing, an installer, and macOS and Linux
 builds (both still run from source only); the rest is the issue-driven backlog now open in
 [Phase 2.6](docs/2026-05-16-pluton-design.md).
 

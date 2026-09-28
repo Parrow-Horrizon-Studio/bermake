@@ -29,13 +29,30 @@ Python runtime
   Licence: Python Software Foundation License Version 2
   Text:    licenses\Python\LICENSE.txt, which also carries the licences of
            components the Windows build of Python bundles, such as libffi
-           (MIT) and bzip2. The licences of the libraries compiled into
-           Python's standard library modules (expat, mpdecimal, liblzma and
-           others) are listed at https://docs.python.org/3.13/license.html
+           (MIT) and bzip2. Three libraries compiled into standard library
+           modules are not covered by that file and have their own entries
+           below: expat, mpdecimal and liblzma.
   Files:   _internal\python313.dll, _internal\python3.dll,
            _internal\base_library.zip, the standard library modules
            _internal\*.pyd, and _internal\libffi-8.dll (libffi, MIT)
   Source:  https://www.python.org/
+
+expat (compiled into Python's XML parser module)
+  Licence: MIT (licenses\expat\COPYING.txt)
+  Files:   _internal\pyexpat.pyd
+  Source:  https://libexpat.github.io/
+
+mpdecimal (compiled into Python's decimal module)
+  Licence: BSD 2-Clause (licenses\mpdecimal\COPYRIGHT.txt)
+  Files:   _internal\_decimal.pyd
+  Source:  https://www.bytereef.org/mpdecimal/
+
+liblzma, from XZ Utils (compiled into Python's lzma module)
+  Licence: public domain in the XZ Utils releases before 5.6, and the BSD
+           Zero Clause License (0BSD) from 5.6 on. Neither requires a notice
+           or a licence text to be shipped.
+  Files:   _internal\_lzma.pyd
+  Source:  https://tukaani.org/xz/
 
 Microsoft Visual C++ runtime and Universal C runtime
   Licence: Microsoft redistributable runtime files, shipped as part of the
@@ -76,6 +93,14 @@ Mesa 3D
   Source:  https://mesa3d.org/
            Windows build by pal1000/mesa-dist-win:
            https://github.com/pal1000/mesa-dist-win
+
+LLVM (statically linked into Mesa's libgallium_wgl.dll)
+  Licence: Apache License 2.0 with LLVM Exceptions
+           (licenses\LLVM\LICENSE.TXT)
+  Files:   _internal\mesa\libgallium_wgl.dll, where llvmpipe uses LLVM to
+           compile shaders for the CPU
+  Source:  https://llvm.org/
+           https://github.com/llvm/llvm-project
 
 Statically linked into Bermake's own module, _internal\bermake\_core.*.pyd.
 Each licence text is in licenses\<name>\.

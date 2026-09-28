@@ -2,6 +2,7 @@
 exercised by running the script, in Step 9 and in CI."""
 
 import importlib.util
+import re
 import sys
 from pathlib import Path
 
@@ -155,3 +156,44 @@ def test_vcpkg_ports_are_read_for_the_triplet_without_helpers_or_tests(pw):
 def test_a_linked_port_missing_from_the_notices_is_reported(pw):
     template = "Statically linked:\n  minizip  zlib License\n  assimp   BSD\n"
     assert pw.unlisted_components(template, ["assimp", "zlib", "draco"]) == ["zlib", "draco"]
+
+
+def _rendering_report(renderer):
+    return {"checks": [{"name": "rendering", "ok": True, "data": {"renderer": renderer}}]}
+
+
+def test_the_llvm_version_comes_from_the_smoke_reports_renderer(pw):
+    report = _rendering_report("llvmpipe (LLVM 23.1.2, 256 bits)")
+    assert pw.llvm_version(report) == "23.1.2"
+    assert pw.llvm_version_entry(report, "26.2.3") == "23.1.2"
+
+
+@pytest.mark.parametrize(
+    "report",
+    [
+        _rendering_report("D3D12 (NVIDIA GeForce RTX 4070 Ti)"),
+        {"checks": [{"name": "rendering", "ok": False, "detail": "Mesa not found", "data": {}}]},
+        {"checks": []},
+    ],
+)
+def test_without_an_llvm_renderer_the_entry_names_the_mesa_it_came_with(pw, report):
+    assert pw.llvm_version(report) is None
+    assert pw.llvm_version_entry(report, "26.2.3") == "the LLVM bundled in Mesa 26.2.3"
+
+
+@pytest.mark.parametrize(
+    ("component", "licence"),
+    [
+        ("LLVM", "LLVM/LICENSE.TXT"),
+        ("expat", "expat/COPYING.txt"),
+        ("mpdecimal", "mpdecimal/COPYRIGHT.txt"),
+    ],
+)
+def test_shipped_libraries_have_an_entry_and_a_checked_in_licence(component, licence):
+    """libgallium_wgl.dll carries LLVM, pyexpat.pyd expat and _decimal.pyd
+    mpdecimal; Python's own LICENSE.txt covers none of them (final review I2)."""
+    template = (ROOT / "packaging" / "THIRD-PARTY-NOTICES.txt").read_text(encoding="utf-8")
+    assert re.search(rf"^{re.escape(component)} \(", template, re.MULTILINE)
+    assert "licenses\\" + licence.replace("/", "\\") in template
+    text = (ROOT / "packaging" / "licenses" / licence).read_text(encoding="utf-8")
+    assert len(text) > 500

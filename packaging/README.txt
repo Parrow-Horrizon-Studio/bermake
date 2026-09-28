@@ -13,11 +13,14 @@ not code-signed yet. Click "More info", then "Run anyway".
 
 If the 3D view does not work
 ----------------------------
-Bermake needs OpenGL 3.3. If your computer's graphics driver cannot provide
-it, which is common in virtual machines and over Remote Desktop, Bermake
-explains the problem and offers to restart using compatibility rendering.
-Compatibility rendering draws through a bundled copy of Mesa instead of your
-graphics driver. It works on almost any computer but may be slower.
+Bermake needs OpenGL 3.3. Every time it starts, before the main window
+opens, it checks what your computer's graphics driver provides. If the
+driver cannot provide OpenGL 3.3, or provides no OpenGL at all, which is
+common in virtual machines, in Windows Sandbox and over Remote Desktop,
+Bermake explains the problem and offers to restart using compatibility
+rendering. Compatibility rendering draws through a bundled copy of Mesa
+instead of your graphics driver. It works on almost any computer but may be
+slower.
 
 You can turn it on or off at any time from Help > Use Compatibility
 Rendering. To start once with it on, run:
@@ -28,6 +31,13 @@ Compatibility rendering uses Mesa's CPU renderer, llvmpipe, which needs no
 graphics card. Advanced users can choose another Mesa driver by setting the
 GALLIUM_DRIVER environment variable before starting Bermake.
 
+If Bermake will not start after you turned compatibility rendering on, start
+it once with it off by running this in a Command Prompt from this folder:
+
+    Bermake.exe --no-compatibility-rendering
+
+Then turn it off for good from Help > Use Compatibility Rendering.
+
 Reporting a problem
 -------------------
 1. Open Help > About Bermake and click "Copy details".
@@ -37,9 +47,10 @@ Reporting a problem
    %LOCALAPPDATA%\Parrow Horrizon Studio\Bermake\logs
 
 If Bermake will not start at all, run this in a Command Prompt from this
-folder and attach the report.json it writes:
+folder and attach the report.json it writes. "start /wait" makes the Command
+Prompt wait until the test has finished:
 
-    Bermake.exe --smoke-test report.json
+    start /wait Bermake.exe --smoke-test report.json
 
 Licences
 --------

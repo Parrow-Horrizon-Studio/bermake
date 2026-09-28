@@ -57,11 +57,13 @@ VCPKG_TEST_ONLY = {"gtest"}
 # Run in the build venv with -I, so it reads what is installed there and not
 # a source tree on the path.
 _PROBE = """
-import json, platform, sys
+import decimal, json, platform, pyexpat, sys
 from importlib.metadata import distribution
 from PySide6.QtCore import qVersion
 
 result = {"Python": platform.python_version(), "Qt": qVersion(),
+          "expat": pyexpat.EXPAT_VERSION.removeprefix("expat_"),
+          "mpdecimal": decimal.__libmpdec_version__,
           "base_prefix": sys.base_prefix, "distributions": {}}
 for name in json.loads(sys.argv[1]):
     dist = distribution(name)
@@ -153,6 +155,23 @@ def smoke_report_problems(report: dict, expected: dict[str, int]) -> list[str]:
     return problems
 
 
+def llvm_version(report: dict) -> str | None:
+    """The LLVM version Mesa reports in the smoke test's renderer string
+    ("llvmpipe (LLVM 23.1.2, 256 bits)"), or None if it names none.
+
+    Read from the build rather than kept by hand: LLVM is statically linked
+    into libgallium_wgl.dll, so the Mesa pin decides it.
+    """
+    rendering = next((c for c in report.get("checks", []) if c.get("name") == "rendering"), None)
+    renderer = str((rendering or {}).get("data", {}).get("renderer", ""))
+    match = re.search(r"LLVM (\d+(?:\.\d+)+)", renderer)
+    return match.group(1) if match else None
+
+
+def llvm_version_entry(report: dict, mesa_version: str) -> str:
+    return llvm_version(report) or f"the LLVM bundled in Mesa {mesa_version}"
+
+
 def versions_section(versions: Mapping[str, str]) -> str:
     """The generated tail of the shipped THIRD-PARTY-NOTICES.txt."""
     title = "Versions in this build"
@@ -210,7 +229,7 @@ def _run(command: list, **kwargs) -> None:
     subprocess.run([str(part) for part in command], check=True, **kwargs)
 
 
-def _write_notices(app_dir: Path, probe: dict) -> None:
+def _write_notices(app_dir: Path, probe: dict, report: dict) -> None:
     """THIRD-PARTY-NOTICES.txt with this build's versions, and licenses/."""
     cache = (WHEEL_BUILD / "CMakeCache.txt").read_text(encoding="utf-8")
     match = re.search(r"^VCPKG_TARGET_TRIPLET:STRING=(.+)$", cache, re.MULTILINE)
@@ -232,6 +251,9 @@ def _write_notices(app_dir: Path, probe: dict) -> None:
     for label, name in BUNDLED_DISTRIBUTIONS.items():
         versions[label] = distributions[name]["version"]
     versions["Mesa 3D"] = MESA_VERSION
+    versions["LLVM (in Mesa)"] = llvm_version_entry(report, MESA_VERSION)
+    versions["expat"] = probe["expat"]
+    versions["mpdecimal"] = probe["mpdecimal"]
     versions.update({f"{name} (static)": version for name, version in ports.items()})
     notices = template + "\n" + versions_section(versions)
     (app_dir / "THIRD-PARTY-NOTICES.txt").write_text(notices, encoding="utf-8")
@@ -366,7 +388,7 @@ def main() -> int:
 
     _stage("6/6 zip")
     shutil.copy2(PACKAGING / "README.txt", app_dir / "README.txt")
-    _write_notices(app_dir, probe)
+    _write_notices(app_dir, probe, report)
     shutil.copy2(ROOT / "LICENSE", app_dir / "LICENSE.txt")
     DIST.mkdir(exist_ok=True)
     archive = DIST / zip_name(version)
