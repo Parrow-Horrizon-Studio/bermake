@@ -117,9 +117,9 @@ jobs:
       - name: Install pinned linters
         run: python -m pip install ruff==0.15.13 clang-format==18.1.8
       - name: ruff check
-        run: ruff check python/bermake
+        run: ruff check python/bermake tools
       - name: ruff format --check
-        run: ruff format --check python/bermake
+        run: ruff format --check python/bermake tools
       - name: clang-format --dry-run (pinned 18.1.8, matches local)
         run: |
           find cpp \( -name "*.cpp" -o -name "*.h" \) -print0 \

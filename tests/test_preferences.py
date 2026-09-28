@@ -1,9 +1,9 @@
 """Per-user preferences, against an injected ini store so no real state is touched."""
 
 import pytest
-from PySide6.QtCore import QSettings
 from bermake.templates import DEFAULT_TEMPLATE_KEY
 from bermake.ui import preferences
+from PySide6.QtCore import QSettings
 
 
 @pytest.fixture
@@ -68,3 +68,20 @@ def test_a_garbage_default_template_value_still_returns_a_string(settings):
     not raise, so a corrupt store cannot stop the application from starting."""
     settings.setValue(preferences.DEFAULT_TEMPLATE_PREF_KEY, 12345)
     assert isinstance(preferences.read_default_template(settings), str)
+
+
+def test_compatibility_rendering_defaults_to_off(settings):
+    assert preferences.read_compatibility_rendering(settings) is False
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_compatibility_rendering_round_trips(settings, enabled):
+    preferences.write_compatibility_rendering(settings, enabled)
+    settings.sync()
+    assert preferences.read_compatibility_rendering(settings) is enabled
+
+
+@pytest.mark.parametrize(("stored", "expected"), [("true", True), ("false", False), ("0", False)])
+def test_compatibility_rendering_reads_qsettings_string_booleans(settings, stored, expected):
+    settings.setValue(preferences.COMPATIBILITY_RENDERING_KEY, stored)
+    assert preferences.read_compatibility_rendering(settings) is expected

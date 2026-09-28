@@ -24,6 +24,7 @@ from bermake.templates import DEFAULT_TEMPLATE_KEY
 THEME_KEY = "appearance/theme"
 SHOW_WELCOME_KEY = "welcome/show_on_startup"
 DEFAULT_TEMPLATE_PREF_KEY = "welcome/default_template"
+COMPATIBILITY_RENDERING_KEY = "graphics/compatibility_rendering"
 
 THEME_LIGHT = "light"
 THEME_DARK = "dark"
@@ -46,18 +47,23 @@ def write_theme(settings: QSettings, theme: str) -> None:
     settings.setValue(THEME_KEY, theme)
 
 
-def read_show_welcome(settings: QSettings) -> bool:
-    """Whether to show the welcome dialog at startup. Defaults to True.
+def _read_bool(settings: QSettings, key: str, default: bool) -> bool:
+    """A stored boolean, tolerant of the ini backend's strings.
 
     The string comparison is not incidental. QSettings' ini backend round-trips
     booleans as the strings "true" and "false", and bool("false") is True, so
-    reading this with bool() would make the checkbox impossible to turn off
-    across a restart.
+    reading with bool() would make a checkbox impossible to turn off across a
+    restart.
     """
-    value = settings.value(SHOW_WELCOME_KEY, True)
+    value = settings.value(key, default)
     if isinstance(value, bool):
         return value
     return str(value).strip().lower() not in ("false", "0", "")
+
+
+def read_show_welcome(settings: QSettings) -> bool:
+    """Whether to show the welcome dialog at startup. Defaults to True."""
+    return _read_bool(settings, SHOW_WELCOME_KEY, True)
 
 
 def write_show_welcome(settings: QSettings, show: bool) -> None:
@@ -76,3 +82,16 @@ def read_default_template(settings: QSettings) -> str:
 
 def write_default_template(settings: QSettings, key: str) -> None:
     settings.setValue(DEFAULT_TEMPLATE_PREF_KEY, key)
+
+
+def read_compatibility_rendering(settings: QSettings) -> bool:
+    """Whether to render through the bundled Mesa (M7.9). Defaults to False.
+
+    Read by app.py before QApplication exists, because Qt only honours the
+    switch when it is made that early.
+    """
+    return _read_bool(settings, COMPATIBILITY_RENDERING_KEY, False)
+
+
+def write_compatibility_rendering(settings: QSettings, enabled: bool) -> None:
+    settings.setValue(COMPATIBILITY_RENDERING_KEY, bool(enabled))
