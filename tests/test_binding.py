@@ -26,18 +26,24 @@ def test_dunder_version_matches_core():
 
 
 def test_the_declared_and_the_compiled_version_agree():
-    """Catches a version bump applied to one file and not the other.
+    """Catches a version that reached one route and not the other.
+
+    pyproject.toml is the single version source (M7.9, #130). It reaches the
+    installed distribution metadata through scikit-build-core, and reaches
+    `_core.version()` through the regex in the root CMakeLists.txt and a compile
+    definition. Reading pyproject.toml as well catches an editable install that
+    was not rebuilt after a bump: both routes would still agree with each other,
+    on the old number.
 
     Not a comparison of `__version__` against `_core.version()`: those are the
     same call, since `__init__` assigns `__version__ = version()` with `version`
-    imported from `_core`, so such a test cannot fail. The hand-edited version in
-    pyproject.toml reaches the installed distribution metadata, and the C++
-    literal reaches `_core.version()`, and nothing derives either from the other.
-    Pinning the expected value as well catches a bump that was never applied at
-    all, and catches an editable install that was not refreshed after the bump.
+    imported from `_core`, so such a test cannot fail.
     """
+    import tomllib
     from importlib.metadata import version as distribution_version
+    from pathlib import Path
 
-    from bermake import _core
+    pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
+    declared = tomllib.loads(pyproject.read_text(encoding="utf-8"))["project"]["version"]
 
-    assert distribution_version("bermake") == _core.version() == "0.14.0"
+    assert distribution_version("bermake") == _core.version() == declared

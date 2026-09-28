@@ -10,12 +10,30 @@ if(CMAKE_HOST_WIN32 AND NOT DEFINED VCPKG_TARGET_TRIPLET)
     set(VCPKG_TARGET_TRIPLET "x64-windows-static-md" CACHE STRING "vcpkg triplet")
 endif()
 
+# pyproject.toml is the single version source (M7.9, #130). Read it here so
+# the standalone build/tests configure, which scikit-build-core does not drive,
+# gets the same number as the wheel. Anchored at the start of the line so
+# `cmake.version` and `minimum-version` under [tool.scikit-build] cannot match,
+# and not anchored at the end, so a CRLF checkout's trailing \r cannot break it.
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml" _bermake_version_line
+    REGEX "^version = \"[0-9]+\\.[0-9]+\\.[0-9]+\"" LIMIT_COUNT 1)
+string(REGEX REPLACE "^version = \"([0-9]+\\.[0-9]+\\.[0-9]+)\".*$" "\\1"
+    BERMAKE_VERSION "${_bermake_version_line}")
+if(NOT BERMAKE_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+    message(FATAL_ERROR "Could not read the project version from pyproject.toml")
+endif()
+
 # Project metadata
 project(bermake
-    VERSION 0.14.0
+    VERSION ${BERMAKE_VERSION}
     DESCRIPTION "Polygonal 3D modeler for architecture"
     LANGUAGES CXX
 )
+
+# Re-run configure when pyproject.toml changes, so a version bump reaches an
+# existing build/tests tree without deleting its cache.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml")
 
 # Require C++20 globally
 set(CMAKE_CXX_STANDARD 20)

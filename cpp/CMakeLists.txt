@@ -21,6 +21,12 @@ set_target_properties(bermake_core PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
 
+# The version comes from pyproject.toml through the root CMakeLists.txt
+# (M7.9, #130), so version.cpp carries no literal of its own.
+target_compile_definitions(bermake_core PRIVATE
+    BERMAKE_VERSION_STRING="${PROJECT_VERSION}"
+)
+
 # The nanobind module — exposed to Python as `bermake._core`
 nanobind_add_module(_core
     bindings/module.cpp
