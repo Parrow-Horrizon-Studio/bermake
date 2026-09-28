@@ -8,16 +8,16 @@ def test_controller_dirty_transitions_and_title():
     c = DocumentController()
     assert c.current_path is None
     assert c.dirty is False
-    assert c.display_title() == "Untitled — Bermake"
+    assert c.display_title() == "Untitled - Bermake"
 
     c.mark_dirty()
-    assert c.display_title() == "Untitled* — Bermake"
+    assert c.display_title() == "Untitled* - Bermake"
 
     c.set_path("/tmp/house.berm")
     c.mark_clean()
-    assert c.display_title() == "house.berm — Bermake"
+    assert c.display_title() == "house.berm - Bermake"
     c.mark_dirty()
-    assert c.display_title() == "house.berm* — Bermake"
+    assert c.display_title() == "house.berm* - Bermake"
 
 
 def test_model_load_from_keeps_identity_swaps_contents():

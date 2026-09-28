@@ -92,11 +92,13 @@ def check_document_roundtrip(tmp_dir: Path) -> CheckResult:
 
 
 def check_rendering(width: int = 64, height: int = 64) -> CheckResult:
-    """Compile every shader and draw one frame into an offscreen framebuffer."""
+    """Compile every shader and draw into an offscreen framebuffer, twice: an
+    empty model, then the square. Passes only if the two frames differ."""
     import numpy as np
     from OpenGL import GL
     from PySide6.QtGui import QOffscreenSurface, QOpenGLContext
 
+    from bermake.model.model import Model
     from bermake.viewport.camera import Camera
     from bermake.viewport.scene_renderer import SceneRenderer
 
@@ -138,15 +140,37 @@ def check_rendering(width: int = 64, height: int = 64) -> CheckResult:
         scene_renderer.resize(width, height)
         camera = Camera()
         camera.aspect = width / height
-        scene_renderer.render(camera, _square_model())
-        GL.glFinish()
-        pixels = GL.glReadPixels(0, 0, width, height, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)
-        colours = len(np.unique(np.frombuffer(pixels, dtype=np.uint8).reshape(-1, 4), axis=0))
-        data["distinct_colours"] = colours
-        ok = colours > 1
-        return CheckResult("rendering", ok, "" if ok else "the frame is a single colour", data)
+
+        def frame(model) -> np.ndarray:
+            scene_renderer.render(camera, model)
+            GL.glFinish()
+            pixels = GL.glReadPixels(0, 0, width, height, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)
+            return np.frombuffer(pixels, dtype=np.uint8).reshape(-1, 4).copy()
+
+        # The background and grid alone already give more than one colour, so
+        # only the difference from an empty model proves the model was drawn
+        # (final review M2).
+        empty = frame(Model())
+        drawn = frame(_square_model())
+        data["distinct_colours"] = len(np.unique(drawn, axis=0))
+        changed = changed_pixels(empty, drawn)
+        data["model_pixels"] = changed
+        ok = changed > 0
+        detail = "" if ok else "the model frame is identical to the empty frame"
+        return CheckResult("rendering", ok, detail, data)
     finally:
         context.doneCurrent()
+
+
+def changed_pixels(before, after) -> int:
+    """How many RGBA pixels differ between two frames of the same size."""
+    import numpy as np
+
+    before = np.asarray(before, dtype=np.uint8).reshape(-1, 4)
+    after = np.asarray(after, dtype=np.uint8).reshape(-1, 4)
+    if before.shape != after.shape:
+        raise ValueError(f"frames differ in size: {before.shape} and {after.shape}")
+    return int(np.any(before != after, axis=1).sum())
 
 
 def _guarded(name: str, check: Callable[[], CheckResult]) -> CheckResult:

@@ -140,12 +140,14 @@ jobs:
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
       # The archive is pinned by SHA-256 in tools/fetch_mesa.py, which verifies
-      # a restored copy exactly as it verifies a fresh download.
+      # a restored copy exactly as it verifies a fresh download. The key is
+      # derived from that script, so changing the pin changes the key without
+      # a second literal to keep in step.
       - name: Cache the pinned Mesa archive
         uses: actions/cache@v6
         with:
           path: build/mesa-cache
-          key: mesa-26.2.3-3f3613adb43cfd0f
+          key: mesa-${{ hashFiles('tools/fetch_mesa.py') }}
 
       - name: Build the Windows package
         env:
@@ -162,7 +164,9 @@ jobs:
 
   release-draft:
     name: Draft release
-    needs: package-windows
+    # A release is drafted only from a tag whose tests and lint also passed,
+    # not merely one that packaged.
+    needs: [build, lint, package-windows]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     permissions:
@@ -170,6 +174,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          # This job holds contents: write; no later step needs git
+          # credentials, so none are left in the checkout.
+          persist-credentials: false
 
       - name: The tag must match pyproject.toml
         run: |

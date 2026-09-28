@@ -19,7 +19,7 @@ def test_main_window_constructs(qtbot):
 
     window = MainWindow()
     qtbot.addWidget(window)
-    assert window.windowTitle() == "Untitled — Bermake"  # M6a: filename + dirty-state title
+    assert window.windowTitle() == "Untitled - Bermake"  # M6a: filename + dirty-state title
 
 
 def test_viewport_widget_constructs(qtbot):

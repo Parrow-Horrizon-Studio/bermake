@@ -26,4 +26,4 @@ class DocumentController:
     def display_title(self) -> str:
         name = self.current_path.name if self.current_path else "Untitled"
         star = "*" if self.dirty else ""
-        return f"{name}{star} — {_APP}"
+        return f"{name}{star} - {_APP}"

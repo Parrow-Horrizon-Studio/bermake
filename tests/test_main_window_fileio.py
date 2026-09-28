@@ -22,10 +22,10 @@ def _draw_something(win):
 def test_command_execution_marks_dirty_and_titles(app):
     win = MainWindow()
     assert win._doc_controller.dirty is False
-    assert win.windowTitle() == "Untitled — Bermake"
+    assert win.windowTitle() == "Untitled - Bermake"
     win._command_stack.execute(ClearSceneCommand(), win._model.active_scene)
     assert win._doc_controller.dirty is True
-    assert win.windowTitle() == "Untitled* — Bermake"
+    assert win.windowTitle() == "Untitled* - Bermake"
 
 
 def test_save_as_writes_file_and_marks_clean(app, tmp_path, monkeypatch):
@@ -39,7 +39,7 @@ def test_save_as_writes_file_and_marks_clean(app, tmp_path, monkeypatch):
     assert win._on_file_save_as() is True
     assert target.exists()
     assert win._doc_controller.dirty is False
-    assert win.windowTitle() == "out.berm — Bermake"
+    assert win.windowTitle() == "out.berm - Bermake"
 
 
 def test_guard_cancel_aborts(app):
@@ -93,7 +93,7 @@ def test_new_resets_to_clean_untitled(app, tmp_path):
     win._on_file_new()
     assert win._doc_controller.current_path is None
     assert win._doc_controller.dirty is False
-    assert win.windowTitle() == "Untitled — Bermake"
+    assert win.windowTitle() == "Untitled - Bermake"
     assert not win._command_stack.can_undo  # history cleared
 
 

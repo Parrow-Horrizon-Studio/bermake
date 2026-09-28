@@ -9,6 +9,8 @@ import json
 from pathlib import Path
 
 import bermake.diagnostics.smoke as smoke
+import numpy as np
+import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -65,3 +67,23 @@ def test_rendering_without_mesa_is_a_failure_not_a_skip(qapp, tmp_path, monkeypa
     report = json.loads((tmp_path / "r.json").read_text(encoding="utf-8"))
     rendering = [c for c in report["checks"] if c["name"] == "rendering"]
     assert rendering == [{"name": "rendering", "ok": False, "detail": "Mesa not found", "data": {}}]
+
+
+def test_identical_frames_have_no_changed_pixels():
+    """The rendering check passes only when drawing the model changed the
+    frame (final review M2); identical frames must count as no change."""
+    frame = np.zeros((4 * 4, 4), dtype=np.uint8)
+    assert smoke.changed_pixels(frame, frame.copy()) == 0
+
+
+def test_changed_pixels_counts_pixels_not_channels():
+    before = np.zeros((16, 4), dtype=np.uint8)
+    after = before.copy()
+    after[3] = (255, 255, 255, 255)
+    after[7, 1] = 9
+    assert smoke.changed_pixels(before, after) == 2
+
+
+def test_frames_of_different_sizes_are_refused():
+    with pytest.raises(ValueError, match="size"):
+        smoke.changed_pixels(np.zeros((4, 4), np.uint8), np.zeros((8, 4), np.uint8))
