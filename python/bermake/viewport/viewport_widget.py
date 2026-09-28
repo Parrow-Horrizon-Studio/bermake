@@ -192,13 +192,18 @@ class ViewportWidget(QOpenGLWidget):
         from inside initializeGL would re-enter Qt's GL setup.
         """
         self.gl_info = info
-        shader_error = None
+        setup_error = None
         if info.version >= MIN_GL_VERSION:
             try:
                 initialize()
-            except RuntimeError as exc:
-                shader_error = str(exc)
-        verdict = evaluate_gl(info, shader_error)
+            except Exception as exc:
+                # Not only RuntimeError (a shader that failed to compile):
+                # PyOpenGL's own errors derive from Exception, and without the
+                # offer they would reach the generic error dialog with a
+                # half-initialised renderer (final review I4).
+                logger.exception("setting up the viewport renderer failed")
+                setup_error = str(exc) or type(exc).__name__
+        verdict = evaluate_gl(info, setup_error)
         if verdict.ok:
             return
         self._gl_failed = True

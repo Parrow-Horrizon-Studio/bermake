@@ -3,6 +3,7 @@ created: _apply_gl_verdict takes the facts initializeGL would read."""
 
 from bermake.diagnostics.gl_check import GlInfo
 from bermake.viewport.viewport_widget import ViewportWidget
+from OpenGL.error import NullFunctionError
 
 
 def _widget(qtbot):
@@ -32,6 +33,23 @@ def test_a_shader_failure_reports_the_renderer_error(qtbot):
     with qtbot.waitSignal(widget.gl_unavailable, timeout=2000) as blocker:
         widget._apply_gl_verdict(GlInfo((4, 6), "4.6", "Odd Driver"), failing_initialise)
     assert "fragment shader compile failed" in blocker.args[0]
+    assert widget._gl_failed
+
+
+def test_a_pyopengl_error_during_setup_still_reports(qtbot):
+    """PyOpenGL's errors derive from Exception, not RuntimeError (final
+    review I4); they must reach the offer, not the generic error dialog."""
+    assert not issubclass(NullFunctionError, RuntimeError)
+    widget = _widget(qtbot)
+
+    def failing_initialise():
+        raise NullFunctionError("Attempt to call an undefined function glGenVertexArrays")
+
+    with qtbot.waitSignal(widget.gl_unavailable, timeout=2000) as blocker:
+        widget._apply_gl_verdict(GlInfo((4, 6), "4.6", "Odd Driver"), failing_initialise)
+    assert "could not set up Bermake's viewport" in blocker.args[0]
+    assert "glGenVertexArrays" in blocker.args[0]
+    assert "Odd Driver" in blocker.args[0]
     assert widget._gl_failed
 
 

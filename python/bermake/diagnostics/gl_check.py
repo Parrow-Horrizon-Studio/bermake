@@ -2,6 +2,11 @@
 
 Every shader is `#version 330 core`, so 3.3 is the floor. Pure, so the whole
 decision is testable without a GPU.
+
+The second input is whatever went wrong while setting up the viewport's
+renderer on a new-enough context: a shader that failed to compile (the
+renderer's RuntimeError) or any PyOpenGL error (GLError, NullFunctionError,
+"no valid context"), which derive from Exception rather than RuntimeError.
 """
 
 from __future__ import annotations
@@ -24,7 +29,7 @@ class GlVerdict:
     message: str = ""
 
 
-def evaluate_gl(info: GlInfo, shader_error: str | None) -> GlVerdict:
+def evaluate_gl(info: GlInfo, setup_error: str | None) -> GlVerdict:
     need = f"{MIN_GL_VERSION[0]}.{MIN_GL_VERSION[1]}"
     if info.version < MIN_GL_VERSION:
         got = f"{info.version[0]}.{info.version[1]}"
@@ -34,12 +39,11 @@ def evaluate_gl(info: GlInfo, shader_error: str | None) -> GlVerdict:
             f"provides OpenGL {got} ({info.renderer}). This is common in virtual machines, "
             "over Remote Desktop, and with older graphics drivers.",
         )
-    if shader_error is not None:
-        lines = shader_error.strip().splitlines()
+    if setup_error is not None:
+        lines = setup_error.strip().splitlines()
         first = lines[0] if lines else "unknown error"
         return GlVerdict(
             False,
-            f"This graphics driver ({info.renderer}) could not compile Bermake's "
-            f"viewport shaders: {first}",
+            f"This graphics driver ({info.renderer}) could not set up Bermake's viewport: {first}",
         )
     return GlVerdict(True)

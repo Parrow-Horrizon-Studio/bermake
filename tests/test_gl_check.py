@@ -26,13 +26,23 @@ def test_new_enough_contexts_pass(version):
     assert evaluate_gl(_info(version), None).ok
 
 
-def test_a_shader_failure_fails_with_only_its_first_line():
+def test_a_setup_failure_fails_with_only_its_first_line():
     error = "vertex shader compile failed:\n0:12(3): error: something long"
     verdict = evaluate_gl(_info((4, 6), "Odd Driver"), error)
     assert not verdict.ok
     assert "vertex shader compile failed:" in verdict.message
     assert "something long" not in verdict.message
     assert "Odd Driver" in verdict.message
+
+
+def test_a_setup_failure_is_worded_for_any_cause_not_only_shaders():
+    """PyOpenGL errors reach here too (final review I4), so the message must
+    not claim a shader failed when a GL call did."""
+    verdict = evaluate_gl(_info((4, 6), "Odd Driver"), "Attempt to call an undefined function")
+    assert verdict.message == (
+        "This graphics driver (Odd Driver) could not set up Bermake's viewport: "
+        "Attempt to call an undefined function"
+    )
 
 
 def test_an_empty_shader_error_still_fails():
