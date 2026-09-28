@@ -203,7 +203,7 @@ class ViewportWidget(QOpenGLWidget):
             return
         self._gl_failed = True
         logger.error("OpenGL unavailable: %s", verdict.message)
-        QTimer.singleShot(0, lambda: self.gl_unavailable.emit(verdict.message))
+        QTimer.singleShot(0, self, lambda: self.gl_unavailable.emit(verdict.message))
 
     def resizeGL(self, w: int, h: int) -> None:
         self.scene_renderer.resize(w, h)

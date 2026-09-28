@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 import math
 from pathlib import Path
 from typing import ClassVar
 
 import numpy as np
-from PySide6.QtCore import QBuffer, QIODevice, QPoint, QSettings, Qt
+from PySide6.QtCore import QBuffer, QIODevice, QPoint, QSettings, Qt, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget
 
@@ -122,6 +123,9 @@ def _texture_decoder(data: bytes):
     )
 
 
+logger = logging.getLogger(__name__)
+
+
 class MainWindow(QMainWindow):
     """Top-level Bermake window."""
 
@@ -201,6 +205,12 @@ class MainWindow(QMainWindow):
         # Overridable for tests, like _prompt_discard.
         self._relaunch = relaunch
         self._mesa_available = default_mesa_dir() is not None
+        # M7.9 fix round 1: overridable for tests, like _relaunch and
+        # _prompt_discard, so _on_gl_unavailable's nested-event-loop check
+        # does not depend on the offscreen platform's real modality.
+        from PySide6.QtWidgets import QApplication
+
+        self._active_modal = QApplication.activeModalWidget
         # M7d, Task 13 (Part B): wire the annotation units provider (Task 4
         # carry-over) -- without this, _paint_annotations silently falls back
         # to a default Units() regardless of the document's unit setting.
@@ -2299,6 +2309,18 @@ class MainWindow(QMainWindow):
             self._restart()
 
     def _on_gl_unavailable(self, message: str) -> None:
+        if self._active_modal() is not None:
+            # M7.9 fix round 1: at startup, app.py's _build_main_window calls
+            # show_welcome_dialog() -> WelcomeDialog(...).exec(), a nested
+            # event loop that runs before app.exec() ever starts. The
+            # viewport's deferred gl_unavailable signal can fire inside that
+            # nested loop, where self.close() below only hides this window
+            # (the Welcome dialog, a separate top-level widget, stays visible)
+            # and _relaunch() would start a second Bermake while the first
+            # never returns from the nested loop. Re-post until no modal
+            # widget is active, so the restart runs from the main event loop.
+            QTimer.singleShot(200, self, lambda: self._on_gl_unavailable(message))
+            return
         offer = self._mesa_available and not compatibility_rendering_active()
         if not self._prompt_gl_fallback(message, offer):
             return
@@ -2315,7 +2337,8 @@ class MainWindow(QMainWindow):
         """
         if not self.close():
             return
-        self._relaunch()
+        if not self._relaunch():
+            logger.error("failed to relaunch Bermake after closing for a rendering restart")
 
     def _prompt_gl_fallback(self, message: str, offer_restart: bool) -> bool:
         """True to restart with compatibility rendering. Overridable for testing."""

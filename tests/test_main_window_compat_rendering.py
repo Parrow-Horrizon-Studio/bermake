@@ -4,6 +4,8 @@ conftest.py redirects MainWindow's QSettings() to tmp_path/window_state.ini,
 so _settings() below opens the same store the window reads and writes.
 """
 
+import logging
+
 import bermake.ui.main_window as main_window_module
 import pytest
 from bermake.commands.scene_commands import ClearSceneCommand
@@ -113,6 +115,46 @@ def test_accepting_the_gl_fallback_stores_it_and_relaunches(
     assert prompts == []
     assert main_window._actions[ACTION].isChecked()
     assert preferences.read_compatibility_rendering(_settings(tmp_path)) is True
+
+
+def test_a_modal_dialog_defers_the_gl_fallback_prompt(main_window, monkeypatch, qtbot):
+    """The Welcome dialog's startup nested event loop must not see this.
+
+    While a modal is active, _on_gl_unavailable re-posts itself instead of
+    prompting; once the modal is gone it proceeds normally.
+    """
+    main_window._mesa_available = True
+    monkeypatch.setattr(main_window_module, "compatibility_rendering_active", lambda: False)
+    seen = []
+    main_window._prompt_gl_fallback = lambda message, offer: seen.append((message, offer)) or False
+    main_window._active_modal = lambda: object()
+
+    main_window._on_gl_unavailable("no usable OpenGL")
+
+    assert seen == []
+
+    main_window._active_modal = lambda: None
+    qtbot.waitUntil(lambda: seen == [("no usable OpenGL", True)], timeout=2000)
+
+
+def test_a_failed_relaunch_is_logged(main_window, caplog):
+    main_window._relaunch = lambda: False
+
+    with caplog.at_level(logging.ERROR, logger="bermake.ui.main_window"):
+        main_window._restart()
+
+    assert any(record.levelno == logging.ERROR for record in caplog.records)
+
+
+def test_mesa_unavailable_disables_the_switch_at_startup(qtbot, monkeypatch):
+    monkeypatch.setattr(main_window_module, "default_mesa_dir", lambda: None)
+
+    window = MainWindow()
+    qtbot.addWidget(window)
+
+    action = window._actions[ACTION]
+    assert not action.isEnabled()
+    assert "tools/fetch_mesa.py" in action.toolTip()
 
 
 def test_the_viewport_signal_reaches_the_window(main_window):
