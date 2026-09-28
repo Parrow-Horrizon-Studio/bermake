@@ -69,6 +69,13 @@ def main(argv: list[str] | None = None) -> int:
     QCoreApplication.setOrganizationName(ORGANIZATION_NAME)
     QCoreApplication.setApplicationName(APPLICATION_NAME)
 
+    # Before logging and before any window: the smoke test reports through its
+    # own JSON file and must not touch the tester's log or preferences.
+    if args.smoke_report is not None:
+        from bermake.diagnostics.smoke import run_smoke
+
+        return run_smoke(args.smoke_report)
+
     log_dir = logs.default_log_directory()
     logs.configure_file_logging(log_dir)
     native_crash_stream = logs.enable_native_crash_log(log_dir)
