@@ -373,6 +373,7 @@ ACTIONS: tuple[ActionSpec, ...] = (
         checkable=True,
         tooltip="Draw through the bundled Mesa instead of the graphics driver (restart needed)",
     ),
+    ActionSpec("help_about", "About Bermake", "_on_show_about"),
 )
 
 _BY_ID: dict[str, ActionSpec] = {spec.id: spec for spec in ACTIONS}
@@ -559,7 +560,7 @@ MENUS: tuple[MenuSpec, ...] = (
             "view_scenes",
         ),
     ),
-    MenuSpec("Help", ("help_welcome", None, "help_compatibility_rendering")),
+    MenuSpec("Help", ("help_welcome", None, "help_compatibility_rendering", None, "help_about")),
 )
 
 # Right-click menus. `Assign Tag` is deliberately absent: it is a dynamic

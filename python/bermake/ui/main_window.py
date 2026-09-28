@@ -2379,3 +2379,13 @@ class MainWindow(QMainWindow):
             QMessageBox.StandardButton.No,
         )
         return reply == QMessageBox.StandardButton.Yes
+
+    def _on_show_about(self) -> None:
+        """Help > About Bermake: versions, OpenGL facts and the log folder."""
+        from bermake.diagnostics.logs import default_log_directory
+        from bermake.ui.about_dialog import AboutDialog, gather_about_info
+
+        info = gather_about_info(
+            self._viewport.gl_info, default_log_directory(), compatibility_rendering_active()
+        )
+        AboutDialog(info, self).exec()
