@@ -6,37 +6,47 @@ Bermake is a long-horizon project inspired by Blender's development model, inten
 
 ## Status
 
-**Alpha, v0.8.0.** Phase 2 (Modeling App) is complete: you can draw, push/pull, transform,
-organize, paint, annotate, save, and import/export real models. v0.4.0 gave it the surface of a
-real application: seven dockable toolbars over an original icon set, per-tool cursors,
+**Alpha, v0.15.0.** Phase 2 (Modeling App) is complete: you can draw, push/pull, transform,
+organize, paint, annotate, save, and import/export real models. v0.4.0 gave it the surface of
+a real application: seven dockable toolbars over an original icon set, per-tool cursors,
 right-click context menus, and a layout that persists between runs. v0.5.0
 ([M7.3](docs/2026-05-16-pluton-design.md)) replaced the right-hand Materials, Tags and Scenes
-docks and the three floating tool-option bars with a single Outliner and Properties panel: a
-model hierarchy with per-instance visibility and rename, above five icon tabs (Tool Settings,
-Entity Info, Material, Tags, Scenes). v0.6.0 ([M7.4](docs/2026-05-16-pluton-design.md)) added
-the Offset and Follow Me tools and four parametric primitives (box, cylinder, cone, sphere),
-built on a sweep layer shared with Push/Pull. v0.7.0
-([M7.5a](docs/2026-09-08-M7.5a-materials-design.md)) reworked materials into a PBR-shaped
-model (base colour, alpha, metallic, roughness) approximated in Phong, gave every face
-independent front and back materials with a distinct back default, added translucent
-materials drawn in a sorted second pass, made material add, edit and delete undoable from a
-real editor, added drag-to-paint, and gave tags a per-tag colour with a Color-by-Tag view
-mode. v0.7.1 fixed a long-standing triangulation bug that left half of every closed solid's
-triangles wound inside-out, which the new back-face default had made visible. v0.8.0
-([M7.5b](docs/2026-09-13-M7.5b-textures-design.md)) added texture images to materials: a
-texture is projected onto every face painted with it at a real-world size, tiling rather than
-stretching, tinted by the material's base colour, with its alpha making cutouts genuinely
-see-through in the same sorted translucent pass. A face can override the projection with its
-own offset, scale and rotation, independently per side, and the `.berm` container now
-embeds texture images and a thumbnail. Texture add, assign, and placement (including a
-direct drag on the face) are all undoable. Still missing: imported per-corner UVs and the
-accompanying OBJ `vt`/`.mtl` round-trip (`#80`) and glTF texture import, both deferred to
-M7.5c (whose stage 1 has since added the storage this design deliberately excluded; import
-itself is stage 2); the four-pin Texture Position tool; any UI to delete a texture from the
-library (deletion clears every material reference and is fully undoable underneath, but
-nothing in the UI reaches it yet); order-independent transparency and real PBR shading (M12);
-the rest of [Phase 2.5 (Parity & Polish)](docs/2026-05-16-pluton-design.md); and installers.
-Run it from source.
+docks and the three floating tool-option bars with a single Outliner and Properties panel.
+v0.6.0 ([M7.4](docs/2026-05-16-pluton-design.md)) added the Offset and Follow Me tools and
+four parametric primitives (box, cylinder, cone, sphere), built on a sweep layer shared with
+Push/Pull. v0.7.0 ([M7.5a](docs/2026-09-08-M7.5a-materials-design.md)) reworked materials into
+a PBR-shaped model approximated in Phong, with independent front and back materials per face,
+translucent materials in a sorted second pass, and an undoable Materials editor with
+drag-to-paint. v0.8.0 ([M7.5b](docs/2026-09-13-M7.5b-textures-design.md)) added texture images
+to materials, projected onto every face at a real-world size, tiling rather than stretching,
+with per-face placement overrides, all undoable. v0.9.0 (M7.5c) stored per-corner UVs on the
+mesh so an imported model keeps its own texture layout instead of being reprojected, and closed
+the OBJ `.mtl`/`vt` and glTF texture round-trip (`#80`). v0.10.0 (M7.6a) added face-split:
+drawing a line or arc across a face divides it, and erasing the cut merges it back. v0.11.0
+(M7.6b) added acquisition-driven inference (Parallel, Perpendicular, From-Point), construction
+guides, and an on-canvas measurement readout. v0.12.0 (M7.6c) added smart-select
+(double/triple-click), selection set operations, and an opt-in vertex selection mode,
+completing Phase 2.5 (Parity & Polish). v0.13.0 (M7.7) gave every document its own Environment
+with five background presets each carrying its own edge and grid contrast, a Welcome dialog
+offering six templates, and light/dark themes. v0.14.0 (M7.8) renamed the project from Pluton
+to Bermake, including the file extension (`.pluton` to `.berm`), the CLI entry point and the
+Python package, with no change in application behavior. v0.15.0 (M7.9) is the first Windows
+build a tester can just download and double-click: a portable zip with crash logging, an
+OpenGL 3.3 check with compatibility rendering for machines below it, and a Help > About Bermake
+dialog for reporting problems. Still missing: code signing, an installer, and macOS and Linux
+builds (both still run from source only); the rest is the issue-driven backlog now open in
+[Phase 2.6](docs/2026-05-16-pluton-design.md).
+
+## Download
+
+**Windows:** download `Bermake-<version>-windows-x64.zip` from the
+[latest release](https://github.com/Parrow-Horrizon-Studio/bermake/releases/latest),
+unzip it anywhere, and double-click `Bermake.exe`. The build is not signed yet,
+so Windows may show "Windows protected your PC"; click **More info**, then
+**Run anyway**. `README.txt` inside the zip covers compatibility rendering and
+how to report a problem.
+
+**From source:** see Building from source below. macOS and Linux run from source only.
 
 ## What works today
 
