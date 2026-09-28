@@ -20,10 +20,10 @@ threshold.
 The Python half of the scope is derived from tool.scikit-build.wheel.packages
 in pyproject.toml rather than hardcoded, because that config is the definition
 of what ships in the wheel; a hardcoded list would silently stop matching a
-newly added package. cpp and four root packaging/build/lint files are added
-explicitly, since they are not covered by the wheel packages list but a stale
-reference in any of them is a real regression (this milestone nearly shipped
-exactly that in a workflow's lint path). See _shipped_roots().
+newly added package. cpp, packaging and four root packaging/build/lint files
+are added explicitly, since they are not covered by the wheel packages list but
+a stale reference in any of them is a real regression (this milestone nearly
+shipped exactly that in a workflow's lint path). See _shipped_roots().
 
 One shipped file is meant to contain the retired name: the old-document
 detection in bermake_file.py has to compare against the literal old format
@@ -71,6 +71,8 @@ def _shipped_roots() -> list[Path]:
 
     roots = [ROOT / p for p in packages]
     roots.append(ROOT / "cpp")
+    # M7.9: packaging/ holds the tester README and notices that ship in the zip.
+    roots.append(ROOT / "packaging")
     roots.extend(
         ROOT / name
         for name in (

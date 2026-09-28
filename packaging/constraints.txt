@@ -1,0 +1,13 @@
+# Exact versions for the shipped Windows build (M7.9, spec 2.2, D4).
+# pyproject.toml keeps unpinned floors for the package; this file applies only
+# to tools/package_windows.py, so an upstream release cannot silently change
+# what testers receive. Upgrading any of these is a deliberate edit.
+PySide6==6.11.1
+PySide6_Essentials==6.11.1
+PySide6_Addons==6.11.1
+shiboken6==6.11.1
+numpy==2.4.6
+PyOpenGL==3.1.10
+mapbox_earcut==2.1.0
+pyinstaller==6.22.3
+pyinstaller-hooks-contrib==2026.7
