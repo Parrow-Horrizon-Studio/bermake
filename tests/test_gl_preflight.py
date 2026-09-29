@@ -13,6 +13,7 @@ import pytest
 from bermake.diagnostics.gl_check import GlInfo
 from bermake.diagnostics.gl_preflight import (
     NO_CONTEXT_MESSAGE,
+    PreflightOutcome,
     PreflightProblem,
     preflight_problem,
     run_gl_preflight,
@@ -88,40 +89,46 @@ class _Recorder:
 
 def test_a_good_context_shows_nothing_and_continues():
     recorder = _Recorder()
-    assert recorder.run(GL_4_6) is False
+    assert recorder.run(GL_4_6) is PreflightOutcome.OK
     assert recorder.events == []
 
 
 def test_accepting_the_offer_stores_the_preference_then_relaunches():
     recorder = _Recorder(answer=True)
-    assert recorder.run(None) is True
+    assert recorder.run(None) is PreflightOutcome.RELAUNCHED
     assert recorder.events == [("prompt", NO_CONTEXT_MESSAGE, True), ("store",), ("relaunch",)]
 
 
 def test_declining_the_offer_continues_to_the_window():
     recorder = _Recorder(answer=False)
-    assert recorder.run(GL_1_1) is False
+    assert recorder.run(GL_1_1) is PreflightOutcome.REPORTED
     assert [event[0] for event in recorder.events] == ["prompt"]
     assert recorder.events[0][2] is True
 
 
+def test_a_low_version_declined_is_reported_so_the_window_stays_quiet():
+    """GL 2.x to 3.2: Qt made a context, the tester was told and said no."""
+    recorder = _Recorder(answer=False)
+    assert recorder.run(GlInfo((2, 1), "2.1 Mesa", "llvmpipe")) is PreflightOutcome.REPORTED
+
+
 def test_without_mesa_the_message_is_shown_and_startup_continues():
     recorder = _Recorder(answer=True)
-    assert recorder.run(GL_1_1, mesa_available=False) is False
+    assert recorder.run(GL_1_1, mesa_available=False) is PreflightOutcome.REPORTED
     assert [event[0] for event in recorder.events] == ["prompt"]
     assert recorder.events[0][2] is False
 
 
 def test_already_active_compatibility_rendering_explains_and_continues():
     recorder = _Recorder(answer=True)
-    assert recorder.run(None, compat_active=True) is False
+    assert recorder.run(None, compat_active=True) is PreflightOutcome.REPORTED
     assert recorder.events == [("prompt", NO_CONTEXT_MESSAGE, False)]
 
 
 def test_a_failed_relaunch_is_logged_and_startup_continues(caplog):
     recorder = _Recorder(answer=True, relaunched=False)
     with caplog.at_level(logging.ERROR, logger="bermake.diagnostics.gl_preflight"):
-        assert recorder.run(GL_1_1) is False
+        assert recorder.run(GL_1_1) is PreflightOutcome.REPORTED
     assert [event[0] for event in recorder.events] == ["prompt", "store", "relaunch"]
     assert "failed to relaunch" in caplog.text
 
@@ -140,7 +147,7 @@ def test_a_probe_that_raises_is_logged_and_skipped(caplog):
             relaunch=lambda: True,
             probe=broken_probe,
         )
-    assert result is False
+    assert result is PreflightOutcome.OK
     assert prompts == []
     assert "probe blew up" in caplog.text
 

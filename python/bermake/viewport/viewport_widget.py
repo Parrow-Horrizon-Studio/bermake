@@ -120,6 +120,11 @@ class ViewportWidget(QOpenGLWidget):
         # M7.9: filled by initializeGL; read by the About dialog.
         self.gl_info: GlInfo | None = None
         self._gl_failed = False
+        # Set by the window when the startup check has already shown the tester
+        # an OpenGL version problem, so the same one is logged but not shown a
+        # second time. Setup and shader failures on a new enough context still
+        # report (M7.9 pre-tag fix).
+        self.version_failure_reported = False
 
     @property
     def scene(self):
@@ -208,6 +213,8 @@ class ViewportWidget(QOpenGLWidget):
             return
         self._gl_failed = True
         logger.error("OpenGL unavailable: %s", verdict.message)
+        if self.version_failure_reported and info.version < MIN_GL_VERSION:
+            return
         QTimer.singleShot(0, self, lambda: self.gl_unavailable.emit(verdict.message))
 
     def resizeGL(self, w: int, h: int) -> None:

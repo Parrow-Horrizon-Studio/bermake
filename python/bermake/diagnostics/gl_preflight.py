@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from enum import Enum
 
 from bermake.diagnostics.gl_check import GlInfo, evaluate_gl
 
@@ -33,6 +34,23 @@ NO_CONTEXT_MESSAGE = (
     "could be created. This is common in virtual machines, over Remote Desktop, and "
     "with missing or very old graphics drivers."
 )
+
+
+class PreflightOutcome(Enum):
+    """What run_gl_preflight did, so the caller can tell the three apart.
+
+    OK: nothing was wrong, or the check itself could not run; the viewport's
+    own check still follows and will report any problem it finds.
+    REPORTED: the tester was shown the problem and Bermake carries on
+    anyway. The viewport must not show the same OpenGL version problem a
+    second time when the window's own context turns out to be the same one.
+    RELAUNCHED: a new Bermake was started with compatibility rendering, so
+    this one must exit without building a window.
+    """
+
+    OK = "ok"
+    REPORTED = "reported"
+    RELAUNCHED = "relaunched"
 
 
 @dataclass(frozen=True)
@@ -105,10 +123,11 @@ def run_gl_preflight(
     store_preference: Callable[[], None],
     relaunch: Callable[[], bool],
     probe: Callable[[], GlInfo | None] = probe_gl,
-) -> bool:
-    """Check OpenGL before the window exists. True means a new Bermake was
-    started with compatibility rendering, so main() returns without building
-    the window.
+) -> PreflightOutcome:
+    """Check OpenGL before the window exists. RELAUNCHED means a new Bermake
+    was started with compatibility rendering, so main() returns without
+    building the window; REPORTED means the tester has already been shown the
+    problem (see PreflightOutcome).
 
     `prompt(message, offer_restart)` is the same dialog the window uses and
     returns True for the restart. Declining, or a problem with no restart on
@@ -120,7 +139,7 @@ def run_gl_preflight(
         info = probe()
     except Exception:
         logger.exception("the OpenGL preflight check failed; continuing without it")
-        return False
+        return PreflightOutcome.OK
     if info is None:
         logger.error("OpenGL preflight: no context could be created")
     else:
@@ -133,13 +152,13 @@ def run_gl_preflight(
         )
     problem = preflight_problem(info, mesa_available=mesa_available, compat_active=compat_active)
     if problem is None:
-        return False
+        return PreflightOutcome.OK
     logger.error("OpenGL unavailable before the main window opened: %s", problem.message)
     if not prompt(problem.message, problem.offer_restart) or not problem.offer_restart:
-        return False
+        return PreflightOutcome.REPORTED
     store_preference()
     if relaunch():
         logger.info("restarting with compatibility rendering from the startup check")
-        return True
+        return PreflightOutcome.RELAUNCHED
     logger.error("failed to relaunch Bermake for compatibility rendering; continuing")
-    return False
+    return PreflightOutcome.REPORTED

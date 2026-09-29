@@ -34,7 +34,7 @@ from bermake.diagnostics.error_dialog import (
     show_error_dialog,
     show_gl_fallback_dialog,
 )
-from bermake.diagnostics.gl_preflight import run_gl_preflight
+from bermake.diagnostics.gl_preflight import PreflightOutcome, run_gl_preflight
 from bermake.diagnostics.launch import LaunchArgs, parse_launch_args
 from bermake.ui import preferences
 from bermake.ui.theme import apply_theme, theme_for_name
@@ -60,10 +60,22 @@ def start_window(
         return None
 
 
-def _build_main_window():
+def _build_main_window(*, gl_reported: bool = False, compat_failed: bool = False):
+    """Build and show the main window.
+
+    `gl_reported`: the startup check already showed an OpenGL problem, so the
+    viewport must not show its version twice. `compat_failed`: switching to
+    compatibility rendering was requested and failed, so the window must not
+    offer the restart into it. Both are set before show(), because the
+    viewport's initializeGL runs on show.
+    """
     from bermake.ui.main_window import MainWindow
 
     window = MainWindow()
+    if gl_reported:
+        window.note_gl_reported_at_startup()
+    if compat_failed:
+        window.disable_compatibility_offer()
     window.show()
     # After show(), so the dialog is modal over a real window rather than over
     # nothing, and so there is no second "no document yet" code path: the
@@ -116,6 +128,15 @@ def apply_compatibility_rendering(
     return True
 
 
+def mesa_restart_available(
+    *, compat_failed: bool, find_mesa: Callable[[], Path | None] = default_mesa_dir
+) -> bool:
+    """Whether "restart using compatibility rendering" can help. Not when
+    switching to it already failed this launch: the restart would land in the
+    same failure and offer itself again, every time."""
+    return not compat_failed and find_mesa() is not None
+
+
 def _store_compatibility_preference() -> None:
     settings = QSettings()
     preferences.write_compatibility_rendering(settings, True)
@@ -154,7 +175,8 @@ def _run(args: LaunchArgs, log_dir: Path) -> int:
     stored = preferences.read_compatibility_rendering(QSettings())
     if args.no_compatibility_rendering:
         logger.info("compatibility rendering is off for this launch (--no-compatibility-rendering)")
-    apply_compatibility_rendering(wants_compatibility_rendering(args, stored))
+    requested = wants_compatibility_rendering(args, stored)
+    compat_failed = requested and not apply_compatibility_rendering(requested)
 
     from PySide6.QtWidgets import QApplication
 
@@ -164,16 +186,23 @@ def _run(args: LaunchArgs, log_dir: Path) -> int:
     # palette (M7.7, #101), and before the preflight so its dialog does too.
     apply_theme(app, theme_for_name(preferences.read_theme(QSettings())))
 
-    if run_gl_preflight(
-        mesa_available=default_mesa_dir() is not None,
+    outcome = run_gl_preflight(
+        mesa_available=mesa_restart_available(compat_failed=compat_failed),
         compat_active=compat_rendering.compatibility_rendering_active(),
         prompt=show_gl_fallback_dialog,
         store_preference=_store_compatibility_preference,
         relaunch=compat_rendering.relaunch,
-    ):
+    )
+    if outcome is PreflightOutcome.RELAUNCHED:
         return 0
 
-    window = start_window(_build_main_window, reporter, show_error_dialog)
+    window = start_window(
+        lambda: _build_main_window(
+            gl_reported=outcome is PreflightOutcome.REPORTED, compat_failed=compat_failed
+        ),
+        reporter,
+        show_error_dialog,
+    )
     if window is None:
         return 1
     return app.exec()

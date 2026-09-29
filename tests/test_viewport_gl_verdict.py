@@ -24,6 +24,36 @@ def test_an_old_context_skips_initialisation_and_reports(qtbot):
     assert "OpenGL 1.1" in blocker.args[0]
 
 
+def test_a_version_failure_already_reported_at_startup_is_not_shown_again(qtbot):
+    """M7.9 pre-tag fix: the startup check showed this very dialog."""
+    widget = _widget(qtbot)
+    widget.version_failure_reported = True
+    initialised = []
+    with qtbot.assertNotEmitted(widget.gl_unavailable, wait=300):
+        widget._apply_gl_verdict(
+            GlInfo((2, 1), "2.1 Mesa", "llvmpipe"), lambda: initialised.append(True)
+        )
+    assert initialised == []
+    assert widget._gl_failed
+
+
+def test_the_flag_defaults_off_so_an_unreported_version_failure_still_shows(qtbot):
+    assert _widget(qtbot).version_failure_reported is False
+
+
+def test_a_setup_failure_on_a_new_context_reports_even_when_a_version_was_reported(qtbot):
+    widget = _widget(qtbot)
+    widget.version_failure_reported = True
+
+    def failing_initialise():
+        raise RuntimeError("fragment shader compile failed")
+
+    with qtbot.waitSignal(widget.gl_unavailable, timeout=2000) as blocker:
+        widget._apply_gl_verdict(GlInfo((4, 6), "4.6", "Odd Driver"), failing_initialise)
+    assert "fragment shader compile failed" in blocker.args[0]
+    assert widget._gl_failed
+
+
 def test_a_shader_failure_reports_the_renderer_error(qtbot):
     widget = _widget(qtbot)
 

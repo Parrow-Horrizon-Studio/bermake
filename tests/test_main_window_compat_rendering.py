@@ -27,9 +27,7 @@ def relaunches(main_window):
     return calls
 
 
-def test_restoring_the_checkmark_at_startup_does_not_offer_a_restart(
-    tmp_path, qtbot, monkeypatch
-):
+def test_restoring_the_checkmark_at_startup_does_not_offer_a_restart(tmp_path, qtbot, monkeypatch):
     store = _settings(tmp_path)
     preferences.write_compatibility_rendering(store, True)
     store.sync()
@@ -97,6 +95,28 @@ def test_the_gl_failure_offers_the_switch_only_when_it_can_help(
     main_window._on_gl_unavailable("no usable OpenGL")
 
     assert seen == [("no usable OpenGL", offered)]
+
+
+def test_noting_the_startup_report_marks_the_viewport(main_window):
+    assert main_window._viewport.version_failure_reported is False
+
+    main_window.note_gl_reported_at_startup()
+
+    assert main_window._viewport.version_failure_reported is True
+
+
+def test_a_failed_switch_at_startup_removes_the_restart_offer(main_window, monkeypatch):
+    """Otherwise the restart relaunches into the same failed switch and the
+    same offer, every time (M7.9 pre-tag fix)."""
+    main_window._mesa_available = True
+    monkeypatch.setattr(main_window_module, "compatibility_rendering_active", lambda: False)
+    seen = []
+    main_window._prompt_gl_fallback = lambda message, offer: seen.append((message, offer)) or False
+
+    main_window.disable_compatibility_offer()
+    main_window._on_gl_unavailable("no usable OpenGL")
+
+    assert seen == [("no usable OpenGL", False)]
 
 
 def test_accepting_the_gl_fallback_stores_it_and_relaunches(

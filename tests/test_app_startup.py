@@ -5,10 +5,19 @@ import subprocess
 import sys
 from pathlib import Path
 
+import bermake.app as app_module
 import pytest
-from bermake.app import apply_compatibility_rendering, start_window, wants_compatibility_rendering
+from bermake.app import (
+    apply_compatibility_rendering,
+    mesa_restart_available,
+    start_window,
+    wants_compatibility_rendering,
+)
+from bermake.diagnostics.gl_check import GlInfo
+from bermake.diagnostics.gl_preflight import PreflightOutcome, preflight_problem
 from bermake.diagnostics.launch import parse_launch_args
 from bermake.diagnostics.logs import ErrorReporter
+from PySide6.QtWidgets import QApplication
 
 
 def test_a_failing_window_factory_shows_the_error_now_and_returns_none(tmp_path):
@@ -96,3 +105,164 @@ def test_a_failure_to_enable_is_logged_and_startup_continues(caplog):
     assert "could not enable compatibility rendering" in record.getMessage()
     assert record.exc_info is not None
     assert "WinError 225" in str(record.exc_info[1])
+
+
+# --- M7.9 pre-tag fix: no repeated dialog, no offer loop ---------------------
+
+
+def test_a_failed_switch_to_compatibility_rendering_offers_no_restart():
+    """The decision the startup check is given, end to end."""
+
+    def found():
+        return Path("mesa")
+
+    assert mesa_restart_available(compat_failed=False, find_mesa=found) is True
+    assert mesa_restart_available(compat_failed=True, find_mesa=found) is False
+    assert mesa_restart_available(compat_failed=False, find_mesa=lambda: None) is False
+
+    low = GlInfo((2, 1), "2.1 Mesa", "llvmpipe")
+    offered = preflight_problem(
+        low,
+        mesa_available=mesa_restart_available(compat_failed=False, find_mesa=found),
+        compat_active=False,
+    )
+    not_offered = preflight_problem(
+        low,
+        mesa_available=mesa_restart_available(compat_failed=True, find_mesa=found),
+        compat_active=False,
+    )
+    assert offered.offer_restart is True
+    assert not_offered.offer_restart is False
+    assert "OpenGL 2.1" in not_offered.message
+
+
+class _FakeWindow:
+    def __init__(self):
+        self.calls = []
+
+    def note_gl_reported_at_startup(self):
+        self.calls.append("reported")
+
+    def disable_compatibility_offer(self):
+        self.calls.append("no_offer")
+
+    def show(self):
+        self.calls.append("show")
+
+    def show_welcome_dialog(self):
+        self.calls.append("welcome")
+
+
+@pytest.fixture
+def fake_window(monkeypatch):
+    import bermake.ui.main_window as main_window_module
+
+    window = _FakeWindow()
+    monkeypatch.setattr(main_window_module, "MainWindow", lambda: window)
+    monkeypatch.setattr(app_module.preferences, "read_show_welcome", lambda settings: False)
+    return window
+
+
+def test_the_window_is_told_before_it_is_shown(fake_window):
+    """initializeGL runs on show, so the flags must already be set."""
+    app_module._build_main_window(gl_reported=True, compat_failed=True)
+    assert fake_window.calls == ["reported", "no_offer", "show"]
+
+
+def test_a_plain_start_tells_the_window_nothing(fake_window):
+    app_module._build_main_window()
+    assert fake_window.calls == ["show"]
+
+
+class _FakeQApplication:
+    """Stands in for QApplication while _run is driven. The real application
+    already exists in the suite, and pytest-qt still calls instance() on
+    whatever the module attribute is at teardown."""
+
+    def __init__(self, argv):
+        pass
+
+    instance = staticmethod(QApplication.instance)
+
+    def exec(self):
+        return 0
+
+
+@pytest.fixture
+def run_harness(monkeypatch):
+    """_run with everything but the wiring stubbed out."""
+    import PySide6.QtWidgets
+
+    built = []
+    monkeypatch.setattr(PySide6.QtWidgets, "QApplication", _FakeQApplication)
+    monkeypatch.setattr(app_module.logs, "install_qt_message_handler", lambda: None)
+    monkeypatch.setattr(app_module.logs, "install_exception_hooks", lambda reporter: None)
+    monkeypatch.setattr(app_module, "apply_theme", lambda app, theme: None)
+    monkeypatch.setattr(app_module.preferences, "read_compatibility_rendering", lambda s: False)
+    monkeypatch.setattr(app_module.preferences, "read_theme", lambda s: "dark")
+    monkeypatch.setattr(app_module, "default_mesa_dir", lambda: Path("mesa"))
+    monkeypatch.setattr(
+        app_module, "_build_main_window", lambda **flags: built.append(flags) or object()
+    )
+    return built
+
+
+def _run_with(monkeypatch, tmp_path, *, requested, enabled, outcome):
+    seen = {}
+    monkeypatch.setattr(
+        app_module, "apply_compatibility_rendering", lambda wanted: enabled if wanted else False
+    )
+
+    def preflight(**kwargs):
+        seen.update(kwargs)
+        return outcome
+
+    monkeypatch.setattr(app_module, "run_gl_preflight", preflight)
+    argv = ["bermake", "--compatibility-rendering"] if requested else ["bermake"]
+    code = app_module._run(parse_launch_args(argv), tmp_path)
+    return code, seen
+
+
+def test_run_passes_a_reported_problem_on_to_the_window(run_harness, monkeypatch, tmp_path):
+    code, _ = _run_with(
+        monkeypatch, tmp_path, requested=False, enabled=False, outcome=PreflightOutcome.REPORTED
+    )
+    assert code == 0
+    assert run_harness == [{"gl_reported": True, "compat_failed": False}]
+
+
+def test_run_tells_the_window_nothing_when_the_check_was_clean(run_harness, monkeypatch, tmp_path):
+    _run_with(monkeypatch, tmp_path, requested=False, enabled=False, outcome=PreflightOutcome.OK)
+    assert run_harness == [{"gl_reported": False, "compat_failed": False}]
+
+
+def test_run_stops_without_a_window_after_a_relaunch(run_harness, monkeypatch, tmp_path):
+    code, _ = _run_with(
+        monkeypatch, tmp_path, requested=False, enabled=False, outcome=PreflightOutcome.RELAUNCHED
+    )
+    assert code == 0
+    assert run_harness == []
+
+
+def test_run_withdraws_the_offer_when_the_requested_switch_failed(
+    run_harness, monkeypatch, tmp_path
+):
+    _, seen = _run_with(
+        monkeypatch, tmp_path, requested=True, enabled=False, outcome=PreflightOutcome.REPORTED
+    )
+    assert seen["mesa_available"] is False
+    assert run_harness == [{"gl_reported": True, "compat_failed": True}]
+
+
+def test_run_keeps_the_offer_when_nothing_was_requested_or_the_switch_worked(
+    run_harness, monkeypatch, tmp_path
+):
+    _, seen = _run_with(
+        monkeypatch, tmp_path, requested=False, enabled=False, outcome=PreflightOutcome.OK
+    )
+    assert seen["mesa_available"] is True
+    _, seen = _run_with(
+        monkeypatch, tmp_path, requested=True, enabled=True, outcome=PreflightOutcome.OK
+    )
+    assert seen["mesa_available"] is True
+    assert run_harness[-1] == {"gl_reported": False, "compat_failed": False}

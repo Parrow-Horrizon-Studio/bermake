@@ -205,6 +205,9 @@ class MainWindow(QMainWindow):
         # Overridable for tests, like _prompt_discard.
         self._relaunch = relaunch
         self._mesa_available = default_mesa_dir() is not None
+        # Cleared by disable_compatibility_offer() when switching to
+        # compatibility rendering already failed at startup.
+        self._compat_offer_enabled = True
         # M7.9 fix round 1: overridable for tests, like _relaunch and
         # _prompt_discard, so _on_gl_unavailable's nested-event-loop check
         # does not depend on the offscreen platform's real modality.
@@ -2308,6 +2311,18 @@ class MainWindow(QMainWindow):
         if self._prompt_restart_for_rendering(checked):
             self._restart()
 
+    def note_gl_reported_at_startup(self) -> None:
+        """The startup OpenGL check has already shown the tester a version
+        problem; the viewport must not show the same one again. Call before
+        the window is shown, because initializeGL runs on show."""
+        self._viewport.version_failure_reported = True
+
+    def disable_compatibility_offer(self) -> None:
+        """Compatibility rendering was requested but could not be switched on
+        at startup, so offering a restart into it would loop. The message is
+        still shown, without the restart button."""
+        self._compat_offer_enabled = False
+
     def _on_gl_unavailable(self, message: str) -> None:
         if self._active_modal() is not None:
             # M7.9 fix round 1: at startup, app.py's _build_main_window calls
@@ -2321,7 +2336,11 @@ class MainWindow(QMainWindow):
             # widget is active, so the restart runs from the main event loop.
             QTimer.singleShot(200, self, lambda: self._on_gl_unavailable(message))
             return
-        offer = self._mesa_available and not compatibility_rendering_active()
+        offer = (
+            self._compat_offer_enabled
+            and self._mesa_available
+            and not compatibility_rendering_active()
+        )
         if not self._prompt_gl_fallback(message, offer):
             return
         preferences.write_compatibility_rendering(self._settings, True)
