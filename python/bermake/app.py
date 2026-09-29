@@ -129,12 +129,18 @@ def apply_compatibility_rendering(
 
 
 def mesa_restart_available(
-    *, compat_failed: bool, find_mesa: Callable[[], Path | None] = default_mesa_dir
+    *, compat_failed: bool, find_mesa: Callable[[], Path | None] | None = None
 ) -> bool:
     """Whether "restart using compatibility rendering" can help. Not when
     switching to it already failed this launch: the restart would land in the
-    same failure and offer itself again, every time."""
-    return not compat_failed and find_mesa() is not None
+    same failure and offer itself again, every time.
+
+    The Mesa lookup is resolved at call time (not bound as a default), so it
+    follows whatever `default_mesa_dir` is when this runs."""
+    if compat_failed:
+        return False
+    lookup = default_mesa_dir if find_mesa is None else find_mesa
+    return lookup() is not None
 
 
 def _store_compatibility_preference() -> None:

@@ -266,3 +266,19 @@ def test_run_keeps_the_offer_when_nothing_was_requested_or_the_switch_worked(
     )
     assert seen["mesa_available"] is True
     assert run_harness[-1] == {"gl_reported": False, "compat_failed": False}
+
+
+def test_run_offers_nothing_when_mesa_is_not_there(run_harness, monkeypatch, tmp_path):
+    """Machine-independent: the lookup is patched, not read from build/mesa."""
+    monkeypatch.setattr(app_module, "default_mesa_dir", lambda: None)
+    _, seen = _run_with(
+        monkeypatch, tmp_path, requested=False, enabled=False, outcome=PreflightOutcome.OK
+    )
+    assert seen["mesa_available"] is False
+
+
+def test_the_mesa_lookup_is_resolved_when_called(monkeypatch):
+    monkeypatch.setattr(app_module, "default_mesa_dir", lambda: Path("patched"))
+    assert mesa_restart_available(compat_failed=False) is True
+    monkeypatch.setattr(app_module, "default_mesa_dir", lambda: None)
+    assert mesa_restart_available(compat_failed=False) is False
