@@ -52,7 +52,7 @@ MEMBERS = ["x64/opengl32.dll", "x64/libgallium_wgl.dll"]
 
 
 def test_the_7zip_command_extracts_with_folders_preserved(tmp_path):
-    extractor = Path(r"C:\Program Files\7-Zip\7z.exe")
+    extractor = tmp_path / "7z.exe"
     archive = tmp_path / "mesa.7z"
     into = tmp_path / "scratch"
 
@@ -62,7 +62,7 @@ def test_the_7zip_command_extracts_with_folders_preserved(tmp_path):
 
 
 def test_the_tar_command_keeps_the_original_arguments(tmp_path):
-    extractor = Path(r"C:\Windows\System32\tar.exe")
+    extractor = tmp_path / "tar.exe"
     archive = tmp_path / "mesa.7z"
     into = tmp_path / "scratch"
 
@@ -90,7 +90,7 @@ def _fake_tar(tmp_path, *, present):
 
 def test_7zip_on_path_is_preferred_over_tar(tmp_path):
     tar = _fake_tar(tmp_path, present=True)
-    on_path = r"C:\tools\7z.EXE"
+    on_path = str(tmp_path / "tools" / "7z.EXE")
 
     chosen = fetch_mesa.find_extractor(
         which=lambda name: on_path if name == "7z" else None,
@@ -99,6 +99,26 @@ def test_7zip_on_path_is_preferred_over_tar(tmp_path):
     )
 
     assert chosen == Path(on_path)
+
+
+def test_7zip_on_path_wins_over_7zip_in_program_files(tmp_path):
+    program_files = _fake_program_files(tmp_path, with_7zip=True)
+    on_path = str(tmp_path / "tools" / "7z.exe")
+
+    chosen = fetch_mesa.find_extractor(
+        which=lambda name: on_path,
+        program_files=str(program_files),
+        tar=_fake_tar(tmp_path, present=True),
+    )
+
+    assert chosen == Path(on_path)
+
+
+def test_which_defaults_to_shutil_which_at_call_time(tmp_path, monkeypatch):
+    on_path = str(tmp_path / "7z.exe")
+    monkeypatch.setattr(fetch_mesa.shutil, "which", lambda name: on_path)
+
+    assert fetch_mesa.find_extractor() == Path(on_path)
 
 
 def test_7zip_under_program_files_is_preferred_over_tar(tmp_path):

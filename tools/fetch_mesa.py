@@ -78,16 +78,17 @@ def _download(url: str, target: Path) -> None:
 
 
 def find_extractor(
-    which: Callable[[str], str | None] = shutil.which,
+    which: Callable[[str], str | None] | None = None,
     program_files: str | None = None,
     tar: Path | None = None,
 ) -> Path:
     """Pick the archive extractor: 7-Zip if present, else Windows tar.
 
     7-Zip is looked up on PATH, then under Program Files. The arguments exist
-    so tests can supply candidates instead of depending on the machine.
+    so tests can supply candidates instead of depending on the machine; `which`
+    defaults to `shutil.which`, resolved at call time so it can be monkeypatched.
     """
-    on_path = which("7z")
+    on_path = (which or shutil.which)("7z")
     if on_path:
         return Path(on_path)
     if program_files is None:
