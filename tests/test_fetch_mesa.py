@@ -46,3 +46,94 @@ def test_a_wrong_digest_is_refused(tmp_path):
 
     with pytest.raises(fetch_mesa.MesaFetchError, match="SHA-256"):
         fetch_mesa.verify_archive(archive, "0" * 64)
+
+
+MEMBERS = ["x64/opengl32.dll", "x64/libgallium_wgl.dll"]
+
+
+def test_the_7zip_command_extracts_with_folders_preserved(tmp_path):
+    extractor = Path(r"C:\Program Files\7-Zip\7z.exe")
+    archive = tmp_path / "mesa.7z"
+    into = tmp_path / "scratch"
+
+    command = fetch_mesa.extract_command(extractor, archive, into)
+
+    assert command == [str(extractor), "x", str(archive), f"-o{into}", "-y", *MEMBERS]
+
+
+def test_the_tar_command_keeps_the_original_arguments(tmp_path):
+    extractor = Path(r"C:\Windows\System32\tar.exe")
+    archive = tmp_path / "mesa.7z"
+    into = tmp_path / "scratch"
+
+    command = fetch_mesa.extract_command(extractor, archive, into)
+
+    assert command == [str(extractor), "-xf", str(archive), "-C", str(into), *MEMBERS]
+
+
+def _fake_program_files(tmp_path, *, with_7zip):
+    program_files = tmp_path / "Program Files"
+    if with_7zip:
+        (program_files / "7-Zip").mkdir(parents=True)
+        (program_files / "7-Zip" / "7z.exe").write_bytes(b"")
+    else:
+        program_files.mkdir()
+    return program_files
+
+
+def _fake_tar(tmp_path, *, present):
+    tar = tmp_path / "tar.exe"
+    if present:
+        tar.write_bytes(b"")
+    return tar
+
+
+def test_7zip_on_path_is_preferred_over_tar(tmp_path):
+    tar = _fake_tar(tmp_path, present=True)
+    on_path = r"C:\tools\7z.EXE"
+
+    chosen = fetch_mesa.find_extractor(
+        which=lambda name: on_path if name == "7z" else None,
+        program_files=str(_fake_program_files(tmp_path, with_7zip=False)),
+        tar=tar,
+    )
+
+    assert chosen == Path(on_path)
+
+
+def test_7zip_under_program_files_is_preferred_over_tar(tmp_path):
+    program_files = _fake_program_files(tmp_path, with_7zip=True)
+    tar = _fake_tar(tmp_path, present=True)
+
+    chosen = fetch_mesa.find_extractor(
+        which=lambda name: None, program_files=str(program_files), tar=tar
+    )
+
+    assert chosen == program_files / "7-Zip" / "7z.exe"
+
+
+def test_tar_is_the_fallback_without_7zip(tmp_path):
+    tar = _fake_tar(tmp_path, present=True)
+
+    chosen = fetch_mesa.find_extractor(
+        which=lambda name: None,
+        program_files=str(_fake_program_files(tmp_path, with_7zip=False)),
+        tar=tar,
+    )
+
+    assert chosen == tar
+
+
+def test_no_extractor_at_all_names_both_options(tmp_path):
+    tar = _fake_tar(tmp_path, present=False)
+
+    with pytest.raises(fetch_mesa.MesaFetchError) as raised:
+        fetch_mesa.find_extractor(
+            which=lambda name: None,
+            program_files=str(_fake_program_files(tmp_path, with_7zip=False)),
+            tar=tar,
+        )
+
+    message = str(raised.value)
+    assert "7-Zip" in message
+    assert str(tar) in message

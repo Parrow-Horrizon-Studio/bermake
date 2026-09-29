@@ -5,6 +5,12 @@ PySide6's own opengl32sw.dll is Mesa 11.2.2 and provides OpenGL 3.0, below the
 (M7.9 spec 2.4.1, D15). The SHA-256 pin makes the download reproducible and
 tamper-evident; upgrading it is a deliberate edit to the four constants below.
 
+The archive is LZMA-compressed 7z. 7-Zip is preferred for extraction because
+the tar.exe in older Windows (Server 2022 and so the GitHub windows-2022
+runner) is an old libarchive without an LZMA codec and cannot read it; newer
+Windows 11 tar.exe can. Windows tar is the fallback for machines without
+7-Zip, such as a plain developer box.
+
 Usage: .venv/Scripts/python tools/fetch_mesa.py
 Result: build/mesa/opengl32sw.dll and build/mesa/libgallium_wgl.dll
 """
@@ -18,6 +24,7 @@ import subprocess
 import sys
 import tempfile
 import urllib.request
+from collections.abc import Callable
 from pathlib import Path
 
 MESA_VERSION = "26.2.3"
@@ -34,7 +41,8 @@ MESA_FILES = {
     "x64/libgallium_wgl.dll": "libgallium_wgl.dll",
 }
 
-# Windows' own tar reads 7z; Git's GNU tar does not, so the path is explicit.
+# Fallback extractor. Windows' own tar reads 7z (newer builds only, see the
+# module docstring); Git's GNU tar does not, so the path is explicit.
 WINDOWS_TAR = Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32" / "tar.exe"
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -69,6 +77,41 @@ def _download(url: str, target: Path) -> None:
     partial.replace(target)
 
 
+def find_extractor(
+    which: Callable[[str], str | None] = shutil.which,
+    program_files: str | None = None,
+    tar: Path | None = None,
+) -> Path:
+    """Pick the archive extractor: 7-Zip if present, else Windows tar.
+
+    7-Zip is looked up on PATH, then under Program Files. The arguments exist
+    so tests can supply candidates instead of depending on the machine.
+    """
+    on_path = which("7z")
+    if on_path:
+        return Path(on_path)
+    if program_files is None:
+        program_files = os.environ.get("ProgramFiles")
+    installed = Path(program_files) / "7-Zip" / "7z.exe" if program_files else None
+    if installed is not None and installed.is_file():
+        return installed
+    fallback = WINDOWS_TAR if tar is None else tar
+    if fallback.is_file():
+        return fallback
+    raise MesaFetchError(
+        f"cannot extract 7z: neither 7-Zip (7z on PATH or {installed or 'Program Files'}) "
+        f"nor Windows tar ({fallback}) was found"
+    )
+
+
+def extract_command(extractor: Path, archive: Path, into: Path) -> list[str]:
+    """Arguments extracting the two Mesa members into `into`, keeping `x64/`."""
+    if extractor.name.lower().startswith("7z"):
+        # `x` (not `e`) preserves the x64/ folder the copy step reads.
+        return [str(extractor), "x", str(archive), f"-o{into}", "-y", *MESA_FILES]
+    return [str(extractor), "-xf", str(archive), "-C", str(into), *MESA_FILES]
+
+
 def fetch_mesa(dest: Path, cache: Path) -> Path:
     """Populate `dest` with the two Mesa DLLs, reusing a verified cache."""
     stamp = dest / STAMP_NAME
@@ -84,14 +127,10 @@ def fetch_mesa(dest: Path, cache: Path) -> Path:
         _download(MESA_URL, archive)
     verify_archive(archive)
 
-    if not WINDOWS_TAR.is_file():
-        raise MesaFetchError(f"cannot extract 7z: {WINDOWS_TAR} not found")
+    extractor = find_extractor()
     dest.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as scratch:
-        subprocess.run(
-            [str(WINDOWS_TAR), "-xf", str(archive), "-C", scratch, *MESA_FILES],
-            check=True,
-        )
+        subprocess.run(extract_command(extractor, archive, Path(scratch)), check=True)
         for member, bundled in MESA_FILES.items():
             shutil.copy2(Path(scratch) / member, dest / bundled)
     stamp.write_text(MESA_SHA256)
