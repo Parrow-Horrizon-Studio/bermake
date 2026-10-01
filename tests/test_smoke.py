@@ -75,13 +75,22 @@ def test_rendering_without_mesa_is_a_failure_not_a_skip(qapp, tmp_path, monkeypa
 
 
 def _stub_probe(monkeypatch, info):
-    monkeypatch.setattr(gl_preflight, "probe_gl", lambda: info)
+    calls = []
+
+    def probe(**kwargs):
+        calls.append(kwargs)
+        return info
+
+    monkeypatch.setattr(gl_preflight, "probe_gl", probe)
+    return calls
 
 
 def test_startup_check_passes_on_a_good_context(monkeypatch):
-    _stub_probe(monkeypatch, GlInfo((4, 6), "4.6 Mesa", "llvmpipe"))
+    calls = _stub_probe(monkeypatch, GlInfo((4, 6), "4.6 Mesa", "llvmpipe"))
     result = smoke.check_startup_check()
     assert result.ok, result.detail
+    # Strict, so a crash in the draw step fails the check rather than passing.
+    assert calls == [{"strict": True}]
     assert result.data == {"version": "4.6", "renderer": "llvmpipe", "draw_error": None}
 
 

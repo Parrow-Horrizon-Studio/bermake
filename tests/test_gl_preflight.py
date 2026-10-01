@@ -148,6 +148,29 @@ def test_an_unexpected_exception_in_the_draw_step_is_logged_and_not_the_drivers_
     assert "Traceback" in caplog.text
 
 
+def test_the_guard_says_the_error_is_bermakes_and_counts_as_passed(caplog):
+    def broken():
+        raise RuntimeError("our own bug")
+
+    with caplog.at_level(logging.ERROR, logger="bermake.diagnostics.gl_preflight"):
+        _guarded_draw_test(broken)
+    assert "error in Bermake" in caplog.text
+    assert "treated as passed" in caplog.text
+
+
+def test_a_strict_guard_lets_an_unexpected_exception_through():
+    def broken():
+        raise RuntimeError("our own bug")
+
+    with pytest.raises(RuntimeError, match="our own bug"):
+        _guarded_draw_test(broken, strict=True)
+
+
+def test_a_strict_guard_still_returns_what_the_driver_reports():
+    assert _guarded_draw_test(lambda: "bad", strict=True) == "bad"
+    assert _guarded_draw_test(lambda: None, strict=True) is None
+
+
 def test_a_failure_the_driver_reports_passes_through_the_guard():
     message = "could not create an offscreen image"
     assert _guarded_draw_test(lambda: message) == message
@@ -290,9 +313,31 @@ def test_the_probe_reports_a_context_or_none_without_importing_opengl():
         "print('OpenGL.GL' in sys.modules)\n"
         "print(info is None or (info.version >= (1, 0) and bool(info.renderer)))\n"
         "print(info is None or info.version < (3, 3) or info.draw_error is None)\n"
+        # Falsification: with an expectation the triangle cannot meet, a 3.3+
+        # context must report a problem. This fails if the draw stops running
+        # (gate disabled, early return, exception swallowed).
+        "import bermake.diagnostics.gl_preflight as g\n"
+        "g._RED = (0, 255, 0)\n"
+        "wrong = g.probe_gl()\n"
+        "print(wrong is None or wrong.version < (3, 3) or wrong.draw_error is not None)\n"
+        # Strict mode: an unexpected error in the draw step propagates, while
+        # the default swallows it.
+        "g._RED = (255, 0, 0)\n"
+        "def boom(context):\n"
+        "    raise RuntimeError('boom')\n"
+        "g._draw_test = boom\n"
+        "quiet = g.probe_gl()\n"
+        "print(quiet is None or quiet.draw_error is None)\n"
+        "try:\n"
+        "    g.probe_gl(strict=True)\n"
+        "    print(quiet is None or quiet.version < (3, 3))\n"
+        "except RuntimeError:\n"
+        "    print(True)\n"
     )
     result = subprocess.run(
         [sys.executable, "-c", code], capture_output=True, text=True, timeout=120
     )
-    # The last line is the draw test: a context of 3.3 or newer must pass it.
-    assert result.stdout.split() == ["False", "True", "True"], result.stdout + result.stderr
+    # Lines: no OpenGL module, a context or None, a 3.3+ context passes the draw
+    # test, a wrong expectation is caught, an error in the draw step is
+    # swallowed by default and raised when strict.
+    assert result.stdout.split() == ["False"] + ["True"] * 5, result.stdout + result.stderr

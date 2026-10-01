@@ -18,6 +18,7 @@ probe_gl touches Qt's OpenGL.
 from __future__ import annotations
 
 import logging
+import struct
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
@@ -30,6 +31,7 @@ GL_VERSION = 0x1F02
 GL_RENDERER = 0x1F01
 GL_COLOR_BUFFER_BIT = 0x4000
 GL_TRIANGLES = 0x0004
+GL_FLOAT = 0x1406
 
 # The draw test: a red triangle on a blue 32x32 image. Pure channel values
 # survive sRGB and precision differences between drivers.
@@ -41,10 +43,14 @@ _RED = (255, 0, 0)
 _CENTRE_PIXEL = (DRAW_TEST_SIZE // 2, DRAW_TEST_SIZE // 2)
 _CORNER_PIXEL = (1, 1)
 
+# The vertices go through a buffer on attribute 0 with a VAO bound, the way
+# every viewport draw does, so the test fails only where the viewport would. A
+# compatibility-profile driver may skip a draw whose attribute 0 is not enabled.
+_DRAW_TRIANGLE = struct.pack("6f", -0.5, -0.5, 0.5, -0.5, 0.0, 0.5)
 _DRAW_VERTEX_SHADER = """#version 330 core
-const vec2 positions[3] = vec2[3](vec2(-0.5, -0.5), vec2(0.5, -0.5), vec2(0.0, 0.5));
+layout(location = 0) in vec2 position;
 void main() {
-    gl_Position = vec4(positions[gl_VertexID], 0.0, 1.0);
+    gl_Position = vec4(position, 0.0, 1.0);
 }
 """
 _DRAW_FRAGMENT_SHADER = """#version 330 core
@@ -150,6 +156,7 @@ def _draw_test(context) -> str | None:
     is still current.
     """
     from PySide6.QtOpenGL import (
+        QOpenGLBuffer,
         QOpenGLFramebufferObject,
         QOpenGLShader,
         QOpenGLShaderProgram,
@@ -161,6 +168,7 @@ def _draw_test(context) -> str | None:
     fbo = QOpenGLFramebufferObject(size, size)
     program = QOpenGLShaderProgram()
     vao = QOpenGLVertexArrayObject()
+    buffer = QOpenGLBuffer()
     try:
         if not fbo.isValid():
             return "could not create an offscreen image"
@@ -178,11 +186,17 @@ def _draw_test(context) -> str | None:
         fbo.bind()
         program.bind()
         vao.bind()
+        buffer.create()
+        buffer.bind()
+        buffer.allocate(_DRAW_TRIANGLE, len(_DRAW_TRIANGLE))
+        program.enableAttributeArray(0)
+        program.setAttributeBuffer(0, GL_FLOAT, 0, 2)
         functions.glViewport(0, 0, size, size)
         functions.glClearColor(0.0, 0.0, 1.0, 1.0)
         functions.glClear(GL_COLOR_BUFFER_BIT)
         functions.glDrawArrays(GL_TRIANGLES, 0, 3)
         functions.glFinish()
+        buffer.release()
         vao.release()
         program.release()
         fbo.release()
@@ -190,25 +204,33 @@ def _draw_test(context) -> str | None:
 
         return draw_test_problem(_rgb_at(image, _CORNER_PIXEL), _rgb_at(image, _CENTRE_PIXEL))
     finally:
+        if buffer.isCreated():
+            buffer.destroy()
         if vao.isCreated():
             vao.destroy()
         program.removeAllShaders()
-        del program, vao, fbo
+        del program, buffer, vao, fbo
 
 
-def _guarded_draw_test(draw: Callable[[], str | None]) -> str | None:
+def _guarded_draw_test(draw: Callable[[], str | None], *, strict: bool = False) -> str | None:
     """Run the draw step. A failure the driver reports comes back as text; an
     unexpected exception is our own bug, not the driver's, so it is logged and
     does not count against the driver (which would push the tester onto the
-    slow renderer for nothing)."""
+    slow renderer for nothing). `strict` lets such an exception propagate, for
+    the smoke test, which must tell "drew correctly" from "crashed"."""
     try:
         return draw()
     except Exception:
-        logger.exception("the OpenGL draw test hit an unexpected error; ignoring it")
+        if strict:
+            raise
+        logger.exception(
+            "the OpenGL draw test could not run because of an error in Bermake, "
+            "not the driver; it is being treated as passed"
+        )
         return None
 
 
-def probe_gl() -> GlInfo | None:
+def probe_gl(strict: bool = False) -> GlInfo | None:
     """Ask Qt for a context with the default format, as the viewport will.
 
     Needs a QApplication. Returns None if no context can be created or made
@@ -216,7 +238,9 @@ def probe_gl() -> GlInfo | None:
     same driver Qt chose and imports nothing from OpenGL. A context that
     reports a good version also has to draw a small test image: some drivers
     claim OpenGL 4.6 and draw nothing (Windows Sandbox with the host's GPU
-    driver), and the reported version alone cannot tell.
+    driver), and the reported version alone cannot tell. With `strict`, an
+    unexpected error in the draw step propagates instead of being logged and
+    ignored.
     """
     from PySide6.QtGui import QOffscreenSurface, QOpenGLContext
 
@@ -236,7 +260,9 @@ def probe_gl() -> GlInfo | None:
         # Only a context that claims to be new enough is worth drawing on; an
         # old one already gets its own message.
         draw_error = (
-            _guarded_draw_test(lambda: _draw_test(context)) if version >= MIN_GL_VERSION else None
+            _guarded_draw_test(lambda: _draw_test(context), strict=strict)
+            if version >= MIN_GL_VERSION
+            else None
         )
         return GlInfo(
             version=version,

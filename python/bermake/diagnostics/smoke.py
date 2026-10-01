@@ -169,7 +169,7 @@ def check_startup_check() -> CheckResult:
     from bermake.diagnostics.gl_check import MIN_GL_VERSION
     from bermake.diagnostics.gl_preflight import probe_gl
 
-    info = probe_gl()
+    info = probe_gl(strict=True)
     if info is None:
         return CheckResult("startup_check", False, "no OpenGL context could be created")
     data: dict[str, object] = {
