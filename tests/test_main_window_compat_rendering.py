@@ -154,7 +154,14 @@ def test_a_modal_dialog_defers_the_gl_fallback_prompt(main_window, monkeypatch, 
     assert seen == []
 
     main_window._active_modal = lambda: None
-    qtbot.waitUntil(lambda: seen == [("no usable OpenGL", True)], timeout=2000)
+
+    def prompted():
+        assert seen == [("no usable OpenGL", True)]
+
+    # The retry fires 200 ms after the modal goes, but on the CI Windows
+    # runner the window's own queued startup work has delayed it by several
+    # seconds; waitUntil returns as soon as the prompt arrives.
+    qtbot.waitUntil(prompted, timeout=10000)
 
 
 def test_a_failed_relaunch_is_logged(main_window, caplog):
