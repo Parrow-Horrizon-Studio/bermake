@@ -22,12 +22,37 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 
-from bermake.diagnostics.gl_check import GlInfo, evaluate_gl
+from bermake.diagnostics.gl_check import MIN_GL_VERSION, GlInfo, evaluate_gl
 
 logger = logging.getLogger(__name__)
 
 GL_VERSION = 0x1F02
 GL_RENDERER = 0x1F01
+GL_COLOR_BUFFER_BIT = 0x4000
+GL_TRIANGLES = 0x0004
+
+# The draw test: a red triangle on a blue 32x32 image. Pure channel values
+# survive sRGB and precision differences between drivers.
+DRAW_TEST_SIZE = 32
+DRAW_TEST_TOLERANCE = 8
+_BLUE = (0, 0, 255)
+_RED = (255, 0, 0)
+# The triangle covers the centre and no corner.
+_CENTRE_PIXEL = (DRAW_TEST_SIZE // 2, DRAW_TEST_SIZE // 2)
+_CORNER_PIXEL = (1, 1)
+
+_DRAW_VERTEX_SHADER = """#version 330 core
+const vec2 positions[3] = vec2[3](vec2(-0.5, -0.5), vec2(0.5, -0.5), vec2(0.0, 0.5));
+void main() {
+    gl_Position = vec4(positions[gl_VertexID], 0.0, 1.0);
+}
+"""
+_DRAW_FRAGMENT_SHADER = """#version 330 core
+out vec4 colour;
+void main() {
+    colour = vec4(1.0, 0.0, 0.0, 1.0);
+}
+"""
 
 NO_CONTEXT_MESSAGE = (
     "Bermake could not find a usable OpenGL driver on this computer: no OpenGL context "
@@ -71,8 +96,9 @@ def preflight_problem(
     if info is None:
         message = NO_CONTEXT_MESSAGE
     else:
-        # No shader outcome yet: shaders compile in the viewport's own check.
-        verdict = evaluate_gl(info, None)
+        # The draw test's failure counts as a setup error; the viewport's own
+        # shaders compile later, in its own check.
+        verdict = evaluate_gl(info, info.draw_error)
         if verdict.ok:
             return None
         message = verdict.message
@@ -84,12 +110,113 @@ def _gl_string(functions, name: int) -> str:
     return value if value else "unknown"
 
 
+def _near(value: tuple[int, int, int], expected: tuple[int, int, int]) -> bool:
+    return all(
+        abs(got - want) <= DRAW_TEST_TOLERANCE for got, want in zip(value, expected, strict=True)
+    )
+
+
+def draw_test_problem(corner: tuple[int, int, int], centre: tuple[int, int, int]) -> str | None:
+    """What is wrong with the draw test's read-back image, or None if it is right.
+
+    Expected: blue at the corner, where nothing was drawn, and red at the
+    centre, where the triangle is.
+    """
+    if _near(corner, _BLUE) and _near(centre, _RED):
+        return None
+    return (
+        "a test image came back wrong (expected red on blue, "
+        f"read rgb({centre[0]}, {centre[1]}, {centre[2]}) at the centre and "
+        f"rgb({corner[0]}, {corner[1]}, {corner[2]}) at the corner)"
+    )
+
+
+def _first_line(text: str, fallback: str) -> str:
+    lines = text.strip().splitlines()
+    return lines[0] if lines else fallback
+
+
+def _rgb_at(image, pixel: tuple[int, int]) -> tuple[int, int, int]:
+    colour = image.pixelColor(pixel[0], pixel[1])
+    return (colour.red(), colour.green(), colour.blue())
+
+
+def _draw_test(context) -> str | None:
+    """Draw a red triangle on a blue offscreen image and read it back.
+
+    Needs `context` current. Returns the driver's failure as text, or None if
+    the image came back right. Qt classes only, so no OpenGL module is
+    imported. Every GL object is released before returning, while the context
+    is still current.
+    """
+    from PySide6.QtOpenGL import (
+        QOpenGLFramebufferObject,
+        QOpenGLShader,
+        QOpenGLShaderProgram,
+        QOpenGLVertexArrayObject,
+    )
+
+    size = DRAW_TEST_SIZE
+    functions = context.functions()
+    fbo = QOpenGLFramebufferObject(size, size)
+    program = QOpenGLShaderProgram()
+    vao = QOpenGLVertexArrayObject()
+    try:
+        if not fbo.isValid():
+            return "could not create an offscreen image"
+        if not program.addShaderFromSourceCode(
+            QOpenGLShader.ShaderTypeBit.Vertex, _DRAW_VERTEX_SHADER
+        ):
+            return _first_line(program.log(), "the test shader would not compile")
+        if not program.addShaderFromSourceCode(
+            QOpenGLShader.ShaderTypeBit.Fragment, _DRAW_FRAGMENT_SHADER
+        ):
+            return _first_line(program.log(), "the test shader would not compile")
+        if not program.link():
+            return _first_line(program.log(), "the test shader would not link")
+        vao.create()
+        fbo.bind()
+        program.bind()
+        vao.bind()
+        functions.glViewport(0, 0, size, size)
+        functions.glClearColor(0.0, 0.0, 1.0, 1.0)
+        functions.glClear(GL_COLOR_BUFFER_BIT)
+        functions.glDrawArrays(GL_TRIANGLES, 0, 3)
+        functions.glFinish()
+        vao.release()
+        program.release()
+        fbo.release()
+        image = fbo.toImage()
+
+        return draw_test_problem(_rgb_at(image, _CORNER_PIXEL), _rgb_at(image, _CENTRE_PIXEL))
+    finally:
+        if vao.isCreated():
+            vao.destroy()
+        program.removeAllShaders()
+        del program, vao, fbo
+
+
+def _guarded_draw_test(draw: Callable[[], str | None]) -> str | None:
+    """Run the draw step. A failure the driver reports comes back as text; an
+    unexpected exception is our own bug, not the driver's, so it is logged and
+    does not count against the driver (which would push the tester onto the
+    slow renderer for nothing)."""
+    try:
+        return draw()
+    except Exception:
+        logger.exception("the OpenGL draw test hit an unexpected error; ignoring it")
+        return None
+
+
 def probe_gl() -> GlInfo | None:
     """Ask Qt for a context with the default format, as the viewport will.
 
     Needs a QApplication. Returns None if no context can be created or made
     current. Uses Qt's own GL functions rather than PyOpenGL, so it calls the
-    same driver Qt chose and imports nothing from OpenGL.
+    same driver Qt chose and imports nothing from OpenGL. A context that
+    reports a good version also has to draw a small test image: some drivers
+    claim OpenGL 4.6 and draw nothing (Windows Sandbox with the host's GPU
+    driver), and the reported version alone cannot tell.
     """
     from PySide6.QtGui import QOffscreenSurface, QOpenGLContext
 
@@ -105,14 +232,30 @@ def probe_gl() -> GlInfo | None:
     try:
         fmt = context.format()
         functions = context.functions()
+        version = (fmt.majorVersion(), fmt.minorVersion())
+        # Only a context that claims to be new enough is worth drawing on; an
+        # old one already gets its own message.
+        draw_error = (
+            _guarded_draw_test(lambda: _draw_test(context)) if version >= MIN_GL_VERSION else None
+        )
         return GlInfo(
-            version=(fmt.majorVersion(), fmt.minorVersion()),
+            version=version,
             version_string=_gl_string(functions, GL_VERSION),
             renderer=_gl_string(functions, GL_RENDERER),
+            draw_error=draw_error,
         )
     finally:
         context.doneCurrent()
         surface.destroy()
+
+
+def _log_draw_outcome(info: GlInfo) -> None:
+    if info.version < MIN_GL_VERSION:
+        logger.info("OpenGL preflight draw test: not run, the version is too low")
+    elif info.draw_error is None:
+        logger.info("OpenGL preflight draw test: passed")
+    else:
+        logger.error("OpenGL preflight draw test: failed, %s", info.draw_error)
 
 
 def run_gl_preflight(
@@ -150,6 +293,7 @@ def run_gl_preflight(
             info.version_string,
             info.renderer,
         )
+        _log_draw_outcome(info)
     problem = preflight_problem(info, mesa_available=mesa_available, compat_active=compat_active)
     if problem is None:
         return PreflightOutcome.OK

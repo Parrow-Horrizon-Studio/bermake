@@ -21,6 +21,10 @@ class GlInfo:
     version: tuple[int, int]
     version_string: str
     renderer: str
+    # The startup draw test's failure: what went wrong when a small image was
+    # drawn on this context. None if the test passed or did not run (a version
+    # below the minimum, or no test at all).
+    draw_error: str | None = None
 
 
 @dataclass(frozen=True)

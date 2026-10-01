@@ -162,6 +162,28 @@ def check_rendering(width: int = 64, height: int = 64) -> CheckResult:
         context.doneCurrent()
 
 
+def check_startup_check() -> CheckResult:
+    """Run the startup OpenGL check, draw test included, in the same Mesa
+    process as the rendering check: it must find nothing wrong with a driver
+    that draws correctly, or every compatibility restart would be refused."""
+    from bermake.diagnostics.gl_check import MIN_GL_VERSION
+    from bermake.diagnostics.gl_preflight import probe_gl
+
+    info = probe_gl()
+    if info is None:
+        return CheckResult("startup_check", False, "no OpenGL context could be created")
+    data: dict[str, object] = {
+        "version": f"{info.version[0]}.{info.version[1]}",
+        "renderer": info.renderer,
+        "draw_error": info.draw_error,
+    }
+    if info.version < MIN_GL_VERSION:
+        return CheckResult("startup_check", False, f"OpenGL {data['version']} is too old", data)
+    if info.draw_error is not None:
+        return CheckResult("startup_check", False, info.draw_error, data)
+    return CheckResult("startup_check", True, "", data)
+
+
 def changed_pixels(before, after) -> int:
     """How many RGBA pixels differ between two frames of the same size."""
     import numpy as np
@@ -205,8 +227,10 @@ def run_smoke(
     if include_rendering:
         if render:
             results.append(_guarded("rendering", check_rendering))
+            results.append(_guarded("startup_check", check_startup_check))
         else:
             results.append(CheckResult("rendering", False, "Mesa not found"))
+            results.append(CheckResult("startup_check", False, "Mesa not found"))
 
     ok = all(result.ok for result in results)
     report_path = Path(report_path)

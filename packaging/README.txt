@@ -18,9 +18,10 @@ opens, it checks what your computer's graphics driver provides. If the
 driver cannot provide OpenGL 3.3, or provides no OpenGL at all, which is
 common in virtual machines, in Windows Sandbox and over Remote Desktop,
 Bermake explains the problem and offers to restart using compatibility
-rendering. Compatibility rendering draws through a bundled copy of Mesa
-instead of your graphics driver. It works on almost any computer but may be
-slower.
+rendering. The check also draws a small test image, so a driver that reports
+OpenGL but draws nothing gets the same message and offer. Compatibility
+rendering draws through a bundled copy of Mesa instead of your graphics
+driver. It works on almost any computer but may be slower.
 
 You can turn it on or off at any time from Help > Use Compatibility
 Rendering. To start once with it on, run:

@@ -15,12 +15,22 @@ from bermake.diagnostics.gl_preflight import (
     NO_CONTEXT_MESSAGE,
     PreflightOutcome,
     PreflightProblem,
+    _guarded_draw_test,
+    draw_test_problem,
     preflight_problem,
     run_gl_preflight,
 )
 
 GL_1_1 = GlInfo((1, 1), "1.1.0", "GDI Generic")
 GL_4_6 = GlInfo((4, 6), "4.6.0 NVIDIA 617.14", "NVIDIA GeForce RTX 4070 Ti")
+BROKEN_DRIVER = GlInfo(
+    (4, 6),
+    "4.6.0 Compatibility Profile Context",
+    "AMD Radeon(TM) Graphics",
+    draw_error="a test image came back wrong",
+)
+BLUE = (0, 0, 255)
+RED = (255, 0, 0)
 
 
 # --- The decision ------------------------------------------------------------
@@ -54,6 +64,93 @@ def test_no_offer_when_compatibility_rendering_is_already_active():
 def test_a_good_context_is_no_problem(version):
     info = GlInfo(version, "x", "y")
     assert preflight_problem(info, mesa_available=True, compat_active=False) is None
+
+
+# --- The draw test's decision ------------------------------------------------
+
+
+def test_the_exact_colours_pass():
+    assert draw_test_problem(BLUE, RED) is None
+
+
+def test_colours_within_the_tolerance_pass():
+    assert draw_test_problem((8, 8, 247), (247, 8, 8)) is None
+
+
+def test_colours_just_outside_the_tolerance_fail():
+    assert draw_test_problem((9, 0, 255), RED) is not None
+    assert draw_test_problem(BLUE, (255, 0, 9)) is not None
+    assert draw_test_problem((0, 0, 246), RED) is not None
+
+
+@pytest.mark.parametrize(
+    ("corner", "centre"),
+    [
+        ((255, 255, 255), (255, 255, 255)),  # draws nothing and clears to white
+        ((0, 0, 0), (0, 0, 0)),  # all black
+        (BLUE, BLUE),  # the triangle is missing
+        (RED, RED),  # everything is red
+        (RED, BLUE),  # swapped
+    ],
+)
+def test_wrong_images_fail(corner, centre):
+    assert draw_test_problem(corner, centre) is not None
+
+
+def test_the_problem_names_what_was_read_back():
+    problem = draw_test_problem((1, 2, 3), (4, 5, 6))
+    assert "rgb(4, 5, 6) at the centre" in problem
+    assert "rgb(1, 2, 3) at the corner" in problem
+    assert "red on blue" in problem
+
+
+# --- A driver that reports a good version and draws nothing ------------------
+
+
+def test_a_good_version_that_fails_the_draw_test_is_a_problem_with_the_offer():
+    problem = preflight_problem(BROKEN_DRIVER, mesa_available=True, compat_active=False)
+    assert problem.offer_restart is True
+    assert "AMD Radeon(TM) Graphics" in problem.message
+    assert "could not set up Bermake's viewport" in problem.message
+    assert "a test image came back wrong" in problem.message
+
+
+def test_the_draw_failure_offers_nothing_when_compatibility_rendering_is_active():
+    problem = preflight_problem(BROKEN_DRIVER, mesa_available=True, compat_active=True)
+    assert problem is not None
+    assert problem.offer_restart is False
+
+
+def test_the_draw_failure_offers_nothing_without_mesa():
+    problem = preflight_problem(BROKEN_DRIVER, mesa_available=False, compat_active=False)
+    assert problem is not None
+    assert problem.offer_restart is False
+
+
+def test_a_passed_draw_test_is_no_problem():
+    info = GlInfo((4, 6), "x", "y", draw_error=None)
+    assert preflight_problem(info, mesa_available=True, compat_active=False) is None
+
+
+def test_a_low_version_wins_over_the_draw_error():
+    info = GlInfo((2, 1), "2.1", "old", draw_error="a test image came back wrong")
+    problem = preflight_problem(info, mesa_available=True, compat_active=False)
+    assert "needs OpenGL 3.3" in problem.message
+
+
+def test_an_unexpected_exception_in_the_draw_step_is_logged_and_not_the_drivers_fault(caplog):
+    def broken():
+        raise RuntimeError("our own bug")
+
+    with caplog.at_level(logging.ERROR, logger="bermake.diagnostics.gl_preflight"):
+        assert _guarded_draw_test(broken) is None
+    assert "our own bug" in caplog.text
+    assert "Traceback" in caplog.text
+
+
+def test_a_failure_the_driver_reports_passes_through_the_guard():
+    message = "could not create an offscreen image"
+    assert _guarded_draw_test(lambda: message) == message
 
 
 # --- The sequence around it --------------------------------------------------
@@ -133,6 +230,31 @@ def test_a_failed_relaunch_is_logged_and_startup_continues(caplog):
     assert "failed to relaunch" in caplog.text
 
 
+def test_a_broken_driver_is_offered_the_restart_in_the_sequence():
+    recorder = _Recorder(answer=True)
+    assert recorder.run(BROKEN_DRIVER) is PreflightOutcome.RELAUNCHED
+    assert [event[0] for event in recorder.events] == ["prompt", "store", "relaunch"]
+    assert "a test image came back wrong" in recorder.events[0][1]
+
+
+def test_the_log_says_the_draw_test_passed(caplog):
+    with caplog.at_level(logging.INFO, logger="bermake.diagnostics.gl_preflight"):
+        _Recorder().run(GL_4_6)
+    assert "draw test: passed" in caplog.text
+
+
+def test_the_log_says_the_draw_test_failed_and_why(caplog):
+    with caplog.at_level(logging.INFO, logger="bermake.diagnostics.gl_preflight"):
+        _Recorder(answer=False).run(BROKEN_DRIVER)
+    assert "draw test: failed, a test image came back wrong" in caplog.text
+
+
+def test_the_log_says_the_draw_test_did_not_run_on_an_old_version(caplog):
+    with caplog.at_level(logging.INFO, logger="bermake.diagnostics.gl_preflight"):
+        _Recorder(answer=False).run(GL_1_1)
+    assert "draw test: not run" in caplog.text
+
+
 def test_a_probe_that_raises_is_logged_and_skipped(caplog):
     def broken_probe():
         raise RuntimeError("probe blew up")
@@ -167,8 +289,10 @@ def test_the_probe_reports_a_context_or_none_without_importing_opengl():
         "info = probe_gl()\n"
         "print('OpenGL.GL' in sys.modules)\n"
         "print(info is None or (info.version >= (1, 0) and bool(info.renderer)))\n"
+        "print(info is None or info.version < (3, 3) or info.draw_error is None)\n"
     )
     result = subprocess.run(
         [sys.executable, "-c", code], capture_output=True, text=True, timeout=120
     )
-    assert result.stdout.split() == ["False", "True"], result.stderr
+    # The last line is the draw test: a context of 3.3 or newer must pass it.
+    assert result.stdout.split() == ["False", "True", "True"], result.stdout + result.stderr

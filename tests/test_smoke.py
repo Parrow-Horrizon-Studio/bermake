@@ -1,16 +1,18 @@
 """The packaged smoke test's checks 1 to 3, run from the dev tree (M7.9, spec 2.6).
 
-Check 4 (rendering) runs only in the package build: the offscreen platform the
-suite uses under CI cannot create an OpenGL context (spec D11). This is a
-stated gap, not a skipped test.
+Checks 4 and 5 (rendering and startup_check) run only in the package build: the
+offscreen platform the suite uses under CI cannot create an OpenGL context
+(spec D11). This is a stated gap, not a skipped test.
 """
 
 import json
 from pathlib import Path
 
+import bermake.diagnostics.gl_preflight as gl_preflight
 import bermake.diagnostics.smoke as smoke
 import numpy as np
 import pytest
+from bermake.diagnostics.gl_check import GlInfo
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -65,8 +67,40 @@ def test_rendering_without_mesa_is_a_failure_not_a_skip(qapp, tmp_path, monkeypa
 
     assert smoke.run_smoke(tmp_path / "r.json") == 1
     report = json.loads((tmp_path / "r.json").read_text(encoding="utf-8"))
-    rendering = [c for c in report["checks"] if c["name"] == "rendering"]
-    assert rendering == [{"name": "rendering", "ok": False, "detail": "Mesa not found", "data": {}}]
+    gl_checks = [c for c in report["checks"] if c["name"] in ("rendering", "startup_check")]
+    assert gl_checks == [
+        {"name": "rendering", "ok": False, "detail": "Mesa not found", "data": {}},
+        {"name": "startup_check", "ok": False, "detail": "Mesa not found", "data": {}},
+    ]
+
+
+def _stub_probe(monkeypatch, info):
+    monkeypatch.setattr(gl_preflight, "probe_gl", lambda: info)
+
+
+def test_startup_check_passes_on_a_good_context(monkeypatch):
+    _stub_probe(monkeypatch, GlInfo((4, 6), "4.6 Mesa", "llvmpipe"))
+    result = smoke.check_startup_check()
+    assert result.ok, result.detail
+    assert result.data == {"version": "4.6", "renderer": "llvmpipe", "draw_error": None}
+
+
+def test_startup_check_fails_when_the_draw_test_failed(monkeypatch):
+    info = GlInfo((4, 6), "4.6", "bad", draw_error="a test image came back wrong")
+    _stub_probe(monkeypatch, info)
+    result = smoke.check_startup_check()
+    assert not result.ok
+    assert result.data["draw_error"] == "a test image came back wrong"
+
+
+def test_startup_check_fails_without_a_context(monkeypatch):
+    _stub_probe(monkeypatch, None)
+    assert not smoke.check_startup_check().ok
+
+
+def test_startup_check_fails_on_an_old_version(monkeypatch):
+    _stub_probe(monkeypatch, GlInfo((3, 2), "3.2", "old"))
+    assert not smoke.check_startup_check().ok
 
 
 def test_identical_frames_have_no_changed_pixels():
