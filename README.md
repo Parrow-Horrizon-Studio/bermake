@@ -61,7 +61,7 @@ on every tool. Metric and architectural imperial units, switchable per document.
 **Editing**: Select (click, Shift-toggle, box-select), Eraser, Move, Rotate, Scale, and a
 measure-only Tape Measure. Full undo/redo on everything.
 
-**Organization**: Groups and Components with real instancing: enter-to-edit isolation with a
+**Organization**: Groups and Components with real instancing, enter-to-edit isolation with a
 breadcrumb, shared-definition edit propagation, Make Unique, Explode, and Ctrl-drag copy.
 Tags (layers) with per-tag visibility.
 
@@ -147,14 +147,14 @@ Python suite:
 pytest
 ```
 
-C++ kernel suite: configure, build, and run with CTest:
+C++ kernel suite (configure, build, and run with CTest):
 
 ```bash
 cmake -S . -B build/tests -G Ninja && cmake --build build/tests && ctest --test-dir build/tests
 ```
 
-On Windows, run that from a Developer Command Prompt (or after sourcing `vcvars64.bat`):
-without the MSVC environment the build silently does nothing.
+On Windows, run that from a Developer Command Prompt (or after sourcing `vcvars64.bat`).
+Without the MSVC environment the build silently does nothing.
 
 Lint, at the versions CI pins:
 

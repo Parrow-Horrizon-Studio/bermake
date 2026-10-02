@@ -362,6 +362,8 @@ def test_the_smoke_flag_runs_the_smoke_path_and_touches_neither_logs_nor_prefere
     monkeypatch.setattr(app_module.logs, "default_log_directory", lambda: log_dir)
     monkeypatch.setattr(app_module.logs, "configure_file_logging", forbidden)
     monkeypatch.setattr(app_module.logs, "enable_native_crash_log", forbidden)
+    monkeypatch.setattr(app_module.logs, "install_qt_message_handler", forbidden)
+    monkeypatch.setattr(app_module.logs, "install_exception_hooks", forbidden)
     monkeypatch.setattr(app_module, "QSettings", forbidden)
 
     assert app_module.main(["Bermake.exe", "--smoke-test", str(report)]) == 7

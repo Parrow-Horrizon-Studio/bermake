@@ -57,7 +57,7 @@ class GlUnavailableNote(QLabel):
         self.raise_()
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802 (Qt virtual)
-        if event.type() == QEvent.Type.Resize and self.isVisible():
+        if event.type() == QEvent.Type.Resize and not self.isHidden():
             self._centre()
         return False
 

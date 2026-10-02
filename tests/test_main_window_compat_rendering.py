@@ -345,7 +345,7 @@ def test_accepting_the_window_prompt_shows_no_note(main_window, monkeypatch, rel
     assert _note(main_window).isHidden()
 
 
-def test_a_deferred_prompt_shows_no_note_until_it_is_declined(main_window, monkeypatch):
+def test_a_deferred_prompt_shows_no_note_yet(main_window, monkeypatch):
     _restart_possible(main_window, monkeypatch)
     main_window._prompt_gl_fallback = lambda message, offer: False
     main_window._active_modal = lambda: object()
@@ -361,9 +361,10 @@ def test_the_note_is_centred_in_the_viewport_and_follows_a_resize(main_window, m
     # only shows the same note.
     main_window._prompt_gl_fallback = lambda message, offer: False
     main_window.resize(1000, 700)
+    # The order app.py uses: the note is set before the window is shown.
+    main_window.note_gl_reported_at_startup()
     main_window.show()
     qtbot.waitExposed(main_window)
-    main_window.note_gl_reported_at_startup()
     viewport = main_window._viewport
     note = _note(main_window)
 

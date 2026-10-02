@@ -28,7 +28,7 @@ Rendering. To start once with it on, run:
 
     Bermake.exe --compatibility-rendering
 
-If you decline the offer to restart, Bermake still opens, but the 3D view
+If you decline the offer to restart, or none is offered, Bermake still opens, but the 3D view
 stays empty apart from a short note saying that Bermake cannot draw it on this
 computer. The note says to turn on Help > Use Compatibility Rendering and
 restart when that is possible, and otherwise points to Help > About Bermake

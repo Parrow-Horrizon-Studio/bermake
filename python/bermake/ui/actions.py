@@ -209,8 +209,7 @@ ACTIONS: tuple[ActionSpec, ...] = (
     ),
     # --- Environment (M7.7) -------------------------------------------------
     # Flat entries in View rather than a submenu: MenuSpec is one top-level menu
-    # holding a tuple of action ids, with no nesting. Labels carry no dash, so
-    # they do not copy the units entries' em-dashes.
+    # holding a tuple of action ids, with no nesting. Labels carry no dash.
     ActionSpec(
         "view_env_sky_ground",
         "Sky and Ground",
