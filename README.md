@@ -51,21 +51,21 @@ how to report a problem.
 
 ## What works today
 
-**Drawing** — Line, Rectangle, Circle, Polygon, Arc, and Push/Pull on the ground plane or on
+**Drawing**: Line, Rectangle, Circle, Polygon, Arc, and Push/Pull on the ground plane or on
 any existing face, over a half-edge kernel that keeps topology clean.
 
-**Inferencing & precision** — endpoint / midpoint / on-edge / on-face / intersection snaps,
+**Inferencing & precision**: endpoint / midpoint / on-edge / on-face / intersection snaps,
 3D axis-lock including the vertical axis, and a Measurements box (VCB) for typed exact values
 on every tool. Metric and architectural imperial units, switchable per document.
 
-**Editing** — Select (click, Shift-toggle, box-select), Eraser, Move, Rotate, Scale, and a
+**Editing**: Select (click, Shift-toggle, box-select), Eraser, Move, Rotate, Scale, and a
 measure-only Tape Measure. Full undo/redo on everything.
 
-**Organization** — Groups and Components with real instancing: enter-to-edit isolation with a
+**Organization**: Groups and Components with real instancing: enter-to-edit isolation with a
 breadcrumb, shared-definition edit propagation, Make Unique, Explode, and Ctrl-drag copy.
 Tags (layers) with per-tag visibility.
 
-**Architecture tools** — a chaining Wall tool, Door/Window placement that auto-orients flush
+**Architecture tools**: a chaining Wall tool, Door/Window placement that auto-orients flush
 to a wall face and shares one Component per identical opening, parametric Gable/Hip/Shed
 Roofs, and persistent Dimension and Text annotations that live per editing context.
 
@@ -76,7 +76,7 @@ sorted second pass, and an undoable Materials editor with drag-to-paint; four fa
 per-tag colour; and Scenes, saved camera + tag visibility + style, recalled with an animated
 camera tween.
 
-**File I/O** — a versioned native `.berm` format (zip container, atomic writes, component
+**File I/O**: a versioned native `.berm` format (zip container, atomic writes, component
 sharing preserved by identity), plus OBJ and glTF/GLB import and export. glTF goes through
 Assimp and handles Draco-compressed meshes, reconstructing real instancing on import.
 
@@ -102,7 +102,7 @@ undo/redo · `Esc` cancel · `Enter` finish gesture
 - **Assimp**: glTF/GLB decoding (statically linked; the only C++ format dependency)
 
 CGAL is named in the design document for future volumetric booleans, but is **not** a
-dependency today — the modeling operations shipped so far are pure half-edge work.
+dependency today: the modeling operations shipped so far are pure half-edge work.
 
 See [the design document](docs/2026-05-16-pluton-design.md) for the full architecture and
 roadmap; each milestone has its own design and plan under [`docs/`](docs/).
@@ -147,13 +147,13 @@ Python suite:
 pytest
 ```
 
-C++ kernel suite — configure, build, and run with CTest:
+C++ kernel suite: configure, build, and run with CTest:
 
 ```bash
 cmake -S . -B build/tests -G Ninja && cmake --build build/tests && ctest --test-dir build/tests
 ```
 
-On Windows, run that from a Developer Command Prompt (or after sourcing `vcvars64.bat`) —
+On Windows, run that from a Developer Command Prompt (or after sourcing `vcvars64.bat`):
 without the MSVC environment the build silently does nothing.
 
 Lint, at the versions CI pins:
