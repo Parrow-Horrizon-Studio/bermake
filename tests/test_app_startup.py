@@ -174,6 +174,49 @@ def test_a_plain_start_tells_the_window_nothing(fake_window):
     assert fake_window.calls == ["show"]
 
 
+def _built_window(qtbot, monkeypatch, *, mesa, **flags):
+    """The real MainWindow through the real _build_main_window."""
+    import bermake.ui.main_window as main_window_module
+
+    monkeypatch.setattr(app_module.preferences, "read_show_welcome", lambda settings: False)
+    monkeypatch.setattr(main_window_module, "compatibility_rendering_active", lambda: False)
+    monkeypatch.setattr(
+        main_window_module, "default_mesa_dir", lambda: Path("mesa") if mesa else None
+    )
+    # Nothing here may open a modal if the offscreen platform reports no GL.
+    monkeypatch.setattr(
+        main_window_module.MainWindow, "_prompt_gl_fallback", lambda self, message, offer: False
+    )
+    window = app_module._build_main_window(**flags)
+    qtbot.addWidget(window)
+    return window
+
+
+def _note_of(window):
+    from PySide6.QtWidgets import QLabel
+
+    return window._viewport.findChild(QLabel, "GlUnavailableNote")
+
+
+def test_a_reported_start_shows_the_restart_note_over_the_view(qtbot, monkeypatch):
+    window = _built_window(qtbot, monkeypatch, mesa=True, gl_reported=True)
+    assert not _note_of(window).isHidden()
+    assert "Help > Use Compatibility Rendering and restart Bermake" in _note_of(window).text()
+
+
+def test_a_reported_start_without_a_restart_shows_the_details_note(qtbot, monkeypatch):
+    window = _built_window(qtbot, monkeypatch, mesa=True, gl_reported=True, compat_failed=True)
+    assert "Help > About Bermake has details" in _note_of(window).text()
+
+    window = _built_window(qtbot, monkeypatch, mesa=False, gl_reported=True)
+    assert "Help > About Bermake has details" in _note_of(window).text()
+
+
+def test_a_clean_start_shows_no_note(qtbot, monkeypatch):
+    window = _built_window(qtbot, monkeypatch, mesa=True)
+    assert _note_of(window).isHidden()
+
+
 class _FakeQApplication:
     """Stands in for QApplication while _run is driven. The real application
     already exists in the suite, and pytest-qt still calls instance() on
