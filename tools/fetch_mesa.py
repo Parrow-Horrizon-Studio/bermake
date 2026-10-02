@@ -113,8 +113,14 @@ def extract_command(extractor: Path, archive: Path, into: Path) -> list[str]:
     return [str(extractor), "-xf", str(archive), "-C", str(into), *MESA_FILES]
 
 
-def fetch_mesa(dest: Path, cache: Path) -> Path:
-    """Populate `dest` with the two Mesa DLLs, reusing a verified cache."""
+def fetch_mesa(
+    dest: Path,
+    cache: Path,
+    run: Callable[..., subprocess.CompletedProcess] = subprocess.run,
+) -> Path:
+    """Populate `dest` with the two Mesa DLLs, reusing a verified cache.
+
+    `run` is the process runner; tests inject a failing one."""
     stamp = dest / STAMP_NAME
     wanted = [dest / name for name in MESA_FILES.values()]
     if stamp.is_file() and stamp.read_text().strip() == MESA_SHA256:
@@ -131,7 +137,14 @@ def fetch_mesa(dest: Path, cache: Path) -> Path:
     extractor = find_extractor()
     dest.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as scratch:
-        subprocess.run(extract_command(extractor, archive, Path(scratch)), check=True)
+        command = extract_command(extractor, archive, Path(scratch))
+        try:
+            run(command, check=True)
+        except subprocess.CalledProcessError as error:
+            raise MesaFetchError(
+                f"extracting {archive.name} with {extractor} failed "
+                f"(exit code {error.returncode}): {subprocess.list2cmdline(command)}"
+            ) from error
         for member, bundled in MESA_FILES.items():
             shutil.copy2(Path(scratch) / member, dest / bundled)
     stamp.write_text(MESA_SHA256)

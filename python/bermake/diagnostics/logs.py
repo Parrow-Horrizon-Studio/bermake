@@ -18,6 +18,7 @@ Three channels, because three different things can go wrong:
 from __future__ import annotations
 
 import faulthandler
+import functools
 import logging
 import os
 import platform
@@ -32,6 +33,10 @@ from typing import TextIO
 
 LOG_FILE_NAME = "bermake.log"
 NATIVE_CRASH_FILE_NAME = "native-crash.log"
+# native-crash.log is trimmed at startup once it passes the first size, down
+# to the last KEEP bytes (from a line boundary).
+NATIVE_CRASH_MAX_BYTES = 256 * 1024
+NATIVE_CRASH_KEEP_BYTES = 64 * 1024
 MAX_LOG_BYTES = 1_000_000
 LOG_BACKUP_COUNT = 3
 _FORMAT = "%(asctime)s %(levelname)s %(name)s: %(message)s"
@@ -77,6 +82,26 @@ def native_crash_session_line(version: str, *, now: datetime | None = None, pid:
     return f"--- Bermake {version or 'unknown version'} session {stamp} pid {pid} ---"
 
 
+def trim_native_crash_log(
+    path: Path, max_bytes: int = NATIVE_CRASH_MAX_BYTES, keep_bytes: int = NATIVE_CRASH_KEEP_BYTES
+) -> None:
+    """Bound the file testers attach: past `max_bytes`, keep the last
+    `keep_bytes`, starting at the first whole line. Best effort, since a
+    failure to trim must not stop the crash log being enabled."""
+    try:
+        if path.stat().st_size <= max_bytes:
+            return
+        with path.open("rb") as stream:
+            stream.seek(-keep_bytes, os.SEEK_END)
+            tail = stream.read()
+        # The cut usually lands mid-line; drop the partial line.
+        newline = tail.find(b"\n")
+        tail = tail[newline + 1 :] if newline != -1 else b""
+        path.write_bytes(tail)
+    except OSError:
+        logger.warning("could not trim %s", path, exc_info=True)
+
+
 def enable_native_crash_log(log_dir: Path, version: str = "") -> TextIO:
     """Point faulthandler at `native-crash.log`, after a session line.
 
@@ -85,7 +110,9 @@ def enable_native_crash_log(log_dir: Path, version: str = "") -> TextIO:
     nowhere at the one moment it matters. Close it with close_native_crash_log.
     """
     log_dir.mkdir(parents=True, exist_ok=True)
-    stream = (log_dir / NATIVE_CRASH_FILE_NAME).open("a", encoding="utf-8")
+    crash_log = log_dir / NATIVE_CRASH_FILE_NAME
+    trim_native_crash_log(crash_log)
+    stream = crash_log.open("a", encoding="utf-8")
     stream.write(native_crash_session_line(version, pid=os.getpid()) + "\n")
     # faulthandler writes to the descriptor directly, past Python's buffer, so
     # the session line must be on disk before any trace can follow it.
@@ -162,7 +189,9 @@ def install_exception_hooks(reporter: ErrorReporter) -> None:
     threading.excepthook = reporter.threading_excepthook
 
 
+@functools.cache
 def _qt_levels() -> dict[object, int]:
+    """Built on first use, so importing this module still loads no Qt."""
     from PySide6.QtCore import QtMsgType
 
     return {

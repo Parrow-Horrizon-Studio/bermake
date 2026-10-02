@@ -4,7 +4,7 @@
 
 namespace bermake {
 
-/// Returns the Bermake library version, e.g. "0.14.0". The value is set at
+/// Returns the Bermake library version, e.g. "X.Y.Z". The value is set at
 /// build time from pyproject.toml (see the root CMakeLists.txt).
 std::string version();
 

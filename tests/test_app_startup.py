@@ -325,3 +325,16 @@ def test_the_mesa_lookup_is_resolved_when_called(monkeypatch):
     assert mesa_restart_available(compat_failed=False) is True
     monkeypatch.setattr(app_module, "default_mesa_dir", lambda: None)
     assert mesa_restart_available(compat_failed=False) is False
+
+
+def test_apply_compatibility_rendering_resolves_the_mesa_lookup_at_call_time(monkeypatch):
+    """A default argument would freeze default_mesa_dir at definition time and
+    make this patch do nothing."""
+    enabled = []
+    monkeypatch.setattr(app_module, "default_mesa_dir", lambda: Path("patched"))
+    assert apply_compatibility_rendering(True, enable=enabled.append) is True
+    assert enabled == [Path("patched")]
+
+    monkeypatch.setattr(app_module, "default_mesa_dir", lambda: None)
+    assert apply_compatibility_rendering(True, enable=enabled.append) is False
+    assert enabled == [Path("patched")]

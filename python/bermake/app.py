@@ -97,7 +97,7 @@ def wants_compatibility_rendering(args: LaunchArgs, stored: bool) -> bool:
 def apply_compatibility_rendering(
     requested: bool,
     *,
-    find_mesa: Callable[[], Path | None] = default_mesa_dir,
+    find_mesa: Callable[[], Path | None] | None = None,
     enable: Callable[[Path], None] = enable_compatibility_rendering,
 ) -> bool:
     """Switch to the bundled Mesa if requested. True if it is now on.
@@ -106,10 +106,13 @@ def apply_compatibility_rendering(
     Bermake continues on the system driver. Letting it propagate would stop
     every later launch the same way, because the preference is stored, with
     the Help menu that turns it off out of reach (final review I3).
+
+    The Mesa lookup is resolved at call time, like mesa_restart_available.
     """
     if not requested:
         return False
-    mesa_dir = find_mesa()
+    lookup = default_mesa_dir if find_mesa is None else find_mesa
+    mesa_dir = lookup()
     if mesa_dir is None:
         logger.warning(
             "compatibility rendering was requested but Mesa was not found; "

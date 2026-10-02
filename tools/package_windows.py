@@ -19,7 +19,7 @@ import sys
 from collections.abc import Mapping
 from pathlib import Path
 
-from fetch_mesa import MESA_VERSION, fetch_mesa
+from fetch_mesa import MESA_VERSION, MesaFetchError, fetch_mesa
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGING = ROOT / "packaging"
@@ -420,6 +420,11 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except (PackagingError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+    except (
+        PackagingError,
+        MesaFetchError,
+        subprocess.CalledProcessError,
+        subprocess.TimeoutExpired,
+    ) as error:
         print(f"packaging failed: {error}", file=sys.stderr)
         sys.exit(1)
