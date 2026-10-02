@@ -160,6 +160,10 @@ def smoke_report_problems(report: dict, expected: dict[str, int]) -> list[str]:
         for check in report.get("checks", [])
         if not check.get("ok")
     ]
+    present = {check["name"] for check in report.get("checks", [])}
+    for required in ("rendering", "startup_check"):
+        if required not in present:
+            problems.append(f"smoke report has no {required} check")
     resources = next((c for c in report.get("checks", []) if c["name"] == "resources"), None)
     if resources is None:
         problems.append("smoke report has no resources check")

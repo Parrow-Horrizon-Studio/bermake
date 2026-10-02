@@ -32,7 +32,21 @@ def test_resource_counts_match_the_source_tree(qapp):
     result = smoke.check_resources()
     icons = len(list((ROOT / "python/bermake/ui/icons").glob("*.svg")))
     shaders = len([p for p in (ROOT / "python/bermake/viewport/shaders").iterdir() if p.is_file()])
-    assert result.data == {"icons": icons, "shaders": shaders}
+    assert result.data == {"icons": icons, "shaders": shaders, "jpeg_decodes": True}
+
+
+def test_the_resources_check_decodes_a_jpeg(qapp):
+    assert smoke._jpeg_decodes() is True
+
+
+def test_a_jpeg_that_does_not_decode_fails_the_resources_check(qapp, monkeypatch):
+    monkeypatch.setattr(smoke, "_jpeg_decodes", lambda: False)
+
+    result = smoke.check_resources()
+
+    assert result.ok is False
+    assert result.data["jpeg_decodes"] is False
+    assert "jpeg" in result.detail
 
 
 def test_the_document_round_trip_compares_geometry(tmp_path):
