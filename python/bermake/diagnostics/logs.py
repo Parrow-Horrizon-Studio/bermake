@@ -86,18 +86,23 @@ def trim_native_crash_log(
     path: Path, max_bytes: int = NATIVE_CRASH_MAX_BYTES, keep_bytes: int = NATIVE_CRASH_KEEP_BYTES
 ) -> None:
     """Bound the file testers attach: past `max_bytes`, keep the last
-    `keep_bytes`, starting at the first whole line. Best effort, since a
-    failure to trim must not stop the crash log being enabled."""
+    `keep_bytes`, starting at the first whole line. A missing file (a first
+    launch) is nothing to trim. Best effort otherwise, since a failure to trim
+    must not stop the crash log being enabled."""
     try:
         if path.stat().st_size <= max_bytes:
             return
         with path.open("rb") as stream:
-            stream.seek(-keep_bytes, os.SEEK_END)
-            tail = stream.read()
-        # The cut usually lands mid-line; drop the partial line.
-        newline = tail.find(b"\n")
-        tail = tail[newline + 1 :] if newline != -1 else b""
+            # One byte more than is kept, to see whether the cut is on a line start.
+            stream.seek(-(keep_bytes + 1), os.SEEK_END)
+            before, tail = stream.read(1), stream.read()
+        if before != b"\n":
+            # The cut landed mid-line; drop the partial line.
+            newline = tail.find(b"\n")
+            tail = tail[newline + 1 :] if newline != -1 else b""
         path.write_bytes(tail)
+    except FileNotFoundError:
+        return
     except OSError:
         logger.warning("could not trim %s", path, exc_info=True)
 

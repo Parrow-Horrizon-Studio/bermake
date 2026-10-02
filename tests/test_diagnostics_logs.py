@@ -277,3 +277,26 @@ def test_a_trim_that_fails_does_not_stop_the_log_being_enabled(tmp_path, monkeyp
         logs.close_native_crash_log(stream)
 
     assert path.read_text(encoding="utf-8").splitlines()[-1].startswith("--- Bermake 9.9.9")
+
+
+def test_a_missing_native_crash_log_is_nothing_to_trim_and_says_nothing(tmp_path, caplog):
+    """The first launch has no file yet; that must not put a warning and a
+    traceback at the top of the first log a tester sends."""
+    path = tmp_path / "native-crash.log"
+
+    with caplog.at_level(logging.DEBUG):
+        logs.trim_native_crash_log(path)
+
+    assert caplog.records == []
+    assert not path.exists()
+
+
+def test_a_native_crash_log_cut_exactly_on_a_line_start_keeps_that_line(tmp_path):
+    path = tmp_path / "native-crash.log"
+    line = "x" * 63 + "\n"  # 64 bytes, so the 64 KiB kept is exactly 1024 whole lines
+    lines = [f"{n:04d}" + line[4:] for n in range(4200)]
+    path.write_bytes("".join(lines).encode("ascii"))
+
+    logs.trim_native_crash_log(path)
+
+    assert path.read_bytes() == "".join(lines[-1024:]).encode("ascii")

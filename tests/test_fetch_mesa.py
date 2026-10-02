@@ -174,8 +174,6 @@ def test_an_extractor_failure_names_the_extractor_and_its_exit_code(tmp_path, mo
     archive.write_bytes(b"pretend archive")
     digest = hashlib.sha256(b"pretend archive").hexdigest()
     monkeypatch.setattr(fetch_mesa, "MESA_SHA256", digest)
-    # verify_archive binds its default pin at definition time, so patch the call.
-    monkeypatch.setattr(fetch_mesa, "verify_archive", lambda path: None)
     extractor = tmp_path / "tar.exe"
     monkeypatch.setattr(fetch_mesa, "find_extractor", lambda: extractor)
 
@@ -194,3 +192,13 @@ def test_the_packaging_script_reports_a_mesa_fetch_error_instead_of_a_traceback(
     text = (ROOT / "tools" / "package_windows.py").read_text(encoding="utf-8")
     caught = text.split("except (", 1)[1].split(") as error", 1)[0]
     assert "MesaFetchError" in caught
+
+
+def test_running_the_tool_directly_reports_a_fetch_error_without_a_traceback(monkeypatch, capsys):
+    def failing(dest, cache):
+        raise fetch_mesa.MesaFetchError("extracting x.7z with 7z failed (exit code 2)")
+
+    monkeypatch.setattr(fetch_mesa, "fetch_mesa", failing)
+
+    assert fetch_mesa.main() == 1
+    assert "exit code 2" in capsys.readouterr().err

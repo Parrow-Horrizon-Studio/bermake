@@ -61,7 +61,9 @@ def sha256_of(path: Path) -> str:
     return digest.hexdigest()
 
 
-def verify_archive(path: Path, expected: str = MESA_SHA256) -> None:
+def verify_archive(path: Path, expected: str | None = None) -> None:
+    # Resolved at call time so the pin can be patched in tests.
+    expected = MESA_SHA256 if expected is None else expected
     actual = sha256_of(path)
     if actual != expected:
         raise MesaFetchError(
@@ -152,7 +154,11 @@ def fetch_mesa(
 
 
 def main() -> int:
-    dest = fetch_mesa(ROOT / "build" / "mesa", ROOT / "build" / "mesa-cache")
+    try:
+        dest = fetch_mesa(ROOT / "build" / "mesa", ROOT / "build" / "mesa-cache")
+    except MesaFetchError as error:
+        print(f"fetching Mesa failed: {error}", file=sys.stderr)
+        return 1
     print(f"Mesa {MESA_VERSION} ready in {dest}")
     return 0
 
