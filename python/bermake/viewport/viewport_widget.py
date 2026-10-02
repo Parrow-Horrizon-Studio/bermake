@@ -197,6 +197,10 @@ class ViewportWidget(QOpenGLWidget):
         from inside initializeGL would re-enter Qt's GL setup.
         """
         self.gl_info = info
+        # Judge this context afresh: Qt can run initializeGL again on a new
+        # context (the widget reparented to another top-level window), and a
+        # verdict from the previous one must not outlive it.
+        self._gl_failed = False
         setup_error = None
         if info.version >= MIN_GL_VERSION:
             try:

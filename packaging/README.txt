@@ -28,9 +28,16 @@ Rendering. To start once with it on, run:
 
     Bermake.exe --compatibility-rendering
 
+If you decline the offer to restart, or none is offered, Bermake still opens, but the 3D view
+stays empty apart from a short note saying that Bermake cannot draw it on this
+computer. The note says to turn on Help > Use Compatibility Rendering and
+restart when that is possible, and otherwise points to Help > About Bermake
+for the details to include in a bug report.
+
 Compatibility rendering uses Mesa's CPU renderer, llvmpipe, which needs no
-graphics card. Advanced users can choose another Mesa driver by setting the
-GALLIUM_DRIVER environment variable before starting Bermake.
+graphics card. It is the only supported setting. Do not set the
+GALLIUM_DRIVER environment variable: the d3d12 driver is not supported in this
+build and closes Bermake without a message.
 
 If Bermake will not start after you turned compatibility rendering on, start
 it once with it off by running this in a Command Prompt from this folder:

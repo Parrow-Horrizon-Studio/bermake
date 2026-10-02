@@ -207,3 +207,96 @@ def test_closing_the_native_crash_log_disables_faulthandler_first(monkeypatch):
     logs.close_native_crash_log(FakeStream())
 
     assert events == ["disable", "close"]
+
+
+def test_the_qt_level_table_is_built_once():
+    assert logs._qt_levels() is logs._qt_levels()
+
+
+def _numbered_lines(count):
+    return "".join(f"line {n:05d} of the native crash log\n" for n in range(count))
+
+
+def test_a_small_native_crash_log_is_left_alone(tmp_path):
+    path = tmp_path / "native-crash.log"
+    text = _numbered_lines(100)
+    path.write_text(text, encoding="utf-8")
+
+    logs.trim_native_crash_log(path)
+
+    assert path.read_text(encoding="utf-8") == text
+
+
+def test_a_native_crash_log_past_256_kib_keeps_its_last_64_kib_from_a_line_start(tmp_path):
+    path = tmp_path / "native-crash.log"
+    text = _numbered_lines(8000)  # about 300 KB
+    assert len(text) > 256 * 1024
+    path.write_text(text, encoding="utf-8")
+
+    logs.trim_native_crash_log(path)
+
+    kept = path.read_text(encoding="utf-8")
+    assert 60 * 1024 < len(kept) <= 64 * 1024
+    assert text.endswith(kept)
+    assert kept.startswith("line ")
+    assert kept.endswith("\n")
+
+
+def test_a_native_crash_log_exactly_at_the_bound_is_not_trimmed(tmp_path):
+    path = tmp_path / "native-crash.log"
+    path.write_bytes(b"x" * logs.NATIVE_CRASH_MAX_BYTES)
+
+    logs.trim_native_crash_log(path)
+
+    assert path.stat().st_size == logs.NATIVE_CRASH_MAX_BYTES
+
+
+def test_starting_a_session_trims_before_the_header_is_appended(tmp_path):
+    path = tmp_path / logs.NATIVE_CRASH_FILE_NAME
+    path.write_text(_numbered_lines(8000), encoding="utf-8")
+
+    stream = logs.enable_native_crash_log(tmp_path, "9.9.9")
+    logs.close_native_crash_log(stream)
+
+    lines = path.read_text(encoding="utf-8").splitlines()
+    assert lines[-1].startswith("--- Bermake 9.9.9 session ")
+    assert path.stat().st_size < 70 * 1024
+    assert lines[0].startswith("line ")
+
+
+def test_a_trim_that_fails_does_not_stop_the_log_being_enabled(tmp_path, monkeypatch):
+    path = tmp_path / logs.NATIVE_CRASH_FILE_NAME
+    path.write_text(_numbered_lines(8000), encoding="utf-8")
+
+    def refuse(self, data):
+        raise PermissionError("held open")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(type(path), "write_bytes", refuse)
+        stream = logs.enable_native_crash_log(tmp_path, "9.9.9")
+        logs.close_native_crash_log(stream)
+
+    assert path.read_text(encoding="utf-8").splitlines()[-1].startswith("--- Bermake 9.9.9")
+
+
+def test_a_missing_native_crash_log_is_nothing_to_trim_and_says_nothing(tmp_path, caplog):
+    """The first launch has no file yet; that must not put a warning and a
+    traceback at the top of the first log a tester sends."""
+    path = tmp_path / "native-crash.log"
+
+    with caplog.at_level(logging.DEBUG):
+        logs.trim_native_crash_log(path)
+
+    assert caplog.records == []
+    assert not path.exists()
+
+
+def test_a_native_crash_log_cut_exactly_on_a_line_start_keeps_that_line(tmp_path):
+    path = tmp_path / "native-crash.log"
+    line = "x" * 63 + "\n"  # 64 bytes, so the 64 KiB kept is exactly 1024 whole lines
+    lines = [f"{n:04d}" + line[4:] for n in range(4200)]
+    path.write_bytes("".join(lines).encode("ascii"))
+
+    logs.trim_native_crash_log(path)
+
+    assert path.read_bytes() == "".join(lines[-1024:]).encode("ascii")

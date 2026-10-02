@@ -178,7 +178,7 @@ ACTIONS: tuple[ActionSpec, ...] = (
     # --- Units --------------------------------------------------------
     ActionSpec(
         "units_metric_m",
-        "Metric — m",
+        "Metric (m)",
         "_set_units_metric",
         handler_arg="m",
         checkable=True,
@@ -186,7 +186,7 @@ ACTIONS: tuple[ActionSpec, ...] = (
     ),
     ActionSpec(
         "units_metric_cm",
-        "Metric — cm",
+        "Metric (cm)",
         "_set_units_metric",
         handler_arg="cm",
         checkable=True,
@@ -194,7 +194,7 @@ ACTIONS: tuple[ActionSpec, ...] = (
     ),
     ActionSpec(
         "units_metric_mm",
-        "Metric — mm",
+        "Metric (mm)",
         "_set_units_metric",
         handler_arg="mm",
         checkable=True,
@@ -202,15 +202,14 @@ ACTIONS: tuple[ActionSpec, ...] = (
     ),
     ActionSpec(
         "units_imperial",
-        "Imperial — architectural",
+        "Imperial (architectural)",
         "_set_units_imperial",
         checkable=True,
         group=UNITS_GROUP,
     ),
     # --- Environment (M7.7) -------------------------------------------------
     # Flat entries in View rather than a submenu: MenuSpec is one top-level menu
-    # holding a tuple of action ids, with no nesting. Labels carry no dash, so
-    # they do not copy the units entries' em-dashes.
+    # holding a tuple of action ids, with no nesting. Labels carry no dash.
     ActionSpec(
         "view_env_sky_ground",
         "Sky and Ground",

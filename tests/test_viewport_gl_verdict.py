@@ -92,3 +92,29 @@ def test_a_good_context_initialises_quietly_and_records_its_info(qtbot):
     assert initialised == [True]
     assert not widget._gl_failed
     assert widget.gl_info == info
+
+
+def test_a_good_context_after_a_bad_one_renders_again(qtbot):
+    """initializeGL can run again on a new context (reparenting); the verdict
+    on the old one must not stick."""
+    widget = _widget(qtbot)
+    with qtbot.waitSignal(widget.gl_unavailable, timeout=2000):
+        widget._apply_gl_verdict(GlInfo((1, 1), "1.1.0", "GDI Generic"), lambda: None)
+    assert widget._gl_failed
+
+    initialised = []
+    with qtbot.assertNotEmitted(widget.gl_unavailable, wait=200):
+        widget._apply_gl_verdict(
+            GlInfo((4, 6), "4.6.0", "GeForce"), lambda: initialised.append(True)
+        )
+    assert initialised == [True]
+    assert not widget._gl_failed
+
+
+def test_a_failure_on_a_second_context_is_still_a_failure(qtbot):
+    widget = _widget(qtbot)
+    widget._apply_gl_verdict(GlInfo((4, 6), "4.6.0", "GeForce"), lambda: None)
+    assert not widget._gl_failed
+    with qtbot.waitSignal(widget.gl_unavailable, timeout=2000):
+        widget._apply_gl_verdict(GlInfo((1, 1), "1.1.0", "GDI Generic"), lambda: None)
+    assert widget._gl_failed

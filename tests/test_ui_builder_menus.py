@@ -52,6 +52,24 @@ def test_units_action_applies_the_unit(qtbot, main_window):
     assert "cm" in repr(main_window._doc.units).lower()
 
 
+def test_unit_labels_use_parentheses_not_dashes(qtbot, main_window):
+    labels = {
+        spec_id: main_window._actions[spec_id].text()
+        for spec_id in (
+            "units_metric_m",
+            "units_metric_cm",
+            "units_metric_mm",
+            "units_imperial",
+        )
+    }
+    assert labels == {
+        "units_metric_m": "Metric (m)",
+        "units_metric_cm": "Metric (cm)",
+        "units_metric_mm": "Metric (mm)",
+        "units_imperial": "Imperial (architectural)",
+    }
+
+
 def test_xray_toggle_passes_the_checked_state(qtbot, main_window):
     action = main_window._actions["view_xray"]
     action.setChecked(True)

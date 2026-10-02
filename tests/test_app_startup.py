@@ -174,6 +174,49 @@ def test_a_plain_start_tells_the_window_nothing(fake_window):
     assert fake_window.calls == ["show"]
 
 
+def _built_window(qtbot, monkeypatch, *, mesa, **flags):
+    """The real MainWindow through the real _build_main_window."""
+    import bermake.ui.main_window as main_window_module
+
+    monkeypatch.setattr(app_module.preferences, "read_show_welcome", lambda settings: False)
+    monkeypatch.setattr(main_window_module, "compatibility_rendering_active", lambda: False)
+    monkeypatch.setattr(
+        main_window_module, "default_mesa_dir", lambda: Path("mesa") if mesa else None
+    )
+    # Nothing here may open a modal if the offscreen platform reports no GL.
+    monkeypatch.setattr(
+        main_window_module.MainWindow, "_prompt_gl_fallback", lambda self, message, offer: False
+    )
+    window = app_module._build_main_window(**flags)
+    qtbot.addWidget(window)
+    return window
+
+
+def _note_of(window):
+    from PySide6.QtWidgets import QLabel
+
+    return window._viewport.findChild(QLabel, "GlUnavailableNote")
+
+
+def test_a_reported_start_shows_the_restart_note_over_the_view(qtbot, monkeypatch):
+    window = _built_window(qtbot, monkeypatch, mesa=True, gl_reported=True)
+    assert not _note_of(window).isHidden()
+    assert "Help > Use Compatibility Rendering and restart Bermake" in _note_of(window).text()
+
+
+def test_a_reported_start_without_a_restart_shows_the_details_note(qtbot, monkeypatch):
+    window = _built_window(qtbot, monkeypatch, mesa=True, gl_reported=True, compat_failed=True)
+    assert "Help > About Bermake has details" in _note_of(window).text()
+
+    window = _built_window(qtbot, monkeypatch, mesa=False, gl_reported=True)
+    assert "Help > About Bermake has details" in _note_of(window).text()
+
+
+def test_a_clean_start_shows_no_note(qtbot, monkeypatch):
+    window = _built_window(qtbot, monkeypatch, mesa=True)
+    assert _note_of(window).isHidden()
+
+
 class _FakeQApplication:
     """Stands in for QApplication while _run is driven. The real application
     already exists in the suite, and pytest-qt still calls instance() on
@@ -282,3 +325,48 @@ def test_the_mesa_lookup_is_resolved_when_called(monkeypatch):
     assert mesa_restart_available(compat_failed=False) is True
     monkeypatch.setattr(app_module, "default_mesa_dir", lambda: None)
     assert mesa_restart_available(compat_failed=False) is False
+
+
+def test_apply_compatibility_rendering_resolves_the_mesa_lookup_at_call_time(monkeypatch):
+    """A default argument would freeze default_mesa_dir at definition time and
+    make this patch do nothing."""
+    enabled = []
+    monkeypatch.setattr(app_module, "default_mesa_dir", lambda: Path("patched"))
+    assert apply_compatibility_rendering(True, enable=enabled.append) is True
+    assert enabled == [Path("patched")]
+
+    monkeypatch.setattr(app_module, "default_mesa_dir", lambda: None)
+    assert apply_compatibility_rendering(True, enable=enabled.append) is False
+    assert enabled == [Path("patched")]
+
+
+def test_the_smoke_flag_runs_the_smoke_path_and_touches_neither_logs_nor_preferences(
+    monkeypatch, tmp_path
+):
+    """main() hands --smoke-test to run_smoke before logging is configured.
+
+    run_smoke is replaced by a recorder (the real run builds a QApplication and
+    compiles shaders; tests/test_smoke.py covers it). The log folder points at
+    a tmp path that must stay missing, and any QSettings construction or
+    logging setup fails the test."""
+    import bermake.diagnostics.smoke as smoke
+
+    log_dir = tmp_path / "logs"
+    report = tmp_path / "report.json"
+    smoke_calls = []
+
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("the smoke path must not reach this")
+
+    monkeypatch.setattr(smoke, "run_smoke", lambda path: smoke_calls.append(path) or 7)
+    monkeypatch.setattr(app_module.logs, "default_log_directory", lambda: log_dir)
+    monkeypatch.setattr(app_module.logs, "configure_file_logging", forbidden)
+    monkeypatch.setattr(app_module.logs, "enable_native_crash_log", forbidden)
+    monkeypatch.setattr(app_module.logs, "install_qt_message_handler", forbidden)
+    monkeypatch.setattr(app_module.logs, "install_exception_hooks", forbidden)
+    monkeypatch.setattr(app_module, "QSettings", forbidden)
+
+    assert app_module.main(["Bermake.exe", "--smoke-test", str(report)]) == 7
+
+    assert smoke_calls == [report]
+    assert not log_dir.exists()

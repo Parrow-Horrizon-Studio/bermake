@@ -1,12 +1,13 @@
 Third-party components bundled with Bermake for Windows
 =======================================================
 
-Bermake itself is licensed under the GNU General Public License v3.0 or later
-(LICENSE.txt). The Windows build also contains the following components,
-each under its own licence. The exact version of each is listed under
-"Versions in this build" at the end of this file, which is written when the
-build is made. Licence texts are in the licenses folder beside this file
-unless an entry says otherwise. Paths below are relative to this folder.
+Bermake itself is Copyright (C) 2026 Parrow Horrizon Studio and licensed under
+the GNU General Public License v3.0 or later (LICENSE.txt). The Windows build
+also contains the following components, each under its own licence. The
+exact version of each is listed under "Versions in this build" at the end of
+this file, which is written when the build is made. Licence texts are in the
+licenses folder beside this file unless an entry says otherwise. Paths below
+are relative to this folder.
 
 The GNU Lesser General Public License v3 (licenses\LGPL-3.0.txt) is a set of
 additional permissions on top of the GNU GPL v3, whose text is LICENSE.txt.

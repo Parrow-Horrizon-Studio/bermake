@@ -72,6 +72,7 @@ from bermake.ui import preferences, selection_controller
 from bermake.ui.cursors import cursor_for
 from bermake.ui.document_controller import DocumentController
 from bermake.ui.entity_info_page import EntityInfoPage
+from bermake.ui.gl_unavailable_note import GlUnavailableNote
 from bermake.ui.materials_page import MaterialsPage
 from bermake.ui.opening_options_bar import OpeningOptionsBar
 from bermake.ui.outliner_tree import OutlinerTree
@@ -202,6 +203,10 @@ class MainWindow(QMainWindow):
         # M7.9: an unusable OpenGL context reports itself here, once, from the
         # event loop.
         self._viewport.gl_unavailable.connect(self._on_gl_unavailable)
+        # M7.10: hidden until OpenGL is known to be unusable and the tester
+        # has not restarted; a label, because no GL context may ever exist.
+        self._gl_note = GlUnavailableNote(self._viewport)
+        self._gl_note_shown = False
         # Overridable for tests, like _prompt_discard.
         self._relaunch = relaunch
         self._mesa_available = default_mesa_dir() is not None
@@ -2314,14 +2319,31 @@ class MainWindow(QMainWindow):
     def note_gl_reported_at_startup(self) -> None:
         """The startup OpenGL check has already shown the tester a version
         problem; the viewport must not show the same one again. Call before
-        the window is shown, because initializeGL runs on show."""
+        the window is shown, because initializeGL runs on show.
+
+        The tester declined (or had no restart to take), so the 3D view says
+        why it is blank (M7.10, #139)."""
         self._viewport.version_failure_reported = True
+        self._show_gl_note()
 
     def disable_compatibility_offer(self) -> None:
         """Compatibility rendering was requested but could not be switched on
         at startup, so offering a restart into it would loop. The message is
         still shown, without the restart button."""
         self._compat_offer_enabled = False
+        if self._gl_note_shown:
+            self._show_gl_note()
+
+    def _restart_offered(self) -> bool:
+        return (
+            self._compat_offer_enabled
+            and self._mesa_available
+            and not compatibility_rendering_active()
+        )
+
+    def _show_gl_note(self) -> None:
+        self._gl_note_shown = True
+        self._gl_note.show_note(self._restart_offered())
 
     def _on_gl_unavailable(self, message: str) -> None:
         if self._active_modal() is not None:
@@ -2336,12 +2358,9 @@ class MainWindow(QMainWindow):
             # widget is active, so the restart runs from the main event loop.
             QTimer.singleShot(200, self, lambda: self._on_gl_unavailable(message))
             return
-        offer = (
-            self._compat_offer_enabled
-            and self._mesa_available
-            and not compatibility_rendering_active()
-        )
+        offer = self._restart_offered()
         if not self._prompt_gl_fallback(message, offer):
+            self._show_gl_note()
             return
         preferences.write_compatibility_rendering(self._settings, True)
         self._settings.sync()

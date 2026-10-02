@@ -53,6 +53,28 @@ def check_imports() -> CheckResult:
     return CheckResult("imports", ok, f"metadata {declared}, compiled {compiled}")
 
 
+def _jpeg_decodes() -> bool:
+    """Encode a tiny image as JPEG in memory and decode it back through QImage.
+
+    The texture picker accepts .jpg files and the spec ships only the JPEG
+    image format plugin it needs, so a build that lost `imageformats/qjpeg.dll`
+    would otherwise pass every other check (#139)."""
+    from PySide6.QtCore import QBuffer, QByteArray, QIODevice
+    from PySide6.QtGui import QColor, QImage
+
+    source = QImage(8, 8, QImage.Format.Format_RGB32)
+    source.fill(QColor("white"))
+    payload = QByteArray()
+    sink = QBuffer(payload)
+    sink.open(QIODevice.OpenModeFlag.WriteOnly)
+    saved = source.save(sink, "JPEG")
+    sink.close()
+    if not saved or payload.isEmpty():
+        return False
+    decoded = QImage()
+    return decoded.loadFromData(payload, "JPEG") and decoded.size() == source.size()
+
+
 def check_resources() -> CheckResult:
     from importlib.resources import files
 
@@ -66,9 +88,15 @@ def check_resources() -> CheckResult:
     shader_dir = files("bermake.viewport") / "shaders"
     shaders = sorted(entry.name for entry in shader_dir.iterdir() if entry.is_file())
     empty = [name for name in shaders if not _load_shader_source(name).strip()]
-    ok = bool(stems) and bool(shaders) and not blank and not empty
-    detail = f"blank icons: {blank}, empty shaders: {empty}" if not ok else ""
-    return CheckResult("resources", ok, detail, {"icons": len(stems), "shaders": len(shaders)})
+    jpeg = _jpeg_decodes()
+    ok = bool(stems) and bool(shaders) and not blank and not empty and jpeg
+    detail = f"blank icons: {blank}, empty shaders: {empty}, jpeg decodes: {jpeg}" if not ok else ""
+    return CheckResult(
+        "resources",
+        ok,
+        detail,
+        {"icons": len(stems), "shaders": len(shaders), "jpeg_decodes": jpeg},
+    )
 
 
 def check_document_roundtrip(tmp_dir: Path) -> CheckResult:

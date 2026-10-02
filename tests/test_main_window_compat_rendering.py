@@ -12,6 +12,8 @@ from bermake.commands.scene_commands import ClearSceneCommand
 from bermake.ui import preferences
 from bermake.ui.main_window import MainWindow
 from PySide6.QtCore import QSettings
+from PySide6.QtGui import QPalette
+from PySide6.QtWidgets import QLabel
 
 ACTION = "help_compatibility_rendering"
 
@@ -54,6 +56,40 @@ def test_toggling_stores_the_preference_and_offers_a_restart(main_window, tmp_pa
     assert prompts == [True]
     assert relaunches == []
     assert preferences.read_compatibility_rendering(_settings(tmp_path)) is True
+
+
+def test_switching_it_off_stores_false_and_asks_about_the_off_state(
+    main_window, tmp_path, relaunches
+):
+    main_window._prompt_restart_for_rendering = lambda enabled: False
+    main_window._actions[ACTION].setChecked(True)
+    assert preferences.read_compatibility_rendering(_settings(tmp_path)) is True
+    prompts = []
+    main_window._prompt_restart_for_rendering = lambda enabled: prompts.append(enabled) or False
+
+    main_window._actions[ACTION].setChecked(False)
+
+    assert prompts == [False]
+    assert relaunches == []
+    assert preferences.read_compatibility_rendering(_settings(tmp_path)) is False
+
+
+def test_the_restart_prompt_says_off_for_the_off_state(main_window, monkeypatch):
+    from PySide6.QtWidgets import QMessageBox
+
+    texts = []
+
+    def question(parent, title, text, *args):
+        texts.append(text)
+        return QMessageBox.StandardButton.No
+
+    monkeypatch.setattr(QMessageBox, "question", question)
+
+    assert main_window._prompt_restart_for_rendering(False) is False
+    assert main_window._prompt_restart_for_rendering(True) is False
+
+    assert texts[0].startswith("Compatibility rendering will be off ")
+    assert texts[1].startswith("Compatibility rendering will be on ")
 
 
 def test_accepting_the_restart_closes_then_relaunches(main_window, relaunches):
@@ -211,3 +247,145 @@ def test_the_window_uses_the_dialog_the_startup_preflight_uses(main_window, monk
 
     assert main_window._prompt_gl_fallback("no usable OpenGL", True) is True
     assert calls == [("no usable OpenGL", True, main_window)]
+
+
+# --- The note over the 3D view when OpenGL cannot draw it (M7.10, #139) ------
+
+NOTE_WITH_RESTART = (
+    "Bermake cannot draw the 3D view on this computer. "
+    "Turn on Help > Use Compatibility Rendering and restart Bermake."
+)
+NOTE_WITHOUT_RESTART = (
+    "Bermake cannot draw the 3D view on this computer. "
+    "Help > About Bermake has details to include in a bug report."
+)
+
+
+def _note(window):
+    return window._viewport.findChild(QLabel, "GlUnavailableNote")
+
+
+def _restart_possible(window, monkeypatch, *, mesa=True, active=False):
+    window._mesa_available = mesa
+    monkeypatch.setattr(main_window_module, "compatibility_rendering_active", lambda: active)
+
+
+def test_a_healthy_window_shows_no_note(main_window):
+    note = _note(main_window)
+    assert note is not None
+    assert note.isHidden()
+
+
+def test_a_startup_report_with_a_restart_available_shows_the_restart_note(main_window, monkeypatch):
+    _restart_possible(main_window, monkeypatch)
+
+    main_window.note_gl_reported_at_startup()
+
+    assert not _note(main_window).isHidden()
+    assert _note(main_window).text() == NOTE_WITH_RESTART
+
+
+@pytest.mark.parametrize(
+    ("mesa", "active"), [(False, False), (True, True)], ids=["no-mesa", "already-active"]
+)
+def test_a_startup_report_with_no_restart_shows_the_details_note(
+    main_window, monkeypatch, mesa, active
+):
+    _restart_possible(main_window, monkeypatch, mesa=mesa, active=active)
+
+    main_window.note_gl_reported_at_startup()
+
+    assert _note(main_window).text() == NOTE_WITHOUT_RESTART
+
+
+def test_a_failed_switch_at_startup_swaps_the_note_to_the_details_text(main_window, monkeypatch):
+    """app.py calls note_gl_reported_at_startup() before disable_compatibility_offer()."""
+    _restart_possible(main_window, monkeypatch)
+
+    main_window.note_gl_reported_at_startup()
+    main_window.disable_compatibility_offer()
+
+    assert _note(main_window).text() == NOTE_WITHOUT_RESTART
+
+
+def test_disabling_the_offer_alone_shows_no_note(main_window, monkeypatch):
+    _restart_possible(main_window, monkeypatch)
+
+    main_window.disable_compatibility_offer()
+
+    assert _note(main_window).isHidden()
+
+
+def test_declining_the_window_prompt_shows_the_note(main_window, monkeypatch):
+    _restart_possible(main_window, monkeypatch)
+    main_window._prompt_gl_fallback = lambda message, offer: False
+
+    main_window._on_gl_unavailable("no usable OpenGL")
+
+    assert not _note(main_window).isHidden()
+    assert _note(main_window).text() == NOTE_WITH_RESTART
+
+
+def test_declining_with_no_restart_on_offer_shows_the_details_note(main_window, monkeypatch):
+    _restart_possible(main_window, monkeypatch, mesa=False)
+    main_window._prompt_gl_fallback = lambda message, offer: False
+
+    main_window._on_gl_unavailable("no usable OpenGL")
+
+    assert _note(main_window).text() == NOTE_WITHOUT_RESTART
+
+
+def test_accepting_the_window_prompt_shows_no_note(main_window, monkeypatch, relaunches):
+    _restart_possible(main_window, monkeypatch)
+    main_window._prompt_gl_fallback = lambda message, offer: True
+
+    main_window._on_gl_unavailable("no usable OpenGL")
+
+    assert relaunches == [True]
+    assert _note(main_window).isHidden()
+
+
+def test_a_deferred_prompt_shows_no_note_yet(main_window, monkeypatch):
+    _restart_possible(main_window, monkeypatch)
+    main_window._prompt_gl_fallback = lambda message, offer: False
+    main_window._active_modal = lambda: object()
+
+    main_window._on_gl_unavailable("no usable OpenGL")
+
+    assert _note(main_window).isHidden()
+
+
+def test_the_note_is_centred_in_the_viewport_and_follows_a_resize(main_window, monkeypatch, qtbot):
+    _restart_possible(main_window, monkeypatch)
+    # The offscreen platform may fail the draw test and prompt; declining
+    # only shows the same note.
+    main_window._prompt_gl_fallback = lambda message, offer: False
+    main_window.resize(1000, 700)
+    # The order app.py uses: the note is set before the window is shown.
+    main_window.note_gl_reported_at_startup()
+    main_window.show()
+    qtbot.waitExposed(main_window)
+    viewport = main_window._viewport
+    note = _note(main_window)
+
+    def centred():
+        centre = note.geometry().center()
+        assert centre.x() == pytest.approx(viewport.width() / 2, abs=2)
+        assert centre.y() == pytest.approx(viewport.height() / 2, abs=2)
+        assert note.width() <= viewport.width()
+
+    centred()
+    before = viewport.size()
+
+    main_window.resize(700, 500)
+    qtbot.waitUntil(lambda: viewport.size() != before)
+
+    centred()
+    assert note.wordWrap()
+
+
+def test_the_note_takes_its_colours_from_the_palette(main_window):
+    note = _note(main_window)
+    assert note.foregroundRole() == QPalette.ColorRole.WindowText
+    assert note.backgroundRole() == QPalette.ColorRole.Window
+    assert note.autoFillBackground()

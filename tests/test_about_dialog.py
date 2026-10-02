@@ -12,6 +12,7 @@ from bermake.ui.about_dialog import (
     about_text,
     gather_about_info,
 )
+from PySide6.QtWidgets import QLabel
 
 INFO = AboutInfo(
     bermake="9.8.7",
@@ -82,3 +83,14 @@ def test_help_about_opens_the_dialog_with_live_facts(main_window, monkeypatch):
     assert len(shown) == 1
     assert shown[0].gl_renderer == "Test GPU"
     assert Path(shown[0].log_dir).name == "logs"
+
+
+def test_the_dialog_shows_the_copyright_notice(qtbot):
+    dialog = AboutDialog(INFO)
+    qtbot.addWidget(dialog)
+
+    assert about_module.COPYRIGHT == "Copyright (C) 2026 Parrow Horrizon Studio"
+    shown = [label.text() for label in dialog.findChildren(QLabel)]
+    assert "Copyright (C) 2026 Parrow Horrizon Studio" in shown
+    # Copy details is for bug reports and stays as it was.
+    assert "Copyright" not in about_text(INFO)

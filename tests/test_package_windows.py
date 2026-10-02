@@ -48,6 +48,24 @@ def test_the_version_resource_carries_the_version(pw):
     assert "StringStruct('OriginalFilename', 'Bermake.exe')" in text
 
 
+def test_the_version_resource_carries_the_exact_copyright_notice(pw):
+    text = pw.version_info_text("0.15.0")
+    assert "StringStruct('LegalCopyright', 'Copyright (C) 2026 Parrow Horrizon Studio')" in text
+
+
+def test_the_exe_and_the_about_dialog_share_one_notice(pw):
+    from bermake.ui.about_dialog import COPYRIGHT
+
+    assert pw.read_copyright() == COPYRIGHT
+
+
+def test_a_source_without_the_notice_is_refused(pw, tmp_path):
+    source = tmp_path / "about.py"
+    source.write_text("OTHER = 1\n", encoding="utf-8")
+    with pytest.raises(pw.PackagingError, match="COPYRIGHT"):
+        pw.read_copyright(source)
+
+
 def test_a_malformed_version_is_refused(pw):
     with pytest.raises(ValueError):
         pw.version_info_text("0.15")
@@ -75,6 +93,7 @@ def _report(icons=44, shaders=8, ok=True):
                 "data": {"icons": icons, "shaders": shaders},
             },
             {"name": "rendering", "ok": ok, "detail": "" if ok else "bad", "data": {}},
+            {"name": "startup_check", "ok": True, "detail": "", "data": {}},
         ],
     }
 
@@ -91,6 +110,16 @@ def test_a_missing_icon_is_a_problem(pw):
 def test_a_failed_check_is_a_problem_naming_it(pw):
     problems = pw.smoke_report_problems(_report(ok=False), {"icons": 44, "shaders": 8})
     assert any("rendering" in p for p in problems)
+
+
+@pytest.mark.parametrize("missing", ["rendering", "startup_check"])
+def test_a_report_missing_a_graphics_check_is_a_problem(pw, missing):
+    report = _report()
+    report["checks"] = [c for c in report["checks"] if c["name"] != missing]
+
+    problems = pw.smoke_report_problems(report, {"icons": 44, "shaders": 8})
+
+    assert any(missing in p for p in problems)
 
 
 def test_the_size_ceiling(pw, tmp_path):

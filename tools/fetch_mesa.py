@@ -61,7 +61,9 @@ def sha256_of(path: Path) -> str:
     return digest.hexdigest()
 
 
-def verify_archive(path: Path, expected: str = MESA_SHA256) -> None:
+def verify_archive(path: Path, expected: str | None = None) -> None:
+    # Resolved at call time so the pin can be patched in tests.
+    expected = MESA_SHA256 if expected is None else expected
     actual = sha256_of(path)
     if actual != expected:
         raise MesaFetchError(
@@ -113,8 +115,14 @@ def extract_command(extractor: Path, archive: Path, into: Path) -> list[str]:
     return [str(extractor), "-xf", str(archive), "-C", str(into), *MESA_FILES]
 
 
-def fetch_mesa(dest: Path, cache: Path) -> Path:
-    """Populate `dest` with the two Mesa DLLs, reusing a verified cache."""
+def fetch_mesa(
+    dest: Path,
+    cache: Path,
+    run: Callable[..., subprocess.CompletedProcess] = subprocess.run,
+) -> Path:
+    """Populate `dest` with the two Mesa DLLs, reusing a verified cache.
+
+    `run` is the process runner; tests inject a failing one."""
     stamp = dest / STAMP_NAME
     wanted = [dest / name for name in MESA_FILES.values()]
     if stamp.is_file() and stamp.read_text().strip() == MESA_SHA256:
@@ -131,7 +139,14 @@ def fetch_mesa(dest: Path, cache: Path) -> Path:
     extractor = find_extractor()
     dest.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as scratch:
-        subprocess.run(extract_command(extractor, archive, Path(scratch)), check=True)
+        command = extract_command(extractor, archive, Path(scratch))
+        try:
+            run(command, check=True)
+        except subprocess.CalledProcessError as error:
+            raise MesaFetchError(
+                f"extracting {archive.name} with {extractor} failed "
+                f"(exit code {error.returncode}): {subprocess.list2cmdline(command)}"
+            ) from error
         for member, bundled in MESA_FILES.items():
             shutil.copy2(Path(scratch) / member, dest / bundled)
     stamp.write_text(MESA_SHA256)
@@ -139,7 +154,11 @@ def fetch_mesa(dest: Path, cache: Path) -> Path:
 
 
 def main() -> int:
-    dest = fetch_mesa(ROOT / "build" / "mesa", ROOT / "build" / "mesa-cache")
+    try:
+        dest = fetch_mesa(ROOT / "build" / "mesa", ROOT / "build" / "mesa-cache")
+    except MesaFetchError as error:
+        print(f"fetching Mesa failed: {error}", file=sys.stderr)
+        return 1
     print(f"Mesa {MESA_VERSION} ready in {dest}")
     return 0
 

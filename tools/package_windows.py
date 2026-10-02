@@ -9,6 +9,7 @@ knows PyInstaller is the packager, and CI runs it unchanged.
 
 from __future__ import annotations
 
+import ast
 import json
 import os
 import re
@@ -18,7 +19,7 @@ import sys
 from collections.abc import Mapping
 from pathlib import Path
 
-from fetch_mesa import MESA_VERSION, fetch_mesa
+from fetch_mesa import MESA_VERSION, MesaFetchError, fetch_mesa
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGING = ROOT / "packaging"
@@ -95,6 +96,21 @@ def toolchain_env(environ: Mapping[str, str], default: Path) -> dict[str, str]:
     )
 
 
+def read_copyright(source: Path | None = None) -> str:
+    """The notice from bermake.ui.about_dialog, read from source.
+
+    The packaging interpreter has no built bermake._core (and no Qt), so the
+    module cannot be imported here; the constant is a plain string literal.
+    """
+    path = source or ROOT / "python" / "bermake" / "ui" / "about_dialog.py"
+    for node in ast.parse(path.read_text(encoding="utf-8")).body:
+        if isinstance(node, ast.Assign) and any(
+            isinstance(t, ast.Name) and t.id == "COPYRIGHT" for t in node.targets
+        ):
+            return ast.literal_eval(node.value)
+    raise PackagingError(f"no COPYRIGHT constant in {path}")
+
+
 def version_info_text(version: str) -> str:
     """A PyInstaller version resource, so Bermake.exe's Properties show it."""
     if not re.fullmatch(r"\d+\.\d+\.\d+", version):
@@ -106,7 +122,7 @@ def version_info_text(version: str) -> str:
         "FileDescription": "Bermake",
         "FileVersion": version,
         "InternalName": "Bermake",
-        "LegalCopyright": "GPL-3.0-or-later",
+        "LegalCopyright": read_copyright(),
         "OriginalFilename": "Bermake.exe",
         "ProductName": "Bermake",
         "ProductVersion": version,
@@ -144,6 +160,10 @@ def smoke_report_problems(report: dict, expected: dict[str, int]) -> list[str]:
         for check in report.get("checks", [])
         if not check.get("ok")
     ]
+    present = {check["name"] for check in report.get("checks", [])}
+    for required in ("rendering", "startup_check"):
+        if required not in present:
+            problems.append(f"smoke report has no {required} check")
     resources = next((c for c in report.get("checks", []) if c["name"] == "resources"), None)
     if resources is None:
         problems.append("smoke report has no resources check")
@@ -404,6 +424,11 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except (PackagingError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+    except (
+        PackagingError,
+        MesaFetchError,
+        subprocess.CalledProcessError,
+        subprocess.TimeoutExpired,
+    ) as error:
         print(f"packaging failed: {error}", file=sys.stderr)
         sys.exit(1)
