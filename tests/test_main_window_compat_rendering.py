@@ -58,6 +58,40 @@ def test_toggling_stores_the_preference_and_offers_a_restart(main_window, tmp_pa
     assert preferences.read_compatibility_rendering(_settings(tmp_path)) is True
 
 
+def test_switching_it_off_stores_false_and_asks_about_the_off_state(
+    main_window, tmp_path, relaunches
+):
+    main_window._prompt_restart_for_rendering = lambda enabled: False
+    main_window._actions[ACTION].setChecked(True)
+    assert preferences.read_compatibility_rendering(_settings(tmp_path)) is True
+    prompts = []
+    main_window._prompt_restart_for_rendering = lambda enabled: prompts.append(enabled) or False
+
+    main_window._actions[ACTION].setChecked(False)
+
+    assert prompts == [False]
+    assert relaunches == []
+    assert preferences.read_compatibility_rendering(_settings(tmp_path)) is False
+
+
+def test_the_restart_prompt_says_off_for_the_off_state(main_window, monkeypatch):
+    from PySide6.QtWidgets import QMessageBox
+
+    texts = []
+
+    def question(parent, title, text, *args):
+        texts.append(text)
+        return QMessageBox.StandardButton.No
+
+    monkeypatch.setattr(QMessageBox, "question", question)
+
+    assert main_window._prompt_restart_for_rendering(False) is False
+    assert main_window._prompt_restart_for_rendering(True) is False
+
+    assert texts[0].startswith("Compatibility rendering will be off ")
+    assert texts[1].startswith("Compatibility rendering will be on ")
+
+
 def test_accepting_the_restart_closes_then_relaunches(main_window, relaunches):
     main_window._prompt_restart_for_rendering = lambda enabled: True
     main_window.show()

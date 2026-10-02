@@ -338,3 +338,33 @@ def test_apply_compatibility_rendering_resolves_the_mesa_lookup_at_call_time(mon
     monkeypatch.setattr(app_module, "default_mesa_dir", lambda: None)
     assert apply_compatibility_rendering(True, enable=enabled.append) is False
     assert enabled == [Path("patched")]
+
+
+def test_the_smoke_flag_runs_the_smoke_path_and_touches_neither_logs_nor_preferences(
+    monkeypatch, tmp_path
+):
+    """main() hands --smoke-test to run_smoke before logging is configured.
+
+    run_smoke is replaced by a recorder (the real run builds a QApplication and
+    compiles shaders; tests/test_smoke.py covers it). The log folder points at
+    a tmp path that must stay missing, and any QSettings construction or
+    logging setup fails the test."""
+    import bermake.diagnostics.smoke as smoke
+
+    log_dir = tmp_path / "logs"
+    report = tmp_path / "report.json"
+    smoke_calls = []
+
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("the smoke path must not reach this")
+
+    monkeypatch.setattr(smoke, "run_smoke", lambda path: smoke_calls.append(path) or 7)
+    monkeypatch.setattr(app_module.logs, "default_log_directory", lambda: log_dir)
+    monkeypatch.setattr(app_module.logs, "configure_file_logging", forbidden)
+    monkeypatch.setattr(app_module.logs, "enable_native_crash_log", forbidden)
+    monkeypatch.setattr(app_module, "QSettings", forbidden)
+
+    assert app_module.main(["Bermake.exe", "--smoke-test", str(report)]) == 7
+
+    assert smoke_calls == [report]
+    assert not log_dir.exists()

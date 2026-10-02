@@ -5,9 +5,10 @@ The OpenGL dialog shared by MainWindow and the startup preflight (final review
 I1) is driven for real: a timer clicks its buttons from inside its event loop."""
 
 from pathlib import Path
+from types import SimpleNamespace
 
 from bermake.diagnostics.error_dialog import deferred_error_dialog, show_gl_fallback_dialog
-from PySide6.QtCore import QEventLoop, QTimer
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 
@@ -45,7 +46,12 @@ def _answer_the_box(button_text, seen, *, attempts=500):
     that re-armed forever could click a later test's box. If the box has no
     such button, that is recorded in `seen` and the box is rejected, so the
     test fails on its assertion instead of hanging in the modal loop.
+
+    Returns a record whose `spent` turns True once the helper has used all its
+    attempts without finding a box, so a test can wait on it and tell a spent
+    helper from one that never armed.
     """
+    state = SimpleNamespace(spent=False)
     remaining = [attempts]
 
     def attempt():
@@ -58,6 +64,8 @@ def _answer_the_box(button_text, seen, *, attempts=500):
             remaining[0] -= 1
             if remaining[0] > 0:
                 QTimer.singleShot(10, attempt)
+            else:
+                state.spent = True
             return
         box = boxes[0]
         labels = [b.text().replace("&", "") for b in box.buttons()]
@@ -75,6 +83,7 @@ def _answer_the_box(button_text, seen, *, attempts=500):
         next(b for b in box.buttons() if b.text().replace("&", "") == button_text).click()
 
     QTimer.singleShot(0, attempt)
+    return state
 
 
 def test_the_helper_closes_a_box_that_lacks_the_button_instead_of_hanging(qapp):
@@ -84,22 +93,18 @@ def test_the_helper_closes_a_box_that_lacks_the_button_instead_of_hanging(qapp):
     assert seen[0]["missing_button"] == "No such button"
 
 
-def test_the_helper_stops_retrying_when_no_box_ever_appears(qapp):
+def test_the_helper_stops_retrying_when_no_box_ever_appears(qapp, qtbot):
     """Once spent, it must not click a box that a later test opens."""
     seen = []
-    _answer_the_box("Close", seen, attempts=3)
-    loop = QEventLoop()
-    QTimer.singleShot(300, loop.quit)
-    loop.exec()
+    helper = _answer_the_box("Close", seen, attempts=3)
+    qtbot.waitUntil(lambda: helper.spent, timeout=5000)
 
-    def close_it():
-        for w in QApplication.topLevelWidgets():
-            if isinstance(w, QMessageBox) and w.isVisible():
-                w.reject()
-
-    QTimer.singleShot(300, close_it)
+    later = []
+    _answer_the_box("Close", later)
     show_gl_fallback_dialog("no driver", False)
+
     assert seen == []
+    assert len(later) == 1
 
 
 def test_the_gl_dialog_offers_the_restart_and_reports_the_choice(qapp):
