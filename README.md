@@ -167,4 +167,4 @@ on every push.
 
 ## License
 
-GPL-3.0 or later. See [LICENSE](LICENSE).
+Copyright (C) 2026 Parrow Horrizon Studio. Licensed under GPL-3.0 or later. See [LICENSE](LICENSE).

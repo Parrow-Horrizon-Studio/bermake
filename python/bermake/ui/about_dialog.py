@@ -18,6 +18,10 @@ from bermake.diagnostics.gl_check import GlInfo
 
 NOT_INITIALISED = "not initialised yet"
 
+# The one copyright notice (#138). tools/package_windows.py reads this line from
+# the source for the exe version resource, so keep it a plain string literal.
+COPYRIGHT = "Copyright (C) 2026 Parrow Horrizon Studio"
+
 
 @dataclass(frozen=True)
 class AboutInfo:
@@ -74,6 +78,7 @@ class AboutDialog(QDialog):
         self.setWindowTitle("About Bermake")
 
         title = QLabel(f"<b>Bermake {info.bermake}</b>")
+        self.copyright_label = QLabel(COPYRIGHT)
         details = QLabel(about_text(info))
         details.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
@@ -85,6 +90,7 @@ class AboutDialog(QDialog):
 
         layout = QVBoxLayout(self)
         layout.addWidget(title)
+        layout.addWidget(self.copyright_label)
         layout.addWidget(details)
         layout.addWidget(buttons)
 

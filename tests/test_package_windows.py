@@ -48,6 +48,24 @@ def test_the_version_resource_carries_the_version(pw):
     assert "StringStruct('OriginalFilename', 'Bermake.exe')" in text
 
 
+def test_the_version_resource_carries_the_exact_copyright_notice(pw):
+    text = pw.version_info_text("0.15.0")
+    assert "StringStruct('LegalCopyright', 'Copyright (C) 2026 Parrow Horrizon Studio')" in text
+
+
+def test_the_exe_and_the_about_dialog_share_one_notice(pw):
+    from bermake.ui.about_dialog import COPYRIGHT
+
+    assert pw.read_copyright() == COPYRIGHT
+
+
+def test_a_source_without_the_notice_is_refused(pw, tmp_path):
+    source = tmp_path / "about.py"
+    source.write_text("OTHER = 1\n", encoding="utf-8")
+    with pytest.raises(pw.PackagingError, match="COPYRIGHT"):
+        pw.read_copyright(source)
+
+
 def test_a_malformed_version_is_refused(pw):
     with pytest.raises(ValueError):
         pw.version_info_text("0.15")
