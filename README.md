@@ -6,7 +6,7 @@ Bermake is a long-horizon project inspired by Blender's development model, inten
 
 ## Status
 
-**Alpha, v0.15.0.** Phase 2 (Modeling App) is complete: you can draw, push/pull, transform,
+**Alpha, v0.16.0.** Phase 2 (Modeling App) is complete: you can draw, push/pull, transform,
 organize, paint, annotate, save, and import/export real models. v0.4.0 gave it the surface of
 a real application: seven dockable toolbars over an original icon set, per-tool cursors,
 right-click context menus, and a layout that persists between runs. v0.5.0
@@ -34,7 +34,9 @@ Python package, with no change in application behavior. v0.15.0 (M7.9) is the fi
 build a tester can just download and double-click: a portable zip with crash logging, an
 OpenGL 3.3 check that runs before the main window opens and offers compatibility rendering on
 machines below it (virtual machines, Remote Desktop), and a Help > About Bermake dialog for
-reporting problems. Still missing: code signing, an installer, and macOS and Linux
+reporting problems. v0.16.0 (M7.10) readies that build for beta testers: a note in the 3D view
+when OpenGL cannot draw it, the copyright notice, a bounded crash log, and a packaged self-test
+that also proves JPEG textures load. Still missing: code signing, an installer, and macOS and Linux
 builds (both still run from source only); the rest is the issue-driven backlog now open in
 [Phase 2.6](docs/2026-05-16-pluton-design.md).
 
