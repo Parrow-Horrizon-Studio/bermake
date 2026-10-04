@@ -283,6 +283,20 @@ class Scene:
         local_indices = np.asarray(local_indices, dtype=np.int32).reshape(-1, 3)
         return [int(loop[i]) for tri in local_indices for i in tri]
 
+    def _retriangulate_face(self, face_id: int) -> None:
+        """Replace a live face's stored triangles with an earcut of its loop.
+
+        The kernel's split_edge and dissolve_edge rebuild every face they touch
+        as a fan from loop[0], which over-covers a concave face: the fan across
+        a U's notch fills the notch, and the renderer and picking both read
+        those triangles. Each Scene wrapper calls this on the faces the kernel
+        returns (M7.11 decision D5). Moving triangulation into the kernel is
+        left for the M7.13 faces-with-holes design.
+        """
+        face_id = int(face_id)
+        loop = self._mesh.face_loop_vertices(face_id)
+        self._mesh.set_face_triangles(face_id, self._triangulate_loop(loop))
+
     def remove_vertex(self, v_id: int) -> None:
         """Remove a vertex. Raises KeyError if not live, ValueError if still referenced."""
         try:
@@ -464,6 +478,7 @@ class Scene:
         if result == self._mesh.INVALID_ID:
             return None
         merged = int(result)
+        self._retriangulate_face(merged)
         merged_loop = self.face_loop(merged)
 
         # Below, disagreement is handled by simply not writing anything --
@@ -617,6 +632,9 @@ class Scene:
             face_a=None if res.face_a == invalid else int(res.face_a),
             face_b=None if res.face_b == invalid else int(res.face_b),
         )
+        for new_fid in (result.face_a, result.face_b):
+            if new_fid is not None:
+                self._retriangulate_face(new_fid)
 
         for old, new_fid in zip(captured, (result.face_a, result.face_b), strict=True):
             if old is None or new_fid is None:

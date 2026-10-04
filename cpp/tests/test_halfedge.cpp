@@ -1908,3 +1908,116 @@ TEST(SplitFace, RejectsStealingAHalfEdgeFromAnUnrelatedLiveFace) {
     EXPECT_TRUE(m.face_is_live(fin))
         << "the fin must not be silently detached from its own boundary edge";
 }
+
+// ---- set_face_triangles -----------------------------------------------------
+//
+// split_edge and dissolve_edge rebuild each face they touch as a fan from
+// loop[0], which over-covers a concave face. Scene re-earcuts those faces and
+// writes the result back through set_face_triangles (M7.11 decision D5).
+
+namespace {
+// A 3 x 3 square with a 1 wide, 2 deep notch cut from the top (area 7), wound
+// CCW from +Z and triangulated with the kernel's own fan from v[0]: the fan
+// that crosses the notch. v[0..7] are (0,0) (3,0) (3,3) (2,3) (2,1) (1,1)
+// (1,3) (0,3).
+bermake::HalfEdgeMesh make_u_face(std::uint32_t& f_out, std::uint32_t v[8]) {
+    bermake::HalfEdgeMesh m;
+    const float pts[8][2] = {{0, 0}, {3, 0}, {3, 3}, {2, 3}, {2, 1}, {1, 1}, {1, 3}, {0, 3}};
+    for (int i = 0; i < 8; ++i) v[i] = m.add_vertex(pts[i][0], pts[i][1], 0.0f);
+    for (int i = 0; i < 8; ++i) m.add_halfedge_pair(v[i], v[(i + 1) % 8]);
+    std::vector<std::int32_t> fan;
+    for (int i = 1; i + 1 < 8; ++i) {
+        fan.push_back((std::int32_t)v[0]);
+        fan.push_back((std::int32_t)v[i]);
+        fan.push_back((std::int32_t)v[i + 1]);
+    }
+    f_out = m.add_face_from_loop({v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]}, fan);
+    return m;
+}
+
+// A correct triangulation of the U: six CCW triangles whose areas
+// (1.5, 1.5, 1, 0.5, 1.5, 1) sum to the polygon's 7.
+std::vector<std::int32_t> u_earcut(const std::uint32_t v[8]) {
+    const int idx[18] = {0, 1, 4, 1, 2, 4, 2, 3, 4, 0, 4, 5, 0, 5, 7, 5, 6, 7};
+    std::vector<std::int32_t> out;
+    for (int i : idx) out.push_back((std::int32_t)v[i]);
+    return out;
+}
+
+// Every rejection must leave the face exactly as it was: still live, same
+// triangles, same loop.
+void expect_triangles_rejected(bermake::HalfEdgeMesh& m, std::uint32_t f,
+                               const std::vector<std::int32_t>& bad) {
+    const auto tris_before = m.face_triangles(f);
+    const auto loop_before = m.face_loop_vertices(f);
+    EXPECT_THROW(m.set_face_triangles(f, bad), std::invalid_argument);
+    EXPECT_TRUE(m.face_is_live(f));
+    EXPECT_EQ(m.face_triangles(f), tris_before) << "a rejected call must not change the fill";
+    EXPECT_EQ(m.face_loop_vertices(f), loop_before);
+}
+}  // namespace
+
+TEST(SetFaceTriangles, AcceptsAValidEarcutOfAUAndFaceTrianglesReturnsIt) {
+    std::uint32_t f = 0;
+    std::uint32_t v[8];
+    auto m = make_u_face(f, v);
+    const auto loop_before = m.face_loop_vertices(f);
+    const auto good = u_earcut(v);
+    ASSERT_NE(m.face_triangles(f), good);
+    m.mark_clean();
+
+    m.set_face_triangles(f, good);
+
+    EXPECT_EQ(m.face_triangles(f), good);
+    EXPECT_EQ(m.face_loop_vertices(f), loop_before) << "only the fill changes, not the loop";
+    EXPECT_TRUE(m.is_dirty()) << "the renderer must see the new fill";
+}
+
+TEST(SetFaceTriangles, RejectsALengthThatIsNotAMultipleOfThree) {
+    std::uint32_t f = 0;
+    std::uint32_t v[8];
+    auto m = make_u_face(f, v);
+    auto bad = u_earcut(v);
+    bad.pop_back();
+    expect_triangles_rejected(m, f, bad);
+}
+
+TEST(SetFaceTriangles, RejectsAnIdThatIsNotOnTheLoop) {
+    std::uint32_t f = 0;
+    std::uint32_t v[8];
+    auto m = make_u_face(f, v);
+    // A live vertex, just not one of this face's corners.
+    const std::uint32_t stray = m.add_vertex(10.0f, 10.0f, 0.0f);
+    auto bad = u_earcut(v);
+    bad.back() = (std::int32_t)stray;
+    expect_triangles_rejected(m, f, bad);
+}
+
+TEST(SetFaceTriangles, RejectsANegativeId) {
+    std::uint32_t f = 0;
+    std::uint32_t v[8];
+    auto m = make_u_face(f, v);
+    auto bad = u_earcut(v);
+    bad.front() = -1;
+    expect_triangles_rejected(m, f, bad);
+}
+
+TEST(SetFaceTriangles, RejectsADeadFaceAndLeavesItDead) {
+    std::uint32_t f = 0;
+    std::uint32_t v[8];
+    auto m = make_u_face(f, v);
+    m.remove_face(f);
+    m.mark_clean();
+
+    EXPECT_THROW(m.set_face_triangles(f, u_earcut(v)), std::invalid_argument);
+    EXPECT_FALSE(m.face_is_live(f)) << "a rejected call must not resurrect the face";
+    EXPECT_FALSE(m.is_dirty()) << "a rejected call must not mark the mesh changed";
+}
+
+TEST(SetFaceTriangles, RejectsAFaceIdPastTheSlab) {
+    std::uint32_t f = 0;
+    std::uint32_t v[8];
+    auto m = make_u_face(f, v);
+    EXPECT_THROW(m.set_face_triangles(f + 100, u_earcut(v)), std::invalid_argument);
+    EXPECT_EQ(m.face_triangles(f).size(), 18u);
+}
