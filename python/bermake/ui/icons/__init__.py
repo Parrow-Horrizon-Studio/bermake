@@ -108,7 +108,6 @@ def _sample_checked_background(palette: QPalette) -> QColor | None:
     button.setPalette(palette)
     button.setFixedSize(_PROBE_BUTTON_SIZE, _PROBE_BUTTON_SIZE)
     image = button.grab().toImage()
-    button.deleteLater()
     if image.isNull():
         return None
     centre = _PROBE_BUTTON_SIZE // 2

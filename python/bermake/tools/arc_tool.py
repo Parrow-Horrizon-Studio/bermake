@@ -72,14 +72,20 @@ def _on_plane(plane, snap) -> bool:
     return abs(float(d @ plane.normal)) <= _PLANE_TOL
 
 
-def _is_stale(scene, snap) -> bool:
-    """True when the snap names an edge or vertex that no longer exists.
+def _is_stale(scene, snap, world_transform) -> bool:
+    """True when the snap names an edge or vertex that no longer exists, or
+    an edge that has since moved away from the point the snap recorded.
 
     A snap is stored at its press and resolved up to two clicks later, and an
-    undo in between can remove what it named.
+    undo in between can remove what it named or move it (undoing a Move).
     """
     if snap.edge_id is not None and not scene.edge_is_live(snap.edge_id):
         return True
+    if snap.edge_id is not None and snap.edge_t is not None:
+        at = scene.point_on_edge(snap.edge_id, snap.edge_t)
+        here = world_to_local_point(snap.world_position, world_transform)
+        if float(np.linalg.norm(at - here)) > _PIN_TOL:
+            return True
     if snap.vertex_id is not None:
         try:
             scene.vertex(snap.vertex_id)
@@ -318,9 +324,10 @@ class ArcTool(Tool):
         # (the same-edge case below handles that one).
         start_snap = self._start_snap
         end_snap = self._end_snap
-        if start_snap is not None and _is_stale(s, start_snap):
+        wt = self._world_transform()
+        if start_snap is not None and _is_stale(s, start_snap, wt):
             start_snap = None
-        if end_snap is not None and _is_stale(s, end_snap):
+        if end_snap is not None and _is_stale(s, end_snap, wt):
             end_snap = None
         # The start is the plane's origin, so it is on the plane by construction.
         # An end off the plane was projected onto it and is not where its edge is.
@@ -349,7 +356,6 @@ class ArcTool(Tool):
         # the plane round-trip (it missed far from the origin). An end is only
         # moved when it is already there to within float rounding, so the arc
         # is never bent out of its plane.
-        wt = self._world_transform()
         local = np.array([world_to_local_point(p, wt) for p in world], dtype=np.float32)
         for idx, vid in ((0, start_vid), (-1, end_vid)):
             if vid is None:

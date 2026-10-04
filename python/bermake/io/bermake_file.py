@@ -22,10 +22,11 @@ from bermake.io.errors import BermakeFormatError, BermakeVersionError
 
 SCHEMA_VERSION = 9  # M7.7: per-document viewport environment (background, sky, ground, ink)
 # The oldest schema this build opens. Every file ever written under the Bermake
-# name is format "bermake" at schema 9 (v0.14.0 onwards); anything older came
-# from Pluton and is rejected by its format name before this floor is reached,
-# so a lower number here means a corrupt manifest. Raising the floor drops files
-# testers already hold, so it is a maintainer decision, never a tidy-up.
+# name is format "bermake" at schema 9 (v0.14.0 onwards); anything older was
+# written before the rename and is rejected by its format name before this
+# floor is reached, so a lower number here means a corrupt manifest. Raising the
+# floor drops files testers already hold, so it is a maintainer decision, never
+# a tidy-up.
 MIN_SCHEMA_VERSION = 9
 
 # n -> the n-to-(n+1) upgrade of the decoded document.json dict. A schema bump
@@ -35,8 +36,8 @@ MIN_SCHEMA_VERSION = 9
 # load_document applies every step from the file's own version up to
 # SCHEMA_VERSION - 1, in order, before document_from_dict sees the data. A
 # migration takes the dict and returns the upgraded dict. Empty today: nothing
-# since schema 9 has needed one. See the file-format policy in
-# docs/2026-05-16-pluton-design.md.
+# since schema 9 has needed one. See "File Format Compatibility" (section 4.5)
+# of the main design document under docs/.
 _MIGRATIONS: dict[int, Callable[[dict], dict]] = {}
 
 _MANIFEST = "manifest.json"

@@ -526,11 +526,41 @@ def test_a_snap_whose_vertex_died_mid_gesture_is_a_plain_point_too():
     assert _counts(scene)[0] == 2
 
 
+def test_an_edge_snap_that_moved_since_its_press_splits_nothing_it_no_longer_meets():
+    """Undoing a Move between two arc clicks leaves a live edge that is no
+    longer where the snap recorded it. The old check only caught dead edges,
+    so the commit split that edge at the parameter's new, unrelated point."""
+    scene = Scene()
+    _fid, v = _quad(scene, size=4.0)
+    tool, stack = _make_tool(scene)
+    bottom = scene.edge_between(v[0], v[1])
+
+    # Press the start on the bottom edge's midpoint, (2, 0, 0).
+    tool.on_mouse_press(None, _on_edge(scene, v[0], v[1], (2, 0, 0), 0.5))
+    # The bottom edge then moves to y = -1 (what undoing a Move does).
+    scene.set_vertex_position(v[0], np.array([0.0, -1.0, 0.0], dtype=np.float32))
+    scene.set_vertex_position(v[1], np.array([4.0, -1.0, 0.0], dtype=np.float32))
+    tool.on_mouse_press(None, _snap(SnapKind.ENDPOINT, (4, 4, 0), vertex_id=v[2]))
+    tool.on_mouse_press(None, _snap(SnapKind.GRID, (2.2, 1.8, 0)))
+
+    assert not tool.has_active_gesture
+    assert scene.edge_is_live(bottom)
+    assert _live_vertices_at(scene, x=2.0, y=-1.0, z=0.0) == []
+    assert stack.can_undo
+    # The arc added only its own vertices and edge: one undo is the bare quad.
+    stack.undo()
+    assert _counts(scene) == (1, 4, 4)
+    assert stack.can_undo is False
+
+
 def test_an_end_is_never_pinned_onto_a_vertex_that_is_far_from_it():
     """A snap whose edge_t is degenerate (a no-op split) falls back to the
     host edge's nearest endpoint. Pinning the arc's end onto that vertex would
     drag it metres along the plane, so the pin only applies within float
-    rounding: the arc still starts where it was drawn."""
+    rounding: the arc still starts where it was drawn. Since the moved-edge
+    check in `_is_stale` such a snap (edge_t 0.0 but the point a metre from
+    that end) is stale and never reaches the pin; the pin's own tolerance is
+    kept as a second line of defence."""
     scene = Scene()
     _fid, v = _quad(scene, size=4.0)
     tool, _stack = _make_tool(scene)
