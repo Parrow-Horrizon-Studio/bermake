@@ -95,6 +95,14 @@ def test_every_template_has_a_name_and_a_description(template):
     assert "—" not in template.description
 
 
+def test_the_studio_description_says_what_it_looks_like_not_its_history():
+    # #132: first-run users have never seen the old default, so the text
+    # describes what they will see and for whom it suits.
+    assert template_for_key("studio").description == (
+        "Dark background with no sky or ground, metres. For long sessions and dark rooms."
+    )
+
+
 @pytest.mark.parametrize("template", TEMPLATES, ids=lambda t: t.key)
 def test_every_template_units_round_trip(template):
     """A template's Units must survive .berm persistence unchanged.
