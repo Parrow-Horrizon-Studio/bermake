@@ -20,11 +20,9 @@ from bermake.commands import CompositeCommand
 from bermake.commands.scene_commands import (
     AddEdgeCommand,
     AddFaceCommand,
-    AddVertexCommand,
-    SplitEdgeCommand,
     SplitFaceCommand,
 )
-from bermake.tools.shape_support import chain_cuts_face
+from bermake.tools.shape_support import chain_cuts_face, vertex_for_snap
 from bermake.tools.tool import Tool, ToolContext, ToolOverlay
 from bermake.viewport.picking import world_to_local_point
 from bermake.viewport.snap_engine import AXIS_COLORS, marker_color
@@ -104,9 +102,7 @@ class LineTool(Tool):
 
         if self._state == _State.IDLE:
             self._composite = CompositeCommand(name="Draw Line")
-            vid, cmd = self._vertex_for_snap(snap, s)
-            if cmd is not None:
-                self._composite.children.append(cmd)
+            vid = vertex_for_snap(self._tool_context(), snap, self._composite)
             self._gesture_vertex_ids = [vid]
             self._state = _State.DRAWING
             self._preview_tip = snap.world_position.copy()
@@ -134,13 +130,16 @@ class LineTool(Tool):
             return
 
         # Branches 2/3 — extend to a resolved vertex (reuse / split / new).
-        vid, cmd = self._vertex_for_snap(snap, s)
+        children = self._composite.children
+        before = len(children)
+        vid = vertex_for_snap(self._tool_context(), snap, self._composite)
         if vid == tip_vid:
-            if cmd is not None:
-                cmd.undo(s)  # degenerate: clicked the current tip
+            # Degenerate: clicked the current tip. Take back whatever the
+            # resolution just did.
+            for cmd in reversed(children[before:]):
+                cmd.undo(s)
+            del children[before:]
             return
-        if cmd is not None:
-            self._composite.children.append(cmd)
         e_cmd = AddEdgeCommand(tip_vid, vid)
         e_cmd.do(s)
         self._composite.children.append(e_cmd)
@@ -344,39 +343,8 @@ class LineTool(Tool):
         return f"{length:.3f}"
 
     # ---- internal -------------------------------------------------------
-    def _vertex_for_snap(self, snap, scene):
-        """Resolve a snap to a vertex id. Splits the host edge for interior
-        snaps. Returns (vertex_id, command_or_None); caller appends the command."""
-        from bermake.viewport.snap_engine import SnapKind
-
-        if snap.kind == SnapKind.ENDPOINT and snap.vertex_id is not None:
-            return snap.vertex_id, None
-        if (
-            snap.edge_id is not None
-            and snap.edge_t is not None
-            and snap.kind in (SnapKind.MIDPOINT, SnapKind.ON_EDGE, SnapKind.INTERSECTION)
-        ):
-            split = SplitEdgeCommand(snap.edge_id, snap.edge_t)
-            split.do(scene)
-            if split.new_vertex_id is not None:
-                return split.new_vertex_id, split
-            # Split was a no-op (degenerate/coincident edge_t). Reuse the host
-            # edge's nearest endpoint rather than dropping a free vertex on the
-            # edge interior (which would be a T-junction).
-            edge = scene.edge(snap.edge_id)
-            pos = np.asarray(snap.world_position, dtype=np.float32)
-            v1p = scene.vertex(edge.v1_id).position
-            v2p = scene.vertex(edge.v2_id).position
-            nearest = (
-                edge.v1_id
-                if float(np.linalg.norm(pos - v1p)) <= float(np.linalg.norm(pos - v2p))
-                else edge.v2_id
-            )
-            return nearest, None
-        local = world_to_local_point(snap.world_position, self._world_transform())
-        cmd = AddVertexCommand(local)
-        cmd.do(scene)
-        return cmd.vertex_id, cmd
+    def _tool_context(self) -> ToolContext:
+        return ToolContext(scene=self._scene, model=self._model)
 
     def _reset_gesture(self) -> None:
         self._state = _State.IDLE
