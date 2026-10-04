@@ -10,7 +10,6 @@ import pytest
 from bermake.document import DocumentSettings
 from bermake.io.document_codec import geometry_from_dict, geometry_to_dict
 from bermake.io.errors import BermakeFormatError
-from bermake.io.bermake_file import SCHEMA_VERSION
 from bermake.scene.scene import DEFAULT_PLACEMENT, Scene, Side, TexturePlacement
 from bermake.viewport.camera import Camera
 
@@ -35,12 +34,6 @@ def _square(scene, z=0.0):
     for a, b in zip(v, v[1:] + v[:1], strict=True):
         scene.add_edge(a, b)
     return scene.add_face_from_loop(v)
-
-
-def test_the_schema_version_is_current():
-    # Tracks whatever SCHEMA_VERSION currently is, same as every prior bump;
-    # not pinned to a specific number.
-    assert SCHEMA_VERSION == 9
 
 
 def test_placement_round_trips_per_side():
@@ -106,7 +99,9 @@ def test_a_placement_with_the_wrong_arity_raises():
         geometry_from_dict(Scene(), d)
 
 
-def test_a_schema_5_payload_without_placement_keys_still_loads():
+def test_a_payload_without_placement_keys_still_loads():
+    # The codec reads the optional placement keys with defaults. Any document that
+    # lacks them (hand-written, or from a build that never wrote them) must open.
     s = Scene()
     _square(s)
     d = geometry_to_dict(s)

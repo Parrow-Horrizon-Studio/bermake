@@ -1,4 +1,9 @@
-"""M7.5a Task 12: schema 4 to 5, additive."""
+"""Two-sided materials (M7.5a), and the codec's tolerance of missing optional keys.
+
+These are document_from_dict-level tests. Every real file is schema 9 (#134), so
+what used to be file-level "old schema" cases now pin only that the codec reads
+optional keys with defaults, which is the property future additive changes rely on.
+"""
 
 from __future__ import annotations
 
@@ -32,8 +37,8 @@ def test_both_sides_round_trip():
     assert rebuilt.face_material(g, Side.BACK) == 5
 
 
-def test_a_schema_4_payload_loads_with_default_backs():
-    # No "face_materials_back" key at all, as v0.6.0 wrote.
+def test_a_payload_without_back_materials_loads_with_default_backs():
+    # No "face_materials_back" key at all.
     s = Scene()
     _square(s)
     data = geometry_to_dict(s)
@@ -54,14 +59,6 @@ def test_unpainted_backs_are_not_written():
     data = geometry_to_dict(s)
     # an all-Default back side must not bloat every file ever saved
     assert data.get("face_materials_back", {}) == {}
-
-
-def test_schema_version_is_five():
-    # M7.7 bumped SCHEMA_VERSION to 9 (per-document viewport environment); this
-    # pin necessarily tracks whatever is current, same as every prior bump.
-    from bermake.io.bermake_file import SCHEMA_VERSION
-
-    assert SCHEMA_VERSION == 9
 
 
 def test_a_v4_geometry_payload_is_unchanged_except_for_the_new_key():
@@ -169,37 +166,21 @@ def test_real_bermake_file_round_trips_two_sided_materials(tmp_path):
     assert loaded.model.root.mesh.face_material(loaded_fid, Side.BACK) == 5
 
 
-def test_a_hand_crafted_v6_0_shaped_document_opens_through_the_real_container(tmp_path):
-    """Stands in for an actual v0.6.0 .berm file (see Task 12 report for
-    why a real one wasn't produced from the tag). document_codec.py and
-    bermake_file.py are byte-identical between the v0.6.0 tag and this
-    milestone's starting point -- Tasks 1/3/11 touched material.py, scene.py
-    and tag.py only -- so a hand-built document matching exactly what
-    v0.6.0's to_records()/geometry_to_dict()/ViewLibrary.to_records()/
-    render_style_to_dict() wrote, pushed through the REAL zip+manifest+json
-    container and the CURRENT load_document, exercises the same code path a
-    genuine old file would.
+def test_a_document_missing_every_optional_key_loads_with_defaults():
+    """A document written before PBR materials, tag colours, back-side paint,
+    textures, placements, UVs and the environment existed, fed to
+    document_from_dict directly.
 
-    Includes real top-level "scenes" and "style" keys, shaped exactly as
-    v0.6.0's document_to_dict() unconditionally wrote them (confirmed via
-    `git show v0.6.0:python/bermake/io/document_codec.py`): one saved Scene
-    from ViewLibrary.to_records() and a non-default RenderStyle from
-    render_style_to_dict(). A fixture omitting those keys is not a faithful
-    v0.6.0 shape -- it only happens to load because document_from_dict()'s
-    `.get("scenes", {})` / `.get("style")` tolerance for their absence
-    predates this milestone and is unrelated to what Task 12 changed; that
-    tolerance is not what this test is exercising or asserting on.
+    It is the codec's defaulting that is under test, not the zip container or the
+    version gate (no real file can carry an old schema now, #134). The shape
+    matches what v0.6.0 wrote, including real top-level "scenes" and "style" keys,
+    so the values read from them are asserted too, not just tolerated as absent.
 
-    Checks every field the migration is supposed to populate, including the
-    ones whose correct value is a default: a loader that silently drops
-    back-side materials and one that correctly writes none are
-    indistinguishable unless a back side is asserted explicitly (it is,
-    below: Default on both faces). The scenes/style values are likewise
-    asserted below, not just carried as inert payload."""
-    import json
-    import zipfile
-
-    from bermake.io.bermake_file import load_document
+    Checks every field the defaulting is supposed to populate, including the ones
+    whose correct value is a default: a loader that silently drops back-side
+    materials and one that correctly writes none are indistinguishable unless a
+    back side is asserted explicitly (it is, below: Default on the face)."""
+    from bermake.io.document_codec import document_from_dict
 
     doc_data = {
         "units": {
@@ -281,14 +262,7 @@ def test_a_hand_crafted_v6_0_shaped_document_opens_through_the_real_container(tm
             ],
         },
     }
-    manifest = {"format": "bermake", "schema_version": 4, "app_version": "0.6.0"}
-
-    path = tmp_path / "v0_6_0_shaped.berm"
-    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("manifest.json", json.dumps(manifest, separators=(",", ":")))
-        zf.writestr("document.json", json.dumps(doc_data, separators=(",", ":")))
-
-    loaded = load_document(path)
+    loaded = document_from_dict(doc_data)
 
     # Materials: "color" migrated to base_color, PBR fields defaulted.
     brick = loaded.model.materials.get(1)

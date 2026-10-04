@@ -13,7 +13,6 @@ from bermake.io.document_codec import (
     model_to_dict,
 )
 from bermake.io.errors import BermakeFormatError
-from bermake.io.bermake_file import SCHEMA_VERSION
 from bermake.model.model import Model
 from bermake.scene.scene import Scene
 from bermake.units import Units, UnitSystem
@@ -467,11 +466,6 @@ def test_document_to_dict_emits_the_environment():
     doc.set_environment(PLAIN_WHITE)
     data = document_to_dict(Model(), Camera(), doc, RenderStyle())
     assert environment_from_dict(data["environment"]) == PLAIN_WHITE
-
-
-def test_the_schema_version_is_nine():
-    """M7.7 is the environment bump. Nothing else in this milestone changes it."""
-    assert SCHEMA_VERSION == 9
 
 
 def test_a_fresh_document_opens_in_the_modelling_environment():
