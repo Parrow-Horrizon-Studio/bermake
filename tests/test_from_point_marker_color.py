@@ -7,7 +7,6 @@ inference line, so colouring the line being drawn would read as an axis lock.
 from __future__ import annotations
 
 import pathlib
-import re
 
 import numpy as np
 import pytest
@@ -129,8 +128,8 @@ def test_no_tool_looks_the_marker_colour_up_by_kind_alone():
     """
     tools_dir = pathlib.Path(__file__).resolve().parents[1] / "python" / "bermake" / "tools"
     offenders = [
-        p.name
-        for p in sorted(tools_dir.glob("*.py"))
-        if re.search(r"MARKER_COLOR_BY_KIND\s*\.\s*get", p.read_text(encoding="utf-8"))
+        str(p.relative_to(tools_dir))
+        for p in sorted(tools_dir.rglob("*.py"))
+        if "MARKER_COLOR_BY_KIND" in p.read_text(encoding="utf-8")
     ]
     assert offenders == []

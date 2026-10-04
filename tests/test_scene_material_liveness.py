@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from bermake.commands.command_stack import CommandStack
 from bermake.commands.material_commands import DeleteMaterialCommand
 from bermake.model.model import Model
 from bermake.scene.scene import DEFAULT_PLACEMENT, Scene, Side, TexturePlacement
@@ -98,3 +99,24 @@ def test_delete_material_quotes_only_live_faces_after_a_split():
     scene.set_face_material(f, mid)
     _split(scene, v, f)
     assert DeleteMaterialCommand(model.materials, mid, model).affected_count == 2
+
+
+def test_delete_material_after_a_split_undoes_and_redoes_on_the_live_faces():
+    model = Model()
+    scene = model.root.mesh
+    v, f = _quad(scene)
+    mid = model.materials.add_custom("Brick", (0.7, 0.3, 0.2)).id
+    scene.set_face_material(f, mid)
+    _split(scene, v, f)
+    stack = CommandStack()
+
+    stack.execute(DeleteMaterialCommand(model.materials, mid, model), model)
+    assert scene.faces_with_material(mid) == []
+
+    assert stack.undo()
+    painted = scene.faces_with_material(mid)
+    assert len(painted) == 2
+    assert all(_live(scene, fid) for fid, _side in painted)
+
+    assert stack.redo()
+    assert scene.faces_with_material(mid) == []

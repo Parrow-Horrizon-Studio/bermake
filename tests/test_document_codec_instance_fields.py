@@ -23,7 +23,7 @@ def test_schema_version_is_at_least_four():
     # concern is instance name/hidden (schema 3 -> 4), not the exact current
     # value, so assert the floor rather than re-pinning a number that isn't
     # this test's story. The exact current value is pinned in
-    # tests/test_schema_v5_migration.py::test_schema_version_is_five.
+    # tests/test_schema_compatibility.py::test_the_schema_version_and_floor_are_pinned.
     assert SCHEMA_VERSION >= 4
 
 

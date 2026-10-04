@@ -26,7 +26,7 @@ from bermake.io.bermake_file import (
     SCHEMA_VERSION,
     load_document,
 )
-from bermake.io.errors import BermakeFormatError, BermakeIOError, BermakeVersionError
+from bermake.io.errors import BermakeFormatError, BermakeVersionError
 from bermake.model.annotation import Dimension, Guide, Label
 from bermake.scene.scene import Side, TexturePlacement
 from bermake.units import Units
@@ -131,6 +131,7 @@ def test_the_fixture_loads_with_every_feature_intact():
     # Tags.
     assert [t.name for t in model.tags.tags()] == ["Untagged", "Walls", "Furniture"]
     walls, furniture = model.tags.tags()[1], model.tags.tags()[2]
+    assert (walls.color, furniture.color) == ((0.9, 0.25, 0.25), (0.95, 0.6, 0.15))
 
     # Nested group.
     outer_inst, chair_a, chair_b = model.root.children
@@ -167,6 +168,7 @@ def test_the_fixture_loads_with_every_feature_intact():
     assert view.name == "Iso"
     assert view.camera.position == (9.0, -9.0, 7.0)
     assert view.camera.fov_y_deg == 40.0
+    assert view.camera.target == (2.0, 2.0, 0.5)
     assert view.tag_visibility == {furniture.id: False}
     assert view.face_style == "HIDDEN_LINE"
     assert view.xray is True
@@ -187,7 +189,7 @@ def test_the_fixture_still_loads_after_the_schema_version_moves_on(monkeypatch):
 
 def test_a_file_below_the_floor_is_rejected(tmp_path):
     path = _rewrite_manifest(tmp_path, schema_version=MIN_SCHEMA_VERSION - 1)
-    with pytest.raises(BermakeIOError) as excinfo:
+    with pytest.raises(BermakeFormatError) as excinfo:
         load_document(path)
     message = str(excinfo.value)
     assert str(MIN_SCHEMA_VERSION - 1) in message

@@ -39,8 +39,37 @@ L_AREA = 3.0
 _AREA_TOL = 1e-5
 
 
-def _add_loop(scene: Scene, points, z: float = 0.0, dx: float = 0.0) -> tuple[int, list[int]]:
-    ids = [scene.add_vertex(np.array([x + dx, y, z], dtype=np.float32)) for x, y in points]
+# Where the 2D outline lands in 3D, with a ray that falls straight onto the
+# notch (the empty part of the U) and one that falls onto its solid base. The
+# earcut projection drops a different axis and winds the other way in each.
+PLANES = {
+    "xy": (
+        lambda x, y: (x, y, 0.0),
+        ((1.5, 2.0, 5.0), (0.0, 0.0, -1.0)),
+        ((1.5, 0.5, 5.0), (0.0, 0.0, -1.0)),
+    ),
+    "xz": (
+        lambda x, y: (x, 0.0, y),
+        ((1.5, 5.0, 2.0), (0.0, -1.0, 0.0)),
+        ((1.5, 5.0, 0.5), (0.0, -1.0, 0.0)),
+    ),
+    "yz": (
+        lambda x, y: (0.0, x, y),
+        ((5.0, 1.5, 2.0), (-1.0, 0.0, 0.0)),
+        ((5.0, 1.5, 0.5), (-1.0, 0.0, 0.0)),
+    ),
+}
+
+
+def _add_loop(
+    scene: Scene, points, z: float = 0.0, dx: float = 0.0, to_3d=None
+) -> tuple[int, list[int]]:
+    if to_3d is None:
+
+        def to_3d(x, y):
+            return (x + dx, y, z)
+
+    ids = [scene.add_vertex(np.array(to_3d(x, y), dtype=np.float32)) for x, y in points]
     return scene.add_face_from_loop(ids), ids
 
 
@@ -129,10 +158,12 @@ def test_the_binding_rejects_a_dead_face_with_value_error():
 # ---- split_edge ---------------------------------------------------------------
 
 
+@pytest.mark.parametrize("plane", PLANES)
 @pytest.mark.parametrize("edge_index", range(len(U_POINTS)))
-def test_splitting_any_edge_of_a_u_keeps_the_notch_empty(edge_index):
+def test_splitting_any_edge_of_a_u_keeps_the_notch_empty(edge_index, plane):
+    to_3d, (notch_origin, notch_dir), (base_origin, base_dir) = PLANES[plane]
     s = Scene()
-    _f, ids = _add_loop(s, U_POINTS)
+    _f, ids = _add_loop(s, U_POINTS, to_3d=to_3d)
     e = _edge_ids_of(s, ids)[edge_index]
 
     res = s.split_edge(e, 0.5)
@@ -144,6 +175,10 @@ def test_splitting_any_edge_of_a_u_keeps_the_notch_empty(edge_index):
         _assert_fills(s, fid)
         # The absolute areas sum to 11 with the fan: the notch (2) counted twice.
         assert _area(s, fid) == pytest.approx(U_AREA)
+    # The user-visible symptom: the notch is empty, so a click there misses,
+    # while a click on the solid base still picks the face.
+    assert s.ray_pick_face(np.array(notch_origin), np.array(notch_dir)) is None
+    assert s.ray_pick_face(np.array(base_origin), np.array(base_dir)) is not None
 
 
 @pytest.mark.parametrize("edge_index", range(len(L_POINTS)))
