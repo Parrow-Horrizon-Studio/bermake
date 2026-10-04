@@ -22,7 +22,7 @@ from bermake.tools.shape_support import (
     resolve_drawing_plane,
 )
 from bermake.tools.tool import Tool, ToolContext, ToolOverlay
-from bermake.viewport.snap_engine import MARKER_COLOR_BY_KIND
+from bermake.viewport.snap_engine import marker_color
 
 _NEUTRAL_COLOR = (0.85, 0.85, 0.85)
 _MIN_CHORD = 1e-4
@@ -88,7 +88,7 @@ class ArcTool(Tool):
             self._snap_marker_kind = 0
             return
         self._snap_marker_pos = snap.world_position.copy()
-        self._snap_marker_color = MARKER_COLOR_BY_KIND.get(snap.kind, _NEUTRAL_COLOR)
+        self._snap_marker_color = marker_color(snap, _NEUTRAL_COLOR)
         self._snap_marker_kind = int(snap.kind)
         if self._plane is not None and self._state != _State.IDLE:
             self._cursor_uv = self._plane.project(snap.world_position)

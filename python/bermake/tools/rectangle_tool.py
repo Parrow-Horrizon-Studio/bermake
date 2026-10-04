@@ -22,7 +22,7 @@ from bermake.commands.scene_commands import (
 from bermake.geometry.transforms import apply_mat, is_identity_transform
 from bermake.tools.tool import Tool, ToolContext, ToolOverlay
 from bermake.viewport.picking import world_to_local_point
-from bermake.viewport.snap_engine import MARKER_COLOR_BY_KIND
+from bermake.viewport.snap_engine import marker_color
 
 
 class _State(Enum):
@@ -80,7 +80,7 @@ class RectangleTool(Tool):
             self._snap_marker_kind = 0
             return
         self._snap_marker_pos = snap.world_position.copy()
-        self._snap_marker_color = MARKER_COLOR_BY_KIND.get(snap.kind, _NEUTRAL_COLOR)
+        self._snap_marker_color = marker_color(snap, _NEUTRAL_COLOR)
         self._snap_marker_kind = int(snap.kind)
         if self._state == _State.DRAGGING:
             self._preview_corner = snap.world_position.copy()

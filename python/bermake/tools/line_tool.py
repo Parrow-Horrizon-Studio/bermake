@@ -27,7 +27,7 @@ from bermake.commands.scene_commands import (
 from bermake.tools.shape_support import chain_cuts_face
 from bermake.tools.tool import Tool, ToolContext, ToolOverlay
 from bermake.viewport.picking import world_to_local_point
-from bermake.viewport.snap_engine import MARKER_COLOR_BY_KIND
+from bermake.viewport.snap_engine import AXIS_COLORS, marker_color
 
 
 class _State(Enum):
@@ -36,11 +36,6 @@ class _State(Enum):
 
 
 _NEUTRAL_COLOR = (0.85, 0.85, 0.85)
-_AXIS_COLORS = {
-    0: (0.95, 0.30, 0.30),  # X — red
-    1: (0.30, 0.85, 0.30),  # Y — green
-    2: (0.30, 0.40, 0.95),  # Z — blue
-}
 
 
 class LineTool(Tool):
@@ -91,12 +86,12 @@ class LineTool(Tool):
             self._snap_marker_kind = 0
             return
         self._snap_marker_pos = snap.world_position.copy()
-        self._snap_marker_color = MARKER_COLOR_BY_KIND.get(snap.kind, _NEUTRAL_COLOR)
+        self._snap_marker_color = marker_color(snap, _NEUTRAL_COLOR)
         self._snap_marker_kind = int(snap.kind)
         if self._state == _State.DRAWING:
             self._preview_tip = snap.world_position.copy()
             if snap.kind == SnapKind.AXIS_LOCK and snap.axis is not None:
-                self._rubber_band_color = _AXIS_COLORS.get(snap.axis, _NEUTRAL_COLOR)
+                self._rubber_band_color = AXIS_COLORS[snap.axis]
             else:
                 self._rubber_band_color = _NEUTRAL_COLOR
 

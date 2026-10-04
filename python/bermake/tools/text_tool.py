@@ -25,7 +25,7 @@ from bermake.commands.annotation_commands import CreateAnnotationCommand
 from bermake.model.annotation import Label
 from bermake.tools.annotation_support import NEUTRAL_PREVIEW_COLOR, world_to_active_local
 from bermake.tools.tool import Tool, ToolContext, ToolOverlay
-from bermake.viewport.snap_engine import MARKER_COLOR_BY_KIND, SnapKind
+from bermake.viewport.snap_engine import SnapKind, marker_color
 
 
 class TextTool(Tool):
@@ -72,7 +72,7 @@ class TextTool(Tool):
             self._snap_kind = 0
             return
         self._cursor_world = np.asarray(snap.world_position, dtype=np.float64).copy()
-        self._snap_color = MARKER_COLOR_BY_KIND.get(snap.kind, NEUTRAL_PREVIEW_COLOR)
+        self._snap_color = marker_color(snap, NEUTRAL_PREVIEW_COLOR)
         self._snap_kind = int(snap.kind)
 
     def on_mouse_press(self, event: QMouseEvent, snap) -> None:
