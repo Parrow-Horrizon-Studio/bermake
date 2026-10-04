@@ -939,13 +939,23 @@ class Scene:
         return self._materials_for(side).get(f_id, _DEFAULT_MATERIAL_ID)
 
     def faces_with_material(self, material_id: int) -> list[tuple[int, Side]]:
-        """Every painted (face, side) referencing `material_id`.
+        """Every live painted (face, side) referencing `material_id`.
 
         Only painted faces are stored, since painting Default clears the entry,
-        so this scans the two sidecars rather than walking the mesh.
+        so this scans the two sidecars rather than walking the mesh. Entries on
+        faces that no longer exist (a split or erase leaves them for undo) are
+        skipped, so a count quoted to the user is a count of real faces.
         """
-        found = [(f, Side.FRONT) for f, m in self._face_materials_front.items() if m == material_id]
-        found += [(f, Side.BACK) for f, m in self._face_materials_back.items() if m == material_id]
+        found = [
+            (f, Side.FRONT)
+            for f, m in self._face_materials_front.items()
+            if m == material_id and self._mesh.face_is_live(f)
+        ]
+        found += [
+            (f, Side.BACK)
+            for f, m in self._face_materials_back.items()
+            if m == material_id and self._mesh.face_is_live(f)
+        ]
         return found
 
     # --- Per-face texture placement sidecar --------------------------------
@@ -977,9 +987,10 @@ class Scene:
             self._render_dirty = True
 
     def faces_with_placement(self) -> list[tuple[int, Side]]:
-        """Every adjusted (face, side) pair. Never walks the mesh."""
-        pairs = [(f, Side.FRONT) for f in self._face_placements_front]
-        pairs += [(f, Side.BACK) for f in self._face_placements_back]
+        """Every adjusted live (face, side) pair. Never walks the mesh."""
+        live = self._mesh.face_is_live
+        pairs = [(f, Side.FRONT) for f in self._face_placements_front if live(f)]
+        pairs += [(f, Side.BACK) for f in self._face_placements_back if live(f)]
         return pairs
 
     # --- Stored per-corner UVs (M7.5c) ------------------------------------
@@ -1013,9 +1024,10 @@ class Scene:
             self._render_dirty = True
 
     def faces_with_uvs(self) -> list[tuple[int, Side]]:
-        """Every (face, side) carrying stored UVs, in no particular order."""
-        pairs = [(f, Side.FRONT) for f in self._face_uvs_front]
-        pairs += [(f, Side.BACK) for f in self._face_uvs_back]
+        """Every live (face, side) carrying stored UVs, in no particular order."""
+        live = self._mesh.face_is_live
+        pairs = [(f, Side.FRONT) for f in self._face_uvs_front if live(f)]
+        pairs += [(f, Side.BACK) for f in self._face_uvs_back if live(f)]
         return pairs
 
     def face_triangle_materials(self, side: Side = Side.FRONT) -> np.ndarray:
