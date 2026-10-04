@@ -54,6 +54,40 @@ def _resolves_to_topology(snap) -> bool:
     )
 
 
+# How far off the drawing plane a snap may sit and still count as a point the
+# arc reaches. 1e-4 still missed corner snaps at 2000 m (float32 snap rounding).
+_PLANE_TOL = 1e-3
+# Pinning an arc end onto its resolved vertex moves it by float rounding only.
+_PIN_TOL = 1e-3
+
+
+def _on_plane(plane, snap) -> bool:
+    """True when the snap's point lies on the arc's drawing plane.
+
+    The plane comes from the START snap, and the end is projected onto it. An
+    end that was projected away from its edge (it lies off the plane) is not
+    on that edge, so it must not split it.
+    """
+    d = np.asarray(snap.world_position, np.float64) - plane.origin
+    return abs(float(d @ plane.normal)) <= _PLANE_TOL
+
+
+def _is_stale(scene, snap) -> bool:
+    """True when the snap names an edge or vertex that no longer exists.
+
+    A snap is stored at its press and resolved up to two clicks later, and an
+    undo in between can remove what it named.
+    """
+    if snap.edge_id is not None and not scene.edge_is_live(snap.edge_id):
+        return True
+    if snap.vertex_id is not None:
+        try:
+            scene.vertex(snap.vertex_id)
+        except KeyError:
+            return True
+    return False
+
+
 class _State(Enum):
     IDLE = 0
     PLACING_END = 1
@@ -278,10 +312,24 @@ class ArcTool(Tool):
         # splits that edge (D6: always, even when no face ends up cut), so the
         # end is a real loop vertex and build_open_polyline reuses it because
         # the arc's first and last points coincide with it.
+        # A snap whose edge or vertex died since its press (an undo mid-gesture)
+        # is a plain point: it splits nothing. Checked for both before any split
+        # runs, because the start's own split may retire the end's edge later
+        # (the same-edge case below handles that one).
         start_snap = self._start_snap
         end_snap = self._end_snap
+        if start_snap is not None and _is_stale(s, start_snap):
+            start_snap = None
+        if end_snap is not None and _is_stale(s, end_snap):
+            end_snap = None
+        # The start is the plane's origin, so it is on the plane by construction.
+        # An end off the plane was projected onto it and is not where its edge is.
+        plane = self._plane
+        if end_snap is not None and not _on_plane(plane, end_snap):
+            end_snap = None
         host_ends = None
         start_vid = None
+        end_vid = None
         if start_snap is not None and _resolves_to_topology(start_snap):
             if start_snap.edge_id is not None and s.edge_is_live(start_snap.edge_id):
                 e = s.edge(start_snap.edge_id)
@@ -295,10 +343,21 @@ class ArcTool(Tool):
                 and not s.edge_is_live(end_snap.edge_id)
             ):
                 end_snap = self._reresolve_on_sub_edges(end_snap, host_ends, start_vid)
-            vertex_for_snap(self._tool_context(), end_snap, outer)
-        result = build_open_polyline(
-            s, world, name="Draw Arc", world_transform=self._world_transform()
-        )
+            end_vid = vertex_for_snap(self._tool_context(), end_snap, outer)
+        # Build in the scene's local frame with each end set exactly onto the
+        # vertex it resolved to, so the join never depends on float rounding of
+        # the plane round-trip (it missed far from the origin). An end is only
+        # moved when it is already there to within float rounding, so the arc
+        # is never bent out of its plane.
+        wt = self._world_transform()
+        local = np.array([world_to_local_point(p, wt) for p in world], dtype=np.float32)
+        for idx, vid in ((0, start_vid), (-1, end_vid)):
+            if vid is None:
+                continue
+            pos = s.vertex(vid).position
+            if float(np.linalg.norm(local[idx] - pos)) <= _PIN_TOL:
+                local[idx] = pos
+        result = build_open_polyline(s, local, name="Draw Arc", world_transform=None)
         if result is None:
             for cmd in reversed(outer.children):
                 cmd.undo(s)
