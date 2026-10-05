@@ -28,7 +28,7 @@ from bermake.geometry.transforms import is_identity_transform, mat_invert
 from bermake.model.annotation import Guide, GuidePoint
 from bermake.tools.annotation_support import world_to_active_local
 from bermake.tools.tool import Tool, ToolContext, ToolOverlay
-from bermake.viewport.snap_engine import MARKER_COLOR_BY_KIND
+from bermake.viewport.snap_engine import marker_color
 
 _LINE_COLOR = (0.95, 0.85, 0.20)
 _NEUTRAL_COLOR = (0.85, 0.85, 0.85)
@@ -138,7 +138,7 @@ class TapeMeasureTool(Tool):
             return
         self._cursor = np.asarray(snap.world_position, np.float32).copy()
         self._snap_marker_pos = snap.world_position.copy()
-        self._snap_marker_color = MARKER_COLOR_BY_KIND.get(snap.kind, _NEUTRAL_COLOR)
+        self._snap_marker_color = marker_color(snap, _NEUTRAL_COLOR)
         self._snap_marker_kind = int(snap.kind)
         if self._drag_active:
             self._drag_current_point = np.asarray(snap.world_position, dtype=np.float64).copy()

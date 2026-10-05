@@ -137,6 +137,12 @@ NB_MODULE(_core, m) {
         .def("edge_vertices", &HalfEdgeMesh::edge_vertices)
         .def("face_loop_vertices", &HalfEdgeMesh::face_loop_vertices)
         .def("face_triangles", &HalfEdgeMesh::face_triangles)
+        .def("set_face_triangles", &HalfEdgeMesh::set_face_triangles, nb::arg("face_id"),
+             nb::arg("flat_vertex_ids"),
+             "Replace a live face's triangulation with flat_vertex_ids, three global "
+             "vertex ids per triangle. Raises ValueError, leaving the face unchanged, "
+             "if the face is not live, the length is not a multiple of 3, or an id is "
+             "not on the face's boundary loop.")
 
         // M3c: topology editing + coplanarity
         .def("dissolve_edge", &HalfEdgeMesh::dissolve_edge, nb::arg("edge_id"),

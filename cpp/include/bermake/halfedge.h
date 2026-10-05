@@ -82,6 +82,15 @@ public:
     std::vector<std::uint32_t> face_loop_vertices(std::uint32_t f_id) const;
     std::vector<std::int32_t> face_triangles(std::uint32_t f_id) const;
 
+    /// Replace a live face's stored triangulation with `triangles`, a flat
+    /// list of GLOBAL vertex ids, three per triangle (the form face_triangles
+    /// returns and add_face_from_loop takes). Validates everything before
+    /// changing anything: the face is live, the length is a multiple of 3, and
+    /// every id is a vertex of that face's boundary loop. On failure it throws
+    /// std::invalid_argument and the face is left exactly as it was. The loop,
+    /// the half-edges and the normal are untouched; only the fill changes.
+    void set_face_triangles(std::uint32_t f_id, const std::vector<std::int32_t>& triangles);
+
     /// Robust planar-coplanarity test for two faces.
     /// Returns true iff both:
     ///   - the angle between unit normals satisfies dot(n1, n2) > angle_tol_cos, AND

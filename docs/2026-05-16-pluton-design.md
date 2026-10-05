@@ -165,6 +165,11 @@ Internal design principle: **the kernel knows about geometry, not the applicatio
 - Website: `bermake.org`
 - Studio org GitHub is calibrated for security (2FA enforcement, conservative member privileges, secure defaults)
 
+### 4.5 File Format Compatibility
+- A `.berm` file a user has saved must keep opening in later versions. Every file written under the Bermake name (v0.14.0 onwards) is `format: "bermake"`, `schema_version: 9`, and that is the permanent floor (`MIN_SCHEMA_VERSION` in `bermake_file.py`). Files from Pluton, which carry `format: "pluton"`, are rejected with an explanation and are not convertible. Files newer than the build fail with a clear error; there is no forward compatibility.
+- A schema change adds keys with defaults wherever it can: the codec reads every optional key with a default, so older files open unchanged and no migration is needed. Anything that is not additive (a renamed, moved or reinterpreted key) registers a step in `_MIGRATIONS` (`n` maps to the n-to-n+1 upgrade of the decoded `document.json` dict), and `load_document` applies the steps from the file's own version up to the current one, in order, before the codec sees the data. The version gate is a range check and must never become an equality check.
+- Frozen fixtures in `tests/data/berm/` are the proof: each is a real file written by a released build, named `v<release>-schema<n>.berm`, and never regenerated. `v0.16.0-schema9.berm` is the first. A schema bump adds a fixture for its release and a test that every older fixture still loads (`tests/test_schema_compatibility.py`).
+
 ---
 
 ## 5. Platforms

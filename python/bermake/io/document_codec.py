@@ -545,9 +545,9 @@ def document_from_dict(data: dict, blobs: dict[int, bytes] | None = None) -> Loa
     BermakeFormatError — the only exception callers need to catch.
 
     `blobs` carries texture bytes the container stored as sibling entries,
-    keyed by texture id; `.get("textures", {})` below is what lets a schema 5
-    file (no `"textures"` key at all) still load, and also accepts a bare
-    list of records (no `next_id`) for a hand-written document.
+    keyed by texture id; `.get("textures", {})` below is what lets a document
+    without a `"textures"` key still load, and also accepts a bare list of
+    records (no `next_id`) for a hand-written document.
     """
     from bermake.views.view_library import ViewLibrary  # function-level: breaks import cycle
 

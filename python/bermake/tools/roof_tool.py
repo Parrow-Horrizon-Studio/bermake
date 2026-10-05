@@ -15,7 +15,7 @@ from bermake.commands.roof_commands import CreateRoofCommand
 from bermake.geometry.roof import _MAX_SLOPE_DEG, _rot_z, roof_solid
 from bermake.geometry.transforms import mat_invert
 from bermake.tools.tool import Tool, ToolContext, ToolOverlay
-from bermake.viewport.snap_engine import MARKER_COLOR_BY_KIND, SnapKind
+from bermake.viewport.snap_engine import SnapKind, marker_color
 
 _NEUTRAL = (0.85, 0.85, 0.85)
 
@@ -101,7 +101,7 @@ class RoofTool(Tool):
             self._snap_kind = 0
             return
         self._snap_pos = np.asarray(snap.world_position, np.float64).copy()
-        self._snap_color = MARKER_COLOR_BY_KIND.get(snap.kind, _NEUTRAL)
+        self._snap_color = marker_color(snap, _NEUTRAL)
         self._snap_kind = int(snap.kind)
         if self._first is not None:
             z0 = float(self._first[2])

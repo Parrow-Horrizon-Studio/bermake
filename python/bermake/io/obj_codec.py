@@ -105,24 +105,58 @@ def write_obj(doc: ObjDocument, mtl_filename: str = "model.mtl") -> tuple[str, s
     return obj_text, mtl_text
 
 
+# MTL map options: flag -> (min values, max values, numeric only). `-o`, `-s`
+# and `-t` take `u [v [w]]`, so a bare `-s 2` is legal and the optional values
+# are taken only while they look like numbers (the filename follows them).
+_MAP_OPTION_ARITY: dict[str, tuple[int, int, bool]] = {
+    "-blendu": (1, 1, False),
+    "-blendv": (1, 1, False),
+    "-cc": (1, 1, False),
+    "-clamp": (1, 1, False),
+    "-imfchan": (1, 1, False),
+    "-type": (1, 1, False),
+    "-bm": (1, 1, False),
+    "-boost": (1, 1, False),
+    "-texres": (1, 1, False),
+    "-mm": (2, 2, True),
+    "-o": (1, 3, True),
+    "-s": (1, 3, True),
+    "-t": (1, 3, True),
+}
+
+
+def _is_number(token: str) -> bool:
+    try:
+        float(token)
+    except ValueError:
+        return False
+    return True
+
+
 def _map_kd_filename(parts: list[str]) -> str | None:
     """The filename from a `map_Kd` line, skipping its option arguments.
 
-    OBJ map lines may carry options before the filename (`-s 1 1 1 brick.png`)
-    and filenames may contain spaces (`my brick.png`), so neither parts[1] nor
-    parts[-1] is right on its own. Drop a leading run of option tokens, each
-    consuming itself and any numeric values that follow it, then join what is
-    left.
+    OBJ map lines may carry options before the filename (`-s 1 1 1 brick.png`,
+    `-clamp on brick.png`) and filenames may contain spaces (`my brick.png`),
+    so neither parts[1] nor parts[-1] is right on its own. Drop a leading run
+    of options using the MTL spec's arity table, then join what is left. An
+    unknown `-flag` falls back to consuming the numeric values after it.
     """
     i = 1
     while i < len(parts) and parts[i].startswith("-"):
+        flag = parts[i].lower()
         i += 1
-        while i < len(parts):
-            try:
-                float(parts[i])
-            except ValueError:
-                break
+        arity = _MAP_OPTION_ARITY.get(flag)
+        if arity is None:
+            while i < len(parts) and _is_number(parts[i]):
+                i += 1
+            continue
+        low, high, numeric_only = arity
+        i += low
+        extra = high - low
+        while extra > 0 and i < len(parts) and (not numeric_only or _is_number(parts[i])):
             i += 1
+            extra -= 1
     name = " ".join(parts[i:]).strip()
     return name or None
 

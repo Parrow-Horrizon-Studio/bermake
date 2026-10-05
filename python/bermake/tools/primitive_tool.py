@@ -195,14 +195,14 @@ class PrimitiveTool(Tool):
             self._update_height_from_event(event)
             return
 
-        from bermake.viewport.snap_engine import MARKER_COLOR_BY_KIND, SnapKind
+        from bermake.viewport.snap_engine import SnapKind, marker_color
 
         if snap.kind == SnapKind.NONE:
             self._snap_marker_pos = None
             self._snap_marker_kind = 0
             return
         self._snap_marker_pos = snap.world_position.copy()
-        self._snap_marker_color = MARKER_COLOR_BY_KIND.get(snap.kind, _NEUTRAL_COLOR)
+        self._snap_marker_color = marker_color(snap, _NEUTRAL_COLOR)
         self._snap_marker_kind = int(snap.kind)
         if self._state == _State.DRAGGING_FOOTPRINT:
             self._preview_corner = snap.world_position.copy()
