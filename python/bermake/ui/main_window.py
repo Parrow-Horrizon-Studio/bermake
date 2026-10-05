@@ -585,6 +585,7 @@ class MainWindow(QMainWindow):
         self._autosave_message_timer.setSingleShot(True)
         self._autosave_message_timer.setInterval(_AUTOSAVED_MESSAGE_MS)
         self._autosave_message_timer.timeout.connect(self._clear_autosaved_message)
+        self._tick_error_logged = False
         self._autosave_timer = QTimer(self)
         self._autosave_timer.setInterval(_AUTOSAVE_TICK_MS)
         self._autosave_timer.timeout.connect(self._autosave_tick)
@@ -2037,8 +2038,13 @@ class MainWindow(QMainWindow):
                 modal_open=QApplication.activeModalWidget() is not None,
             )
         except Exception:
-            logger.exception("Autosave could not check whether to save")
+            # Once per stuck spell, not once a second: a repeating fault would
+            # otherwise push the history a bug report needs out of the log.
+            if not self._tick_error_logged:
+                logger.exception("Autosave could not check whether to save")
+                self._tick_error_logged = True
             return
+        self._tick_error_logged = False
         if due:
             self._autosave_now()
 
@@ -2111,11 +2117,10 @@ class MainWindow(QMainWindow):
                 exc_info=True,
             )
 
-    def _start_new_session(self, *, delete_current: bool = True) -> None:
+    def _start_new_session(self) -> None:
         """A new document: drop the old session's files, take a fresh id, and
         start with nothing to protect."""
-        if delete_current:
-            self._delete_session_files()
+        self._delete_session_files()
         self._session_id = uuid.uuid4().hex
         self._autosave.note_saved()
 
@@ -2374,10 +2379,12 @@ class MainWindow(QMainWindow):
         """Adopt a (model, camera, units, render style, environment) into the live window.
 
         This is the shared New, Open, Revert and Recover path, so it also starts
-        a new autosave session and deletes the old one's files. Recover passes
-        `hand_over_from` (the recovered session's id); the delete is then
-        skipped so the caller can hand that session's files over to the new
-        session (spec 4.3, 4.5).
+        a new autosave session and always deletes the outgoing session's files:
+        they belong to the document being replaced. Recover passes
+        `hand_over_from`, the id of the recovered session (left by another,
+        crashed Bermake, so never this window's own id). Its files are not
+        touched here, so the caller can hand them over to the new session
+        (spec 4.3, 4.5).
         """
         from dataclasses import replace
 
@@ -2412,7 +2419,7 @@ class MainWindow(QMainWindow):
         # 1.7: "Document New / Open -> rebuild and rebind libraries").
         self._rebuild_outliner()
         self._suggested_save_path = None
-        self._start_new_session(delete_current=hand_over_from is None)
+        self._start_new_session()
         self._refresh_status_text()
         self._update_window_title()
         self._viewport.update()

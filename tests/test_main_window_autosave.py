@@ -26,6 +26,7 @@ from bermake.io.document_codec import CameraState
 from bermake.model import Model
 from bermake.recovery.liveness import current_process_started_at
 from bermake.recovery.scheduler import AutosaveScheduler
+from bermake.recovery.store import SessionMeta
 from bermake.ui import preferences
 from bermake.ui.main_window import MainWindow
 from bermake.viewport.camera import Camera
@@ -361,6 +362,33 @@ def test_a_failing_check_never_escapes_the_tick(win, clock, monkeypatch, caplog)
     assert _exist(_session_files(win)) == [False, False]
 
 
+def test_a_stuck_tick_logs_its_error_once_until_a_tick_succeeds(win, clock, monkeypatch, caplog):
+    """Fix round 1, M2: a fault that repeats every second must not flood the
+    log with a traceback a second; it is logged again only after a tick has
+    worked in between."""
+
+    def broken():
+        raise RuntimeError("no screen")
+
+    def errors():
+        return [r for r in caplog.records if r.levelno >= logging.ERROR and r.exc_info]
+
+    with caplog.at_level(logging.DEBUG, logger=main_window_module.__name__):
+        monkeypatch.setattr(QApplication, "mouseButtons", broken)
+        for _ in range(5):
+            win._autosave_tick()
+        assert len(errors()) == 1
+
+        monkeypatch.setattr(QApplication, "mouseButtons", lambda: Qt.MouseButton.NoButton)
+        win._autosave_tick()  # a tick that works clears the latch
+        assert len(errors()) == 1
+
+        monkeypatch.setattr(QApplication, "mouseButtons", broken)
+        win._autosave_tick()
+        win._autosave_tick()
+        assert len(errors()) == 2
+
+
 # --- Failure --------------------------------------------------------------
 
 
@@ -449,6 +477,41 @@ def test_an_accepted_close_deletes_the_session_files(win, clock, monkeypatch):
     win.closeEvent(event)
     assert event.isAccepted()
     assert _exist(files) == [False, False]
+
+
+def test_the_suite_stops_every_live_windows_autosave_timer(qtbot):
+    """Fix round 1, M1: a window a test never closes (a bare MainWindow(),
+    kept alive by its own signal cycles until the garbage collector runs) must
+    not tick, and possibly autosave, during a later test. The conftest
+    teardown stops the timer of every live MainWindow; this drives that
+    helper directly and checks the autouse fixture that runs it is active."""
+    from tests import conftest
+
+    leftover = MainWindow()  # deliberately not given to qtbot, like test_main_window_fileio.py
+    try:
+        assert leftover._autosave_timer.isActive()
+        conftest.stop_autosave_timers()
+        assert not leftover._autosave_timer.isActive()
+    finally:
+        leftover.deleteLater()
+
+
+def test_the_timer_stopping_fixture_is_autouse_and_stops_leftovers_at_teardown(qtbot, request):
+    """Drives the fixture's own generator (through pytest's fixture manager, a
+    private API: an upgrade that changes it fails here loudly, not silently)."""
+    name = "_stop_leftover_autosave_timers"
+    assert name in request.fixturenames
+    (fixturedef,) = request._fixturemanager.getfixturedefs(name, request.node)
+    leftover = MainWindow()  # not given to qtbot
+    try:
+        steps = fixturedef.func()
+        next(steps)  # a test body would run here
+        assert leftover._autosave_timer.isActive()
+        with pytest.raises(StopIteration):
+            next(steps)  # teardown
+        assert not leftover._autosave_timer.isActive()
+    finally:
+        leftover.deleteLater()
 
 
 def test_an_accepted_close_stops_the_timer(main_window, monkeypatch):
@@ -646,12 +709,42 @@ def test_reset_document_starts_a_new_session(win, clock):
     assert win._autosave.changed_since_autosave is False
 
 
-def test_reset_document_handing_over_keeps_the_old_files(win, clock):
-    files = _autosave_once(win, clock)
-    old_id = win._session_id
-    _reset(win, hand_over_from=old_id)
-    assert win._session_id != old_id
-    assert _exist(files) == [True, True]
+def _write_recovered_session(window, session_id: str) -> tuple[Path, Path]:
+    """A session left by another (crashed) Bermake, as Task 6's Recover finds it."""
+    meta = SessionMeta(
+        session_id=session_id,
+        original_path="C:/drawings/House.berm",
+        display_name="House.berm",
+        saved_at="2026-10-04T14:32:05+08:00",
+        app_version=bermake.__version__,
+        pid=999999,
+        process_started_at="2026-10-04T13:58:41+08:00",
+    )
+    store = window._recovery_store
+    store.write(
+        meta,
+        lambda target: save_document(target, Model(), Camera(), DocumentSettings(), RenderStyle()),
+    )
+    folder = store.folder
+    return folder / f"{session_id}.berm", folder / f"{session_id}.json"
+
+
+def test_reset_document_handing_over_deletes_only_the_windows_own_files(win, clock):
+    """Controller ruling (fix round 1, I1): Recover replaces the window's
+    document like New or Open, so the window's own outgoing session goes; only
+    the recovered session's files, named by hand_over_from, are left alone for
+    the caller to hand over."""
+    own = _autosave_once(win, clock)
+    own_id = win._session_id
+    recovered_id = "f" * 32
+    recovered = _write_recovered_session(win, recovered_id)
+
+    _reset(win, hand_over_from=recovered_id)
+
+    assert _exist(own) == [False, False]
+    assert _exist(recovered) == [True, True]
+    assert win._session_id not in (own_id, recovered_id)
+    assert len(win._session_id) == 32
 
 
 def test_reset_document_forgets_a_suggested_save_path(win):
