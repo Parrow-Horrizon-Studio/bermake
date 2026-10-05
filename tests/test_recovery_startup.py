@@ -1,6 +1,7 @@
 """recoverable_sessions: the startup query (M7.12, spec 4.5)."""
 
 import os
+import time
 from pathlib import Path
 
 from bermake.recovery.liveness import current_process_started_at
@@ -67,7 +68,13 @@ def test_newest_is_by_instant_not_by_text(tmp_path):
 def test_session_whose_writer_is_running_is_skipped(tmp_path):
     store = RecoveryStore(tmp_path)
     _write(store, "a" * 32, "2026-10-04T14:00:00+08:00", pid=111)
-    _write(store, "b" * 32, "2026-10-04T15:00:00+08:00", pid=222, started_at="STARTED-222")
+    _write(
+        store,
+        "b" * 32,
+        "2026-10-04T15:00:00+08:00",
+        pid=222,
+        started_at="2026-10-04T13:01:00+08:00",
+    )
     asked: list[tuple[int, str]] = []
 
     def is_running(pid: int, started_at: str) -> bool:
@@ -76,11 +83,11 @@ def test_session_whose_writer_is_running_is_skipped(tmp_path):
 
     result = recoverable_sessions(store, is_running)
     assert [s.meta.session_id for s in result] == ["a" * 32]
-    assert (222, "STARTED-222") in asked
+    assert (222, "2026-10-04T13:01:00+08:00") in asked
 
 
 def test_damaged_pair_is_skipped_and_quarantined(tmp_path):
-    store = RecoveryStore(tmp_path)
+    store = RecoveryStore(tmp_path, clock=lambda: time.time() + 3600)  # lone files are old
     _write(store, "a" * 32, "2026-10-04T14:00:00+08:00")
     (tmp_path / ("b" * 32 + ".json")).write_text("garbage", "utf-8")
     (tmp_path / ("b" * 32 + ".berm")).write_bytes(b"x")

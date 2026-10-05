@@ -2,10 +2,12 @@
 
 import json
 import os
+import time
 from pathlib import Path
 
 import pytest
 from bermake.recovery.store import (
+    LONE_FILE_GRACE_SECONDS,
     RECOVERY_FORMAT,
     RECOVERY_VERSION,
     RecoverySession,
@@ -42,6 +44,11 @@ def _valid_json(session_id: str) -> str:
             "process_started_at": "2026-10-04T13:58:41+08:00",
         }
     )
+
+
+def _later_store(folder: Path, seconds: float = 3600) -> RecoveryStore:
+    """A store whose clock is ahead, so every file already counts as old."""
+    return RecoveryStore(folder, clock=lambda: time.time() + seconds)
 
 
 def _write_bytes(data: bytes):
@@ -143,7 +150,7 @@ def test_list_sessions_on_missing_folder_is_empty(tmp_path):
 
 
 def test_list_sessions_quarantines_damaged_entries(tmp_path, caplog):
-    store = RecoveryStore(tmp_path)
+    store = _later_store(tmp_path)
     store.write(_meta("1" * 32), _write_bytes(b"good"))
 
     # lone .json
@@ -179,12 +186,24 @@ def test_list_sessions_quarantines_damaged_entries(tmp_path, caplog):
     assert store.list_sessions() == (sessions, [])
 
 
-def test_newer_version_is_quarantined(tmp_path):
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("version", RECOVERY_VERSION + 1),
+        ("version", 0),
+        ("version", -1),
+        ("pid", 0),
+        ("pid", -5),
+        ("saved_at", "yesterday"),
+        ("process_started_at", "not a time"),
+    ],
+)
+def test_out_of_range_metadata_is_quarantined(tmp_path, field, value):
     store = RecoveryStore(tmp_path)
     sid = "6" * 32
     (tmp_path / f"{sid}.berm").write_bytes(b"b")
     data = json.loads(_valid_json(sid))
-    data["version"] = RECOVERY_VERSION + 1
+    data[field] = value
     (tmp_path / f"{sid}.json").write_text(json.dumps(data), "utf-8")
     sessions, quarantined = store.list_sessions()
     assert sessions == [] and quarantined == [sid]
@@ -259,6 +278,66 @@ def test_quarantine_of_missing_session_does_nothing(tmp_path):
     assert list(tmp_path.iterdir()) == []
 
 
+def test_lone_berm_five_seconds_old_is_skipped_and_left_alone(tmp_path):
+    now = 1_000_000.0
+    store = RecoveryStore(tmp_path, clock=lambda: now)
+    lone = tmp_path / ("a" * 32 + ".berm")
+    lone.write_bytes(b"in flight")
+    os.utime(lone, (now - 5, now - 5))
+    assert store.list_sessions() == ([], [])
+    assert lone.read_bytes() == b"in flight"
+    assert [p.name for p in tmp_path.iterdir()] == [lone.name]
+
+
+def test_lone_json_five_seconds_old_is_skipped_and_left_alone(tmp_path):
+    now = 1_000_000.0
+    store = RecoveryStore(tmp_path, clock=lambda: now)
+    lone = tmp_path / ("a" * 32 + ".json")
+    lone.write_text(_valid_json("a" * 32), "utf-8")
+    os.utime(lone, (now - 5, now - 5))
+    assert store.list_sessions() == ([], [])
+    assert [p.name for p in tmp_path.iterdir()] == [lone.name]
+
+
+@pytest.mark.parametrize("suffix", [".berm", ".json"])
+def test_lone_file_120_seconds_old_is_quarantined(tmp_path, suffix):
+    now = 1_000_000.0
+    store = RecoveryStore(tmp_path, clock=lambda: now)
+    sid = "a" * 32
+    lone = tmp_path / (sid + suffix)
+    lone.write_bytes(b"x")
+    os.utime(lone, (now - 120, now - 120))
+    assert store.list_sessions() == ([], [sid])
+    assert (tmp_path / (sid + ".broken" + suffix)).exists()
+    assert not lone.exists()
+
+
+def test_lone_file_just_past_the_grace_period_is_quarantined(tmp_path):
+    now = 1_000_000.0
+    store = RecoveryStore(tmp_path, clock=lambda: now)
+    sid = "a" * 32
+    lone = tmp_path / (sid + ".berm")
+    lone.write_bytes(b"x")
+    os.utime(lone, (now - LONE_FILE_GRACE_SECONDS, now - LONE_FILE_GRACE_SECONDS))
+    assert store.list_sessions() == ([], [sid])
+
+
+def test_fresh_valid_pair_is_unaffected_by_the_grace_period(tmp_path):
+    store = RecoveryStore(tmp_path)  # real clock, files written just now
+    meta = _meta()
+    store.write(meta, _write_bytes(b"x"))
+    (session,), quarantined = store.list_sessions()
+    assert session.meta == meta and quarantined == []
+
+
+def test_damaged_pair_is_quarantined_even_when_fresh(tmp_path):
+    store = RecoveryStore(tmp_path)  # real clock; the grace period is for lone files only
+    sid = "a" * 32
+    (tmp_path / f"{sid}.berm").write_bytes(b"b")
+    (tmp_path / f"{sid}.json").write_text("not json", "utf-8")
+    assert store.list_sessions() == ([], [sid])
+
+
 def test_quarantine_twice_keeps_both_generations(tmp_path):
     store = RecoveryStore(tmp_path)
     sid = "c" * 32
@@ -268,6 +347,20 @@ def test_quarantine_twice_keeps_both_generations(tmp_path):
     store.quarantine(sid, "two")
     contents = sorted(p.read_bytes() for p in tmp_path.glob("*.berm"))
     assert contents == [b"first", b"second"]
+
+
+def test_quarantine_uses_one_generation_suffix_for_both_files(tmp_path):
+    store = RecoveryStore(tmp_path)
+    sid = "d" * 32
+    # An earlier pass left only a .broken.berm; the .json slot at .broken is free.
+    (tmp_path / f"{sid}.broken.berm").write_bytes(b"old")
+    (tmp_path / f"{sid}.berm").write_bytes(b"new-berm")
+    (tmp_path / f"{sid}.json").write_text("new-json", "utf-8")
+    store.quarantine(sid, "second pass")
+    assert (tmp_path / f"{sid}.broken.2.berm").read_bytes() == b"new-berm"
+    assert (tmp_path / f"{sid}.broken.2.json").read_text("utf-8") == "new-json"
+    assert (tmp_path / f"{sid}.broken.berm").read_bytes() == b"old"
+    assert not (tmp_path / f"{sid}.broken.json").exists()
 
 
 def test_hand_over_moves_berm_and_rewrites_metadata(tmp_path):

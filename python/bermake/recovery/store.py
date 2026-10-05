@@ -10,8 +10,10 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, fields
+from datetime import datetime
 from pathlib import Path
 
 _log = logging.getLogger(__name__)
@@ -23,6 +25,12 @@ _BERM = ".berm"
 _JSON = ".json"
 _BROKEN = ".broken."
 _TMP = ".tmp"
+
+# A live Bermake briefly leaves a lone .berm or .json between its two writes
+# (first autosave, hand_over, delete). A second Bermake listing the folder must
+# not quarantine that, so lone files younger than this are skipped, not
+# quarantined and not offered.
+LONE_FILE_GRACE_SECONDS = 60.0
 
 
 @dataclass(frozen=True)
@@ -59,7 +67,9 @@ def _meta_from_json(text: str) -> SessionMeta:
     if data.get("format") != RECOVERY_FORMAT:
         raise ValueError(f"unexpected recovery format {data.get('format')!r}")
     version = data.get("version")
-    if not isinstance(version, int) or isinstance(version, bool) or version > RECOVERY_VERSION:
+    if not isinstance(version, int) or isinstance(version, bool):
+        raise ValueError(f"unsupported recovery version {version!r}")
+    if not 1 <= version <= RECOVERY_VERSION:
         raise ValueError(f"unsupported recovery version {version!r}")
     missing = [name for name in _META_FIELDS if name not in data]
     if missing:
@@ -73,12 +83,17 @@ def _meta_from_json(text: str) -> SessionMeta:
     pid = data["pid"]
     if not isinstance(pid, int) or isinstance(pid, bool):
         raise ValueError("pid must be an integer")
+    if pid <= 0:
+        raise ValueError(f"pid must be positive, not {pid}")
+    for name in ("saved_at", "process_started_at"):
+        datetime.fromisoformat(data[name])  # ValueError if it does not parse
     return SessionMeta(**{name: data[name] for name in _META_FIELDS})
 
 
 class RecoveryStore:
-    def __init__(self, folder: Path) -> None:
+    def __init__(self, folder: Path, clock: Callable[[], float] = time.time) -> None:
         self.folder = Path(folder)
+        self._clock = clock  # wall-clock seconds; injectable for tests
 
     def berm_path(self, session_id: str) -> Path:
         return self.folder / f"{session_id}{_BERM}"
@@ -124,6 +139,14 @@ class RecoveryStore:
         sessions: list[RecoverySession] = []
         quarantined: list[str] = []
         for session_id in sorted(json_ids | berm_ids):
+            if session_id not in berm_ids or session_id not in json_ids:
+                lone = (
+                    self._meta_path(session_id)
+                    if session_id in json_ids
+                    else self.berm_path(session_id)
+                )
+                if self._is_recent(lone):
+                    continue  # possibly a live writer between its two writes
             if session_id not in berm_ids:
                 self.quarantine(session_id, "metadata has no matching .berm")
                 quarantined.append(session_id)
@@ -149,6 +172,13 @@ class RecoveryStore:
             sessions.append(RecoverySession(meta, self.berm_path(session_id), meta_path))
         return sessions, quarantined
 
+    def _is_recent(self, path: Path) -> bool:
+        try:
+            age = self._clock() - path.stat().st_mtime
+        except OSError:
+            return True  # vanished while we looked: someone else is working on it
+        return age < LONE_FILE_GRACE_SECONDS
+
     def delete(self, session_id: str) -> None:
         for path in (self.berm_path(session_id), self._meta_path(session_id)):
             path.unlink(missing_ok=True)
@@ -157,15 +187,26 @@ class RecoveryStore:
         """Rename <id>.berm -> <id>.broken.berm and <id>.json -> <id>.broken.json
         (whichever exist), never delete; log the reason at WARNING."""
         _log.warning("Quarantining recovery session %s: %s", session_id, reason)
-        for suffix in (_BERM, _JSON):
-            source = self.folder / f"{session_id}{suffix}"
-            if not source.exists():
-                continue
-            target = self.folder / f"{session_id}{_BROKEN[:-1]}{suffix}"
-            n = 1
-            while target.exists():  # never overwrite an earlier quarantine
-                n += 1
-                target = self.folder / f"{session_id}{_BROKEN}{n}{suffix}"
+        sources = [
+            self.folder / f"{session_id}{suffix}"
+            for suffix in (_BERM, _JSON)
+            if (self.folder / f"{session_id}{suffix}").exists()
+        ]
+
+        def target_for(source: Path, n: int) -> Path:
+            tag = _BROKEN[:-1] if n == 1 else f"{_BROKEN}{n}"
+            return self.folder / f"{session_id}{tag}{source.suffix}"
+
+        # One generation number for the whole pass, so the .berm and .json of a
+        # session always carry the same suffix; never overwrite an earlier one.
+        n = 1
+        while any(
+            target_for(src, n).exists()
+            for src in (self.folder / f"{session_id}{x}" for x in (_BERM, _JSON))
+        ):
+            n += 1
+        for source in sources:
+            target = target_for(source, n)
             try:
                 os.replace(source, target)
             except OSError:

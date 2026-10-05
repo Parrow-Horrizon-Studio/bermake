@@ -19,11 +19,6 @@ def recoverable_sessions(
     sessions, _quarantined = store.list_sessions()
     left_behind = [s for s in sessions if not is_running(s.meta.pid, s.meta.process_started_at)]
     # saved_at is ISO 8601 with an offset; compare as instants, not as text.
-    return sorted(left_behind, key=lambda s: _saved_at_key(s.meta.saved_at), reverse=True)
-
-
-def _saved_at_key(saved_at: str) -> float:
-    try:
-        return datetime.fromisoformat(saved_at).timestamp()
-    except ValueError:
-        return float("-inf")  # unparseable sorts last
+    return sorted(
+        left_behind, key=lambda s: datetime.fromisoformat(s.meta.saved_at).timestamp(), reverse=True
+    )
