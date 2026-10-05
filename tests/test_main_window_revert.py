@@ -136,6 +136,16 @@ def test_revert_reloads_the_file_and_clears_undo(saved):
     assert _revert_action(window).isEnabled() is False
 
 
+def test_revert_clears_the_autosaved_message(saved):
+    window, _ = saved
+    _change(window)
+    assert window._autosave_now() is True
+    assert window._status_bar.message_text().startswith("Autosaved ")
+    window._prompt_revert = lambda name: True
+    window._on_file_revert()
+    assert window._status_bar.message_text() == ""
+
+
 def test_the_prompt_is_given_the_file_name(saved):
     window, _ = saved
     _change(window)

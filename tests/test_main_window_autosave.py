@@ -239,7 +239,7 @@ def test_a_due_idle_tick_writes_the_session(win, clock):
 
     loaded = load_document(berm)
     assert _vertex_count(loaded.model) == 1
-    assert "Autosaved" in win._status_bar.prompt_text()
+    assert win._status_bar.message_text().startswith("Autosaved ")
     assert win._autosave.changed_since_autosave is False
 
 
@@ -265,21 +265,97 @@ def test_autosave_now_returns_true_on_success(win):
     assert _exist(_session_files(win)) == [True, True]
 
 
-def test_the_autosaved_message_clears_after_a_few_seconds(win, clock):
-    _autosave_once(win, clock)
-    timer = win._autosave_message_timer
-    assert timer.isSingleShot()
-    assert timer.isActive()
-    assert 2000 <= timer.interval() <= 5000
-    win._clear_autosaved_message()
-    assert "Autosaved" not in win._status_bar.prompt_text()
+@pytest.fixture
+def local_time(monkeypatch):
+    """Pin the wall-clock time the window reads, as 21:09 local."""
+
+    class Fixed(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            moment = datetime(2026, 10, 5, 21, 9, 30)
+            return moment if tz is None else moment.astimezone(tz)
+
+    monkeypatch.setattr(main_window_module, "datetime", Fixed)
 
 
-def test_clearing_the_autosaved_message_keeps_a_newer_one(win, clock):
+def _message(win) -> str:
+    return win._status_bar.message_text()
+
+
+def test_the_autosaved_message_is_the_local_time_in_24_hour_form(win, clock, local_time):
     _autosave_once(win, clock)
-    win._status_bar.set_message("Saved House.berm")
-    win._clear_autosaved_message()
-    assert "Saved House.berm" in win._status_bar.prompt_text()
+    assert _message(win) == "Autosaved 21:09"
+    assert "Autosaved 21:09" in win._status_bar.prompt_text()
+
+
+def test_the_autosaved_message_has_no_timeout(win, clock, local_time):
+    _autosave_once(win, clock)
+    assert not hasattr(win, "_autosave_message_timer")
+    assert not hasattr(main_window_module, "_AUTOSAVED_MESSAGE_MS")
+    # Time passes, with ticks but no change: still there.
+    clock.advance(3600)
+    for _ in range(5):
+        win._autosave_tick()
+    QApplication.processEvents()
+    assert _message(win) == "Autosaved 21:09"
+
+
+def test_the_autosaved_message_is_cleared_by_a_document_change(win, clock, local_time):
+    _autosave_once(win, clock)
+    _change(win, 5.0)
+    assert _message(win) == ""
+
+
+def test_the_autosaved_message_is_cleared_by_save(win, clock, local_time, tmp_path):
+    _autosave_once(win, clock)
+    assert win._save_to(tmp_path / "Plan.berm")
+    assert _message(win) == "Saved Plan.berm"
+
+
+def test_the_autosaved_message_is_cleared_by_new_and_open(win, clock, local_time, tmp_path):
+    target = tmp_path / "Plan.berm"
+    save_document(target, Model(), Camera(), DocumentSettings(), RenderStyle())
+    _autosave_once(win, clock)
+    win._doc_controller.mark_clean()  # so New asks nothing
+    win._on_file_new()
+    assert _message(win) == ""
+
+    _autosave_once(win, clock)
+    win._doc_controller.mark_clean()
+    win._prompt_open_path = lambda *a, **k: str(target)
+    win._on_file_open()
+    assert win._doc_controller.current_path == target
+    assert _message(win) == ""
+
+
+def test_a_reset_clears_the_autosaved_message_for_revert_and_recover_too(win, clock, local_time):
+    """Revert and Recover go through _reset_document, as New and Open do."""
+    _autosave_once(win, clock)
+    _reset(win)
+    assert _message(win) == ""
+
+
+def test_a_later_message_replaces_the_autosaved_one_and_is_not_reasserted(win, clock, local_time):
+    _autosave_once(win, clock)
+    win._status_bar.set_message("Exported House.obj")
+    assert _message(win) == "Exported House.obj"
+    # A change must not wipe a message that is not the autosave one.
+    _change(win, 7.0)
+    assert _message(win) == "Exported House.obj"
+    win._autosave_tick()
+    assert _message(win) == "Exported House.obj"
+
+
+def test_the_failure_message_replaces_the_autosaved_one(win, clock, local_time, monkeypatch):
+    _autosave_once(win, clock)
+    _change(win, 9.0)
+
+    def broken(*args, **kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(win._recovery_store, "write", broken)
+    assert win._autosave_now() is False
+    assert _message(win) == "Autosave failed; will retry"
 
 
 # --- It waits for a safe moment ------------------------------------------

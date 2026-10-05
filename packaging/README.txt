@@ -51,6 +51,8 @@ Autosave
 Bermake autosaves your unsaved work every 5 minutes by default. You can
 change the interval, or turn autosave off, in File > Autosave. It saves when
 you pause, not in the middle of a drag, and your own file is never touched.
+After each autosave the status bar shows "Autosaved" and the time, until you
+make your next change.
 
 If Bermake closes unexpectedly, the next launch offers to recover the work.
 Recovered work opens as unsaved, with "(recovered)" in the title; Save asks

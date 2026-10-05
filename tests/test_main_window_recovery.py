@@ -414,6 +414,20 @@ def test_the_real_confirmation_deletes_on_delete_and_keeps_on_cancel(win, folder
     assert not berm.exists() and not meta.exists()
 
 
+def test_recovering_clears_the_autosaved_message(win, folder, monkeypatch):
+    from bermake.commands.scene_commands import AddVertexCommand
+
+    win._command_stack.execute(AddVertexCommand(np.array([1.0, 2.0, 3.0])), win._model.active_scene)
+    assert win._autosave_now() is True
+    assert win._status_bar.message_text().startswith("Autosaved ")
+    sid, _berm, _meta = write_session(folder, _square())
+    # The window's own autosave is listed too (liveness says every writer is
+    # gone here), so recover the written session by id.
+    session = next(s for s in recoverable_sessions(win._recovery_store) if s.meta.session_id == sid)
+    assert win.recover_session(session) is True
+    assert win._status_bar.message_text() == ""
+
+
 def test_decide_later_keeps_the_files_and_the_window(win, folder, monkeypatch):
     _sid, berm, meta = write_session(folder, _square())
     _choose(win, monkeypatch, "later")

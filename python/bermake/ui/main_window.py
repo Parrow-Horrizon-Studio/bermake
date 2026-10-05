@@ -127,10 +127,7 @@ _INPUT_EVENT_TYPES = frozenset(
     )
 )
 _AUTOSAVE_TICK_MS = 1000
-_AUTOSAVED_MESSAGE = "Autosaved"
 _AUTOSAVE_FAILED_MESSAGE = "Autosave failed; will retry"
-# Spec 4.4: "Autosaved" shows for a few seconds and nothing more.
-_AUTOSAVED_MESSAGE_MS = 3000
 
 # M7.6b: arrow keys arm an inference lock on the matching axis, unless the
 # active tool claims Up/Down for itself (Tool.consumes_arrow_keys).
@@ -583,10 +580,9 @@ class MainWindow(QMainWindow):
         interval = preferences.read_autosave_interval(self._settings)
         self._autosave_actions[interval].setChecked(True)
         self._autosave.set_interval(interval)
-        self._autosave_message_timer = QTimer(self)
-        self._autosave_message_timer.setSingleShot(True)
-        self._autosave_message_timer.setInterval(_AUTOSAVED_MESSAGE_MS)
-        self._autosave_message_timer.timeout.connect(self._clear_autosaved_message)
+        # The "Autosaved HH:MM" text this window last showed, so it is cleared
+        # only while it is still the message on screen (spec 4.4).
+        self._autosaved_message: str | None = None
         self._tick_error_logged = False
         self._autosave_timer = QTimer(self)
         self._autosave_timer.setInterval(_AUTOSAVE_TICK_MS)
@@ -2020,6 +2016,7 @@ class MainWindow(QMainWindow):
     def _on_document_changed(self) -> None:
         self._doc_controller.mark_dirty()
         self._autosave.note_change()
+        self._clear_autosaved_message()
         self._update_window_title()
 
     # --- Autosave (M7.12, #77; spec 4.2 to 4.4) ---------------------------
@@ -2093,18 +2090,22 @@ class MainWindow(QMainWindow):
             logger.exception("Autosave to %s failed unexpectedly", self._recovery_store.folder)
             return self._autosave_failed()
         self._autosave.note_saved()
-        self._status_bar.set_message(_AUTOSAVED_MESSAGE)
-        self._autosave_message_timer.start()
+        # Stays until the next change, Save, New, Open, Revert or Recover, or
+        # until another message replaces it (spec 4.4).
+        self._autosaved_message = f"Autosaved {datetime.now():%H:%M}"
+        self._status_bar.set_message(self._autosaved_message)
         return True
 
     def _autosave_failed(self) -> bool:
         self._autosave.note_failed()
-        self._autosave_message_timer.stop()
         self._status_bar.set_message(_AUTOSAVE_FAILED_MESSAGE)
         return False
 
     def _clear_autosaved_message(self) -> None:
-        if self._status_bar.message_text() == _AUTOSAVED_MESSAGE:
+        """Remove "Autosaved HH:MM" if it is still the message showing; any
+        other message that has replaced it is left alone."""
+        shown, self._autosaved_message = self._autosaved_message, None
+        if shown is not None and self._status_bar.message_text() == shown:
             self._status_bar.set_message("")
 
     def _delete_session_files(self) -> None:
@@ -2446,6 +2447,7 @@ class MainWindow(QMainWindow):
         self._suggested_save_path = None
         self._doc_controller.recovered_name = None
         self._start_new_session()
+        self._clear_autosaved_message()
         self._refresh_status_text()
         self._update_window_title()
         self._viewport.update()
