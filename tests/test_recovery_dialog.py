@@ -5,13 +5,15 @@ Driven for real: a timer clicks its buttons from inside its own event loop
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 
 import pytest
 from bermake.recovery.store import RecoverySession, SessionMeta
 from bermake.ui.recovery_dialog import RecoveryChoice, RecoveryDialog, describe_saved_at
-from PySide6.QtWidgets import QApplication, QWidget
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QApplication, QPushButton, QWidget
 
 from tests._recovery_helpers import answer_recovery_dialog
 
@@ -38,7 +40,13 @@ def _session(name: str, saved_at: datetime, session_id: str | None = None) -> Re
 
 
 def _at(hour: int, minute: int, days_ago: int = 0) -> datetime:
-    return (NOW - timedelta(days=days_ago)).replace(hour=hour, minute=minute, second=5)
+    """A local wall-clock time `days_ago` calendar days before 5 Oct 2026.
+
+    Built naive and then made aware, so each day gets its own UTC offset:
+    a DST change between the two dates (Sydney, 4 Oct 2026) cannot move the
+    clock reading the test expects."""
+    day = date(2026, 10, 5) - timedelta(days=days_ago)
+    return datetime.combine(day, time(hour, minute, 5)).astimezone()
 
 
 # --- <when> ------------------------------------------------------------------
@@ -68,8 +76,17 @@ def test_when_is_in_local_time():
 
 def test_when_a_future_date_is_shown_as_a_date():
     """A clock set back since the autosave must not say "today" for tomorrow."""
-    tomorrow = (NOW + timedelta(days=1)).replace(hour=8, minute=0)
+    tomorrow = _at(8, 0, days_ago=-1)
     assert describe_saved_at(tomorrow.isoformat(), NOW) == "6 Oct 2026 at 08:00"
+
+
+def test_when_across_midnight():
+    """Calendar days, not 24-hour spans: 23:59 read at 00:01 is yesterday."""
+    just_after_midnight = datetime(2026, 10, 5, 0, 1).astimezone()
+    late = datetime(2026, 10, 4, 23, 59).astimezone()
+    early = datetime(2026, 10, 5, 0, 0).astimezone()
+    assert describe_saved_at(late.isoformat(), just_after_midnight) == "yesterday at 23:59"
+    assert describe_saved_at(early.isoformat(), just_after_midnight) == "today at 00:00"
 
 
 def test_when_never_raises_on_an_unusable_timestamp():
@@ -119,17 +136,26 @@ def test_each_button_maps_to_its_choice_for_one_session(app, button, action):
     assert choice.session is (None if action == "later" else session)
 
 
-def test_escape_or_closing_the_dialog_is_decide_later(app):
+@pytest.mark.parametrize(
+    "dismiss",
+    [
+        pytest.param(lambda d: QTest.keyClick(d, Qt.Key.Key_Escape), id="escape"),
+        pytest.param(lambda d: d.close(), id="close-box"),
+    ],
+)
+def test_escape_or_closing_the_dialog_is_decide_later(app, dismiss):
     """Closing it any other way must keep the work, never discard it."""
     session = _session("House.berm", _at(14, 32))
     dialog = RecoveryDialog([session], now=NOW)
 
-    def close():
-        dialog.reject()
+    def recover_if_still_open():
+        # If the dismissal did nothing, end the modal loop with a choice the
+        # assertion rejects, so the test fails instead of hanging.
+        if dialog.isVisible():
+            next(b for b in dialog.findChildren(QPushButton) if b.text() == "Recover").click()
 
-    from PySide6.QtCore import QTimer
-
-    QTimer.singleShot(0, close)
+    QTimer.singleShot(0, lambda: dismiss(dialog))
+    QTimer.singleShot(2000, recover_if_still_open)
     assert dialog.exec() == RecoveryChoice("later", None)
 
 

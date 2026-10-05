@@ -315,22 +315,132 @@ def test_an_error_while_listing_is_logged_and_returns_false(win, monkeypatch, ca
     assert "folder is gone" in caplog.text
 
 
-def test_a_failed_hand_over_still_recovers_and_autosaves_soon(win, folder, monkeypatch, caplog):
-    """The model is already in the window; losing it over a rename would be
-    worse than leaving the old files to be offered again."""
-    _sid, berm, meta = write_session(folder, _square())
+# --- Review I1: a hand-over that fails part way -------------------------------
+
+
+@pytest.fixture(params=[5, 0], ids=["interval-5", "autosave-off"])
+def interval(request, win):
+    """Run each hand-over test with the default interval and with autosave Off."""
+    win._autosave.set_interval(request.param)
+    return request.param
+
+
+def _rename_fails(win, monkeypatch):
+    """hand_over's first step, the .berm rename, fails (the file is locked)."""
 
     def locked(old_id, new_meta):
         raise PermissionError("locked by antivirus")
 
     monkeypatch.setattr(win._recovery_store, "hand_over", locked)
+
+
+def _metadata_write_fails_once(win, monkeypatch):
+    """hand_over renames the .berm, then its metadata write fails (disk full);
+    later metadata writes work."""
+    store = win._recovery_store
+    real = store._write_meta
+    calls = []
+
+    def flaky(meta):
+        calls.append(meta.session_id)
+        if len(calls) == 1:
+            raise OSError(28, "No space left on device")
+        real(meta)
+
+    monkeypatch.setattr(store, "_write_meta", flaky)
+    return calls
+
+
+def _autosave_fails(win, monkeypatch):
+    def full(meta, write_berm):
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(win._recovery_store, "write", full)
+
+
+def _after_a_second_crash(folder):
+    """What the next launch offers if this process dies now."""
+    return recoverable_sessions(RecoveryStore(folder), is_running=lambda pid, started: False)
+
+
+@pytest.mark.parametrize("failure", [_rename_fails, _metadata_write_fails_once])
+def test_a_failed_hand_over_autosaves_at_once_and_drops_the_old_session(
+    win, folder, monkeypatch, caplog, interval, failure
+):
+    _old_id, _berm, _meta = write_session(folder, _square())
+    failure(win, monkeypatch)
+    _choose(win, monkeypatch, "recover")
+
+    with caplog.at_level(logging.WARNING):
+        assert win.run_startup_recovery() is True
+
+    assert _counts(win._model) == (4, 1)
+    assert "Could not hand recovery session" in caplog.text
+    # The window's own session is on disk now, not one interval from now.
+    assert _names(folder) == sorted([f"{win._session_id}.berm", f"{win._session_id}.json"])
+    assert win._autosave.changed_since_autosave is False
+    [session] = _after_a_second_crash(folder)
+    assert session.meta.session_id == win._session_id
+    assert session.meta.pid == os.getpid()
+    assert session.meta.display_name == "House.berm"
+    assert _counts(load_document(session.berm_path).model) == (4, 1)
+
+
+def test_after_a_failed_rename_a_save_leaves_nothing_to_offer(
+    win, folder, monkeypatch, tmp_path, interval
+):
+    """Case A of I1: the old session must not outlive the user's Save and
+    come back next launch with older content."""
+    write_session(folder, _square())
+    _rename_fails(win, monkeypatch)
+    _choose(win, monkeypatch, "recover")
+    assert win.run_startup_recovery() is True
+
+    monkeypatch.setattr(win, "_prompt_save_path", lambda *a, **k: str(tmp_path / "Saved.berm"))
+    assert win._on_file_save() is True
+    assert _after_a_second_crash(folder) == []
+
+
+def test_a_locked_old_session_is_logged_not_raised(win, folder, monkeypatch, caplog):
+    write_session(folder, _square())
+    _rename_fails(win, monkeypatch)
+    real_delete = win._recovery_store.delete
+
+    def locked_delete(session_id):
+        if session_id != win._session_id:
+            raise PermissionError("old session locked")
+        real_delete(session_id)
+
+    monkeypatch.setattr(win._recovery_store, "delete", locked_delete)
     _choose(win, monkeypatch, "recover")
     with caplog.at_level(logging.WARNING):
         assert win.run_startup_recovery() is True
+    assert "old session locked" in caplog.text
+    assert (folder / f"{win._session_id}.json").exists()
+
+
+@pytest.mark.parametrize("failure", [_rename_fails, _metadata_write_fails_once])
+def test_when_the_immediate_autosave_fails_too_the_old_session_stays_recoverable(
+    win, folder, monkeypatch, caplog, interval, failure
+):
+    """Nothing written under the new session: the old one, put back together
+    if the rename had already happened, is what the next launch offers."""
+    old_id, berm, meta = write_session(folder, _square())
+    failure(win, monkeypatch)
+    _autosave_fails(win, monkeypatch)
+    _choose(win, monkeypatch, "recover")
+
+    with caplog.at_level(logging.WARNING):
+        assert win.run_startup_recovery() is True
+
     assert _counts(win._model) == (4, 1)
-    assert berm.exists() and meta.exists()
+    assert _names(folder) == sorted([berm.name, meta.name])
+    [session] = _after_a_second_crash(folder)
+    assert session.meta.session_id == old_id
+    assert _counts(load_document(session.berm_path).model) == (4, 1)
+    # Still unsaved work, retried at the next interval.
     assert win._autosave.changed_since_autosave is True
-    assert "locked by antivirus" in caplog.text
+    assert f"recovery session {old_id} is kept" in caplog.text
 
 
 # --- Review Focus 2: vanished or locked between listing and loading ----------

@@ -2663,22 +2663,55 @@ class MainWindow(QMainWindow):
             # The new metadata: the new session id, this process, now.
             self._recovery_store.hand_over(old_id, self._autosave_meta())
         except Exception:
-            # The work is already in the window. Leave the old files to be
-            # offered again rather than lose anything, and autosave this
-            # session at the next interval.
             logger.warning(
                 "Could not hand recovery session %s over to %s",
                 old_id,
                 self._session_id,
                 exc_info=True,
             )
-            self._autosave.note_change()
+            self._protect_after_failed_hand_over(old_id)
         else:
             # The disk copy matches the window (spec 4.5).
             self._autosave.note_saved()
         logger.info("Recovered session %s as session %s", old_id, self._session_id)
         self._update_window_title()
         return True
+
+    def _protect_after_failed_hand_over(self, old_id: str) -> None:
+        """The recovered work is in the window but the hand-over failed part
+        way, so it is not on disk under a live session. Write this session now,
+        whatever the interval (even Off): waiting for the next autosave would
+        leave a second crash with nothing to offer (review I1).
+
+        If that works, the old session is redundant: drop it, or it would be
+        offered again after the user's Save. If it fails too, put the old
+        session back together (the rename may already have happened) so it is
+        still offered at the next launch, and keep retrying at the interval.
+        """
+        self._autosave.note_change()
+        if self._autosave_now():
+            try:
+                self._recovery_store.delete(old_id)
+            except OSError:
+                logger.warning(
+                    "Could not delete recovery session %s after recovering it",
+                    old_id,
+                    exc_info=True,
+                )
+            return
+        store = self._recovery_store
+        moved, original = store.berm_path(self._session_id), store.berm_path(old_id)
+        try:
+            if moved.exists() and not original.exists():
+                os.replace(moved, original)
+        except OSError:
+            logger.warning(
+                "Could not move %s back to %s; both may be quarantined at the next launch",
+                moved,
+                original,
+                exc_info=True,
+            )
+        logger.warning("Recovered work is not autosaved yet; recovery session %s is kept", old_id)
 
     def _show_recovery_failed(self, message: str) -> None:
         """Tell the tester a recovery could not be opened. Overridable for testing."""
