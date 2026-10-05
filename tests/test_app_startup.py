@@ -137,8 +137,9 @@ def test_a_failed_switch_to_compatibility_rendering_offers_no_restart():
 
 
 class _FakeWindow:
-    def __init__(self):
+    def __init__(self, recovered=False):
         self.calls = []
+        self.recovered = recovered
 
     def note_gl_reported_at_startup(self):
         self.calls.append("reported")
@@ -151,6 +152,10 @@ class _FakeWindow:
 
     def show_welcome_dialog(self):
         self.calls.append("welcome")
+
+    def run_startup_recovery(self):
+        self.calls.append("recovery")
+        return self.recovered
 
 
 @pytest.fixture
@@ -166,12 +171,12 @@ def fake_window(monkeypatch):
 def test_the_window_is_told_before_it_is_shown(fake_window):
     """initializeGL runs on show, so the flags must already be set."""
     app_module._build_main_window(gl_reported=True, compat_failed=True)
-    assert fake_window.calls == ["reported", "no_offer", "show"]
+    assert fake_window.calls == ["reported", "no_offer", "show", "recovery"]
 
 
 def test_a_plain_start_tells_the_window_nothing(fake_window):
     app_module._build_main_window()
-    assert fake_window.calls == ["show"]
+    assert fake_window.calls == ["show", "recovery"]
 
 
 def _built_window(qtbot, monkeypatch, *, mesa, **flags):
@@ -370,3 +375,134 @@ def test_the_smoke_flag_runs_the_smoke_path_and_touches_neither_logs_nor_prefere
 
     assert smoke_calls == [report]
     assert not log_dir.exists()
+
+
+# --- M7.12 Task 6: recovery runs before the Welcome dialog -------------------
+
+
+@pytest.mark.parametrize(
+    ("recovered", "show_welcome", "calls"),
+    [
+        (True, True, ["show", "recovery"]),
+        (False, True, ["show", "recovery", "welcome"]),
+        (False, False, ["show", "recovery"]),
+        (True, False, ["show", "recovery"]),
+    ],
+)
+def test_a_recovered_session_replaces_the_welcome_dialog(
+    monkeypatch, recovered, show_welcome, calls
+):
+    import bermake.ui.main_window as main_window_module
+
+    window = _FakeWindow(recovered=recovered)
+    monkeypatch.setattr(main_window_module, "MainWindow", lambda: window)
+    monkeypatch.setattr(app_module.preferences, "read_show_welcome", lambda s: show_welcome)
+    assert app_module._build_main_window() is window
+    assert window.calls == calls
+
+
+@pytest.fixture
+def real_startup(qtbot, monkeypatch):
+    """The real MainWindow through the real _build_main_window, with show and
+    the Welcome dialog recorded and the recovery prompt recorded instead of
+    shown. Returns (build, calls)."""
+    import bermake.ui.main_window as main_window_module
+
+    calls = []
+    cls = main_window_module.MainWindow
+    monkeypatch.setattr(app_module.preferences, "read_show_welcome", lambda settings: True)
+    monkeypatch.setattr(cls, "show", lambda self: calls.append("show"))
+    monkeypatch.setattr(cls, "show_welcome_dialog", lambda self: calls.append("welcome"))
+
+    def ask(self, sessions):
+        calls.append(("asked", [s.meta.session_id for s in sessions]))
+        from bermake.ui.recovery_dialog import RecoveryChoice
+
+        return RecoveryChoice("later", None)
+
+    monkeypatch.setattr(cls, "_ask_recovery", ask)
+
+    def build():
+        window = app_module._build_main_window()
+        qtbot.addWidget(window)
+        window._autosave_timer.stop()
+        return window
+
+    return build, calls
+
+
+def test_a_failing_recovery_still_reaches_the_welcome_dialog(real_startup, monkeypatch, caplog):
+    import bermake.recovery.startup as recovery_startup
+
+    build, calls = real_startup
+
+    def broken(store, is_running=None):
+        raise RuntimeError("recovery folder exploded")
+
+    monkeypatch.setattr(recovery_startup, "recoverable_sessions", broken)
+    with caplog.at_level(logging.ERROR):
+        window = build()
+    assert window is not None
+    assert calls == ["show", "welcome"]
+    assert "recovery folder exploded" in caplog.text
+
+
+def test_a_second_bermake_never_offers_the_first_ones_live_session(real_startup):
+    """Review Focus 4, through the real _build_main_window and the real
+    liveness check: a session written by this very process is a live one."""
+    import os
+
+    from bermake.recovery import paths as recovery_paths
+    from bermake.recovery.liveness import current_process_started_at
+
+    from tests._recovery_helpers import write_session
+
+    build, calls = real_startup
+    folder = recovery_paths.default_recovery_directory()
+    _sid, berm, meta = write_session(
+        folder, pid=os.getpid(), process_started_at=current_process_started_at()
+    )
+
+    build()
+
+    assert calls == ["show", "welcome"]
+    assert berm.exists() and meta.exists()
+
+
+def test_a_dead_writers_session_is_offered_at_startup(real_startup):
+    """The counterpart of the test above: the same session from a gone
+    process is offered, so the live-writer test cannot pass by accident."""
+    from bermake.recovery import paths as recovery_paths
+
+    from tests._recovery_helpers import write_session
+
+    build, calls = real_startup
+    sid, _berm, _meta = write_session(recovery_paths.default_recovery_directory())
+
+    build()
+
+    assert calls == ["show", ("asked", [sid]), "welcome"]
+
+
+def test_the_smoke_test_never_reaches_recovery(monkeypatch, tmp_path):
+    import bermake.diagnostics.smoke as smoke
+    import bermake.recovery.startup as recovery_startup
+    import bermake.ui.main_window as main_window_module
+
+    reached = []
+    real_smoke = smoke.run_smoke
+    monkeypatch.setattr(
+        recovery_startup, "recoverable_sessions", lambda *a, **k: reached.append("listed") or []
+    )
+    monkeypatch.setattr(
+        main_window_module.MainWindow,
+        "run_startup_recovery",
+        lambda self: reached.append("recovery") or False,
+    )
+    monkeypatch.setattr(smoke, "run_smoke", lambda path: real_smoke(path, include_rendering=False))
+    report = tmp_path / "report.json"
+
+    app_module.main(["Bermake.exe", "--smoke-test", str(report)])
+
+    assert report.exists()
+    assert reached == []

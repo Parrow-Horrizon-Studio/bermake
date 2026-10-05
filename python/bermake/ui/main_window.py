@@ -47,10 +47,12 @@ from bermake.io.obj_io import read_obj_texture_bytes
 from bermake.model import Model
 from bermake.model.model_queries import instance_path
 from bermake.model.tag import TagLibrary
+from bermake.recovery import liveness as recovery_liveness
 from bermake.recovery import paths as recovery_paths
+from bermake.recovery import startup as recovery_startup
 from bermake.recovery.liveness import current_process_started_at
 from bermake.recovery.scheduler import DEFAULT_INTERVAL, AutosaveScheduler
-from bermake.recovery.store import RecoveryStore, SessionMeta
+from bermake.recovery.store import RecoverySession, RecoveryStore, SessionMeta
 from bermake.selection import Selection
 from bermake.tools import (
     ArcTool,
@@ -2244,12 +2246,18 @@ class MainWindow(QMainWindow):
         self._viewport.update()
 
     def _prompt_save_path(
-        self, file_filter: str = "Bermake files (*.berm)", title: str = "Save As"
+        self,
+        file_filter: str = "Bermake files (*.berm)",
+        title: str = "Save As",
+        suggested: str | None = None,
     ) -> str | None:
-        """Return a chosen save path (or None). Overridable for testing."""
+        """Return a chosen save path (or None). Overridable for testing.
+
+        `suggested` pre-fills the dialog's folder and file name; a recovered
+        document suggests the file it came from (spec 4.5)."""
         from PySide6.QtWidgets import QFileDialog
 
-        path, _ = QFileDialog.getSaveFileName(self, title, "", file_filter)
+        path, _ = QFileDialog.getSaveFileName(self, title, suggested or "", file_filter)
         return path or None
 
     def _capture_thumbnail(self) -> bytes | None:
@@ -2313,6 +2321,8 @@ class MainWindow(QMainWindow):
             return False
         self._doc_controller.set_path(path)
         self._doc_controller.mark_clean()
+        # A recovered document now has a real path; Save As offers that.
+        self._suggested_save_path = None
         # The saved file is now the newest copy (spec 4.3).
         self._delete_session_files()
         self._autosave.note_saved()
@@ -2326,20 +2336,23 @@ class MainWindow(QMainWindow):
         return self._save_to(self._doc_controller.current_path)
 
     def _on_file_save_as(self) -> bool:
-        path = self._prompt_save_path()
+        path = self._prompt_save_path(suggested=self._suggested_save_path)
         if not path:
             return False
         return self._save_to(path)
+
+    def _unsaved_changes_name(self) -> str:
+        """The name the unsaved-changes prompt asks about."""
+        controller = self._doc_controller
+        if controller.current_path is not None:
+            return controller.current_path.name
+        return controller.recovered_name or "Untitled"
 
     def _prompt_discard(self) -> str:
         """Return 'save' | 'discard' | 'cancel'. Overridable for testing."""
         from PySide6.QtWidgets import QMessageBox
 
-        name = (
-            self._doc_controller.current_path.name
-            if self._doc_controller.current_path
-            else "Untitled"
-        )
+        name = self._unsaved_changes_name()
         box = QMessageBox(self)
         box.setWindowTitle("Unsaved changes")
         box.setText(f"Save changes to {name}?")
@@ -2433,6 +2446,7 @@ class MainWindow(QMainWindow):
         # 1.7: "Document New / Open -> rebuild and rebind libraries").
         self._rebuild_outliner()
         self._suggested_save_path = None
+        self._doc_controller.recovered_name = None
         self._start_new_session()
         self._refresh_status_text()
         self._update_window_title()
@@ -2561,6 +2575,116 @@ class MainWindow(QMainWindow):
     def show_welcome_dialog(self) -> None:
         """Public entry point for app.py's startup call."""
         self._on_show_welcome()
+
+    # --- Recovery at startup (M7.12, #77; spec 4.5 and 5) ------------------
+
+    def run_startup_recovery(self) -> bool:
+        """Offer work left by a Bermake that is no longer running.
+
+        Returns True only if a session was recovered, in which case app.py
+        skips the Welcome dialog. Nothing here may stop Bermake from starting,
+        so every failure is logged and reads as "nothing recovered".
+        """
+        try:
+            # Both resolved at call time, so a test can patch either module.
+            sessions = recovery_startup.recoverable_sessions(
+                self._recovery_store, recovery_liveness.process_is_running
+            )
+            if not sessions:
+                return False
+            logger.info("Found %d recoverable session(s)", len(sessions))
+            choice = self._ask_recovery(sessions)
+            if choice.session is None:
+                return False  # Decide later: keep everything for next launch
+            if choice.action == "recover":
+                return self.recover_session(choice.session)
+            if choice.action == "discard":
+                session_id = choice.session.meta.session_id
+                self._recovery_store.delete(session_id)
+                logger.info("Discarded recovery session %s", session_id)
+            return False
+        except Exception:
+            logger.exception("Startup recovery failed; starting without it")
+            return False
+
+    def _ask_recovery(self, sessions: list[RecoverySession]):
+        """Show the recovery dialog modal over this window and return its
+        RecoveryChoice. Overridable for testing."""
+        from bermake.ui.recovery_dialog import RecoveryDialog
+
+        dialog = RecoveryDialog(sessions, self)
+        try:
+            return dialog.exec()
+        finally:
+            dialog.deleteLater()
+
+    def recover_session(self, session: RecoverySession) -> bool:
+        """Open a recovered session as unsaved work, not tied to its original
+        file (D4), and hand its files over to this window's new session.
+
+        A session that cannot be opened is quarantined (kept as
+        `<id>.broken.*`), logged, and reported to the tester. Returns whether
+        the session was recovered.
+        """
+        meta = session.meta
+        old_id = meta.session_id
+        try:
+            loaded = load_document(session.berm_path)
+        except Exception as exc:  # BermakeIOError, OSError, or a bug: never fatal
+            logger.warning(
+                "Could not open recovery session %s from %s",
+                old_id,
+                session.berm_path,
+                exc_info=True,
+            )
+            try:
+                self._recovery_store.quarantine(old_id, f"could not be opened: {exc}")
+            except Exception:
+                logger.exception("Could not quarantine recovery session %s", old_id)
+            self._show_recovery_failed(
+                f"Bermake could not open the autosaved work for {meta.display_name}. "
+                f"It was kept in {self._recovery_store.folder} for a bug report."
+            )
+            return False
+
+        self._reset_document(
+            loaded.model,
+            loaded.camera_state,
+            loaded.units,
+            loaded.style,
+            None,
+            environment=loaded.environment,
+            hand_over_from=old_id,
+        )
+        self._doc_controller.mark_dirty()
+        self._doc_controller.recovered_name = meta.display_name
+        self._suggested_save_path = meta.original_path
+        try:
+            # The new metadata: the new session id, this process, now.
+            self._recovery_store.hand_over(old_id, self._autosave_meta())
+        except Exception:
+            # The work is already in the window. Leave the old files to be
+            # offered again rather than lose anything, and autosave this
+            # session at the next interval.
+            logger.warning(
+                "Could not hand recovery session %s over to %s",
+                old_id,
+                self._session_id,
+                exc_info=True,
+            )
+            self._autosave.note_change()
+        else:
+            # The disk copy matches the window (spec 4.5).
+            self._autosave.note_saved()
+        logger.info("Recovered session %s as session %s", old_id, self._session_id)
+        self._update_window_title()
+        return True
+
+    def _show_recovery_failed(self, message: str) -> None:
+        """Tell the tester a recovery could not be opened. Overridable for testing."""
+        from PySide6.QtWidgets import QMessageBox
+
+        QMessageBox.warning(self, "Recovery failed", message)
 
     # --- Compatibility rendering (M7.9) -----------------------------------
 
