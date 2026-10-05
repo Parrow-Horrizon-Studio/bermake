@@ -46,6 +46,24 @@ it once with it off by running this in a Command Prompt from this folder:
 
 Then turn it off for good from Help > Use Compatibility Rendering.
 
+Autosave
+--------
+Bermake autosaves your unsaved work every 5 minutes by default. You can
+change the interval, or turn autosave off, in File > Autosave. It saves when
+you pause, not in the middle of a drag, and your own file is never touched.
+
+If Bermake closes unexpectedly, the next launch offers to recover the work.
+Recovered work opens as unsaved, with "(recovered)" in the title; Save asks
+where to put it, starting at the original file's folder and name.
+
+Autosaves are kept in this folder:
+
+    %LOCALAPPDATA%\Parrow Horrizon Studio\Bermake\recovery
+
+If a recovery file cannot be opened, Bermake keeps it there as
+something.broken.berm instead of deleting it. Attach that file to your bug
+report.
+
 Reporting a problem
 -------------------
 1. Open Help > About Bermake and click "Copy details".
