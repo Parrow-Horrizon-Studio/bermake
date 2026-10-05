@@ -2131,6 +2131,20 @@ class MainWindow(QMainWindow):
 
     def _update_window_title(self) -> None:
         self.setWindowTitle(self._doc_controller.display_title())
+        self._update_revert_enabled()
+
+    def _update_revert_enabled(self) -> None:
+        """Revert to Saved needs a path to reload and changes to discard.
+
+        Called from _update_window_title, which already runs whenever the path
+        or the dirty state changes (spec 4.6).
+        """
+        # The title is first set while the actions are still being built.
+        action = getattr(self, "_actions", {}).get("file_revert")
+        if action is not None:
+            action.setEnabled(
+                self._doc_controller.current_path is not None and self._doc_controller.dirty
+            )
 
     def _on_export_obj(self) -> None:
         path = self._prompt_save_path("OBJ files (*.obj)", "Export OBJ")
@@ -2454,6 +2468,48 @@ class MainWindow(QMainWindow):
             return
         path = self._prompt_open_path()
         if not path:
+            return
+        try:
+            loaded = load_document(path)
+        except (BermakeIOError, OSError) as e:
+            from PySide6.QtWidgets import QMessageBox
+
+            QMessageBox.critical(self, "Open failed", str(e))
+            return
+        self._reset_document(
+            loaded.model,
+            loaded.camera_state,
+            loaded.units,
+            loaded.style,
+            path,
+            environment=loaded.environment,
+        )
+
+    def _prompt_revert(self, name: str) -> bool:
+        """True to discard the changes and reload. Overridable for testing."""
+        from PySide6.QtWidgets import QMessageBox
+
+        box = QMessageBox(self)
+        box.setWindowTitle("Revert to Saved")
+        box.setText(f"Discard all changes since you last saved {name}? This cannot be undone.")
+        revert = box.addButton("Revert", QMessageBox.ButtonRole.DestructiveRole)
+        cancel = box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
+        box.setDefaultButton(cancel)
+        box.setEscapeButton(cancel)
+        box.exec()
+        return box.clickedButton() is revert
+
+    def _on_file_revert(self) -> None:
+        """File > Revert to Saved: reload the document's file (spec 4.6).
+
+        The same load and reset as Open, so the undo history is cleared and a
+        new autosave session replaces the old one. A file that can no longer be
+        read leaves the current document, with its changes, untouched.
+        """
+        path = self._doc_controller.current_path
+        if path is None or not self._doc_controller.dirty:
+            return
+        if not self._prompt_revert(path.name):
             return
         try:
             loaded = load_document(path)

@@ -176,6 +176,8 @@ ACTIONS: tuple[ActionSpec, ...] = (
         checkable=True,
         group=AUTOSAVE_GROUP,
     ),
+    # Enabled only for a saved document with unsaved changes (M7.12, spec 4.6).
+    ActionSpec("file_revert", "Revert to Saved", "_on_file_revert"),
     ActionSpec("file_import_obj", "Import OBJ…", "_on_import_obj"),
     ActionSpec("file_export_obj", "Export OBJ…", "_on_export_obj"),
     ActionSpec("file_import_gltf", "Import glTF…", "_on_import_gltf"),
@@ -525,6 +527,7 @@ MENUS: tuple[MenuSpec, ...] = (
                     "file_autosave_30",
                 ),
             ),
+            "file_revert",
             None,
             "file_import_obj",
             "file_export_obj",
