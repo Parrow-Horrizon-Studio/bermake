@@ -5,7 +5,9 @@ gesture closes the loop and creates a face (provided ≥ 3 vertices exist).
 Snapping onto some other existing vertex extends the polyline to it.
 Otherwise, a new vertex is created at the snapped position.
 
-ESC clears the visible gesture state; it does not un-add committed vertices.
+Each click changes the scene at once, but the chain reaches the undo stack as one
+command only on Enter, a double-click or loop closure. ESC rolls the unfinished
+chain back. Until then the tool reports `holds_uncommitted_changes`.
 """
 
 from __future__ import annotations
@@ -302,6 +304,18 @@ class LineTool(Tool):
             snap_marker_color=self._snap_marker_color,
             snap_marker_kind=self._snap_marker_kind,
         )
+
+    @property
+    def holds_uncommitted_changes(self) -> bool:
+        """True once a click of this chain has changed the model.
+
+        Each click executes its AddVertex/AddEdge commands at once but keeps
+        them in `_composite`, which reaches the undo stack only on Enter, a
+        double-click or loop closure; Escape undoes it. So a chain holds
+        changes whenever the composite has any child. A chain whose clicks
+        all reused existing vertices has no child and holds nothing.
+        """
+        return self._composite is not None and bool(self._composite.children)
 
     @property
     def has_active_gesture(self) -> bool:

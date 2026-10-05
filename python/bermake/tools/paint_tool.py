@@ -457,6 +457,21 @@ class PaintTool(Tool):
         )
 
     @property
+    def holds_uncommitted_changes(self) -> bool:
+        """True while a stroke or a placement drag has written to the scene
+        ahead of the command that records it.
+
+        A paint stroke applies each PaintFaceCommand at once and pushes the
+        lot on release; a placement drag writes every intermediate placement
+        straight into the scene and pushes one command on release.
+        `deactivate` rolls both back. An armed stroke that has painted nothing,
+        or a placement drag that has not moved, holds nothing.
+        """
+        stroke = self._stroke_active and bool(self._stroke_commands)
+        drag = self._drag_active and self._drag_current != self._drag_start
+        return stroke or drag
+
+    @property
     def has_active_gesture(self) -> bool:
         # Mirrors EraserTool.has_active_gesture: True only for a live stroke
         # or placement drag, not for a mere hover -- so a right-click mid-drag
