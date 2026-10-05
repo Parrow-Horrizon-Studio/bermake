@@ -236,7 +236,7 @@ def test_clock_going_backwards_never_saves_early_or_raises():
     assert _idle(sched) is True
 
 
-def test_note_change_is_idempotent_for_the_flag():
+def test_a_later_change_does_not_push_back_the_due_point():
     sched, clock = _make(1)
     sched.note_change()
     clock.advance(MINUTE - 1)
@@ -255,4 +255,20 @@ def test_continuous_editing_does_not_postpone_the_forced_save():
         assert _idle(sched, idle_for=0) is False
     clock.advance(10)  # 60 s after becoming due
     sched.note_change()
+    assert _idle(sched, idle_for=0) is True
+
+
+def test_clock_going_backwards_does_not_stall_the_forced_save():
+    # A first edit after a quiet spell is due at once, so the force window is
+    # anchored to the edit. A backwards jump must re-anchor it to the new
+    # time: the forced save lands FORCE_AFTER_SECONDS later, not after the
+    # whole gap plus FORCE_AFTER_SECONDS, and never before.
+    sched, clock = _make(1)
+    clock.advance(60 * MINUTE)
+    sched.note_change()
+    clock.advance(-500)
+    assert _idle(sched, idle_for=0) is False
+    clock.advance(FORCE_AFTER_SECONDS - 0.5)
+    assert _idle(sched, idle_for=0) is False
+    clock.advance(0.5)
     assert _idle(sched, idle_for=0) is True
