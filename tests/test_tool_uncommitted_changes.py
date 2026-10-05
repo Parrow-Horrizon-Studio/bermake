@@ -8,7 +8,10 @@ before their command reaches the undo stack:
 
 - Line: every click runs its AddVertex/AddEdge commands at once and keeps
   them in a private composite; the composite is pushed only on Enter, a
-  double-click or loop closure, and Escape undoes it.
+  double-click or loop closure, and Escape undoes it. By controller ruling it
+  still reports False: the segments are real, visible edges, and True would
+  block every autosave for the whole length of a chain. The test documents
+  that choice by showing the model has changed while the tool says False.
 - Eraser: a press-drag stroke executes each removal at once and pushes the
   stroke on release.
 - Paint: a stroke paints faces at once and pushes on release, and a Shift
@@ -20,8 +23,9 @@ execute or push their command in a single call.
 Each tool is driven through its own mouse and key handlers. Two things keep
 the expected values honest rather than asserted by fiat. A model fingerprint
 taken before and during the gesture must differ for exactly the tools that
-claim to hold changes (so True is not vacuous, and False means the model
-really was untouched). The undo depth must not move mid-gesture for any tool
+change the model mid-gesture (so True is not vacuous, and False means the
+model really was untouched, except Line, where False is a deliberate choice).
+The undo depth must not move mid-gesture for any tool
 (so "uncommitted" really means "not yet on the undo stack").
 """
 
@@ -154,11 +158,14 @@ class _Env:
 class _Script:
     begin: Callable  # (env, tool, k) -> leaves the tool mid-gesture
     commit: Callable  # (env, tool, k) -> finishes the gesture normally
-    mid: bool  # does the tool hold uncommitted changes mid-gesture?
+    mid: bool  # does the tool REPORT uncommitted changes mid-gesture?
     after_escape: bool = False  # ... and after Escape (Eraser, Paint: Escape is inert)
     prepare: Callable | None = None  # (env, k) -> selection or scene setup, before activate
     commits: bool = True  # does `commit` push an undo entry? (Select only changes selection)
     gesture: bool = True  # is the tool in a gesture mid-script? (False: hover-only tools)
+    # Has the tool changed the model mid-gesture? Defaults to `mid`; Line differs
+    # (it changes the model but deliberately reports False).
+    changes_model: bool | None = None
 
 
 def _escape(env, tool, k):
@@ -202,7 +209,7 @@ def _select_faces(env, k):
     env.selection.replace(faces=[env.squares[k][0]])
 
 
-# -- Line: live (see module docstring) --
+# -- Line: changes the model mid-chain but, by controller ruling, reports False --
 
 
 def _line_begin(env, tool, k):
@@ -211,7 +218,7 @@ def _line_begin(env, tool, k):
     tool.on_mouse_move(_move(), _snap(env.org(k) + _o(2, 0)))
 
 
-_LINE = _Script(_line_begin, _enter, mid=True)
+_LINE = _Script(_line_begin, _enter, mid=False, changes_model=True)
 
 
 # -- Arc: three clicks, built at the third --
@@ -570,8 +577,9 @@ def test_tool_reports_uncommitted_changes_only_while_it_holds_them(main_window, 
     assert tool.has_active_gesture is script.gesture, "the script reached the mid-gesture state"
     assert tool.holds_uncommitted_changes is script.mid, "mid-gesture"
     assert env.undo_depth() == depth, "nothing is on the undo stack mid-gesture"
-    if script.mid:
-        assert env.fingerprint() != before, "a holding tool has really changed the model"
+    changes = script.mid if script.changes_model is None else script.changes_model
+    if changes:
+        assert env.fingerprint() != before, "the tool has really changed the model"
     else:
         assert env.fingerprint() == before, "a tool that holds nothing left the model alone"
 
@@ -611,30 +619,30 @@ def test_switching_tools_mid_stroke_rolls_back_so_nothing_is_held(main_window, t
     assert env.fingerprint() == before
 
 
-def test_line_holds_nothing_when_every_click_so_far_reused_existing_vertices(main_window):
-    """The start point snapped to an existing vertex adds no command, so the
-    composite is empty and an autosave there would save exactly what is in the
-    model. The first click on empty space does add a vertex and does hold."""
+def test_line_reports_nothing_mid_chain_although_the_model_has_changed(main_window):
+    """Controller ruling (M7.12 progress.md): a Line chain's segments are real,
+    visible edges, so an autosave mid-chain is safe, and reporting True would
+    block every autosave, the forced one included, for as long as a chain
+    lasts. The worst case is a recovered file with segments the user later
+    cancelled. This pins the choice: the chain changes the model, is not on the
+    undo stack, Escape would roll it back, and the tool still says False."""
     env = _Env(main_window)
     tool = main_window._tool_manager._tools_by_id["line"]
     tool.activate(env.ctx)
-    vid = env.squares[0][1][0]
+    before = env.fingerprint()
+    depth = env.undo_depth()
 
-    tool.on_mouse_press(_press(), _snap([0, 0, 0], SnapKind.ENDPOINT, vid))
+    tool.on_mouse_press(_press(), _snap([-3, 5, 0]))
+    tool.on_mouse_press(_press(), _snap([-2, 5, 0]))
+    tool.on_mouse_press(_press(), _snap([-2, 6, 0]))
+
     assert tool.has_active_gesture is True
+    assert env.fingerprint() != before, "the chain's vertices and edges are in the model"
+    assert env.undo_depth() == depth, "and not yet on the undo stack"
     assert tool.holds_uncommitted_changes is False
 
-    tool.on_mouse_press(_press(), _snap([-3, 5, 0]))
-    assert tool.holds_uncommitted_changes is True
-
-
-def test_line_holds_from_the_first_click_on_empty_space(main_window):
-    env = _Env(main_window)
-    tool = main_window._tool_manager._tools_by_id["line"]
-    tool.activate(env.ctx)
-    tool.on_mouse_press(_press(), _snap([-3, 5, 0]))
-    assert tool.holds_uncommitted_changes is True
     _escape(env, tool, 0)
+    assert env.fingerprint() == before, "Escape still rolls the chain back"
     assert tool.holds_uncommitted_changes is False
 
 

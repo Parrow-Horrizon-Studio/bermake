@@ -307,15 +307,19 @@ class LineTool(Tool):
 
     @property
     def holds_uncommitted_changes(self) -> bool:
-        """True once a click of this chain has changed the model.
+        """Always False, by controller ruling (M7.12, #77), though not for lack of changes.
 
-        Each click executes its AddVertex/AddEdge commands at once but keeps
-        them in `_composite`, which reaches the undo stack only on Enter, a
-        double-click or loop closure; Escape undoes it. So a chain holds
-        changes whenever the composite has any child. A chain whose clicks
-        all reused existing vertices has no child and holds nothing.
+        Mid-chain, the clicks have already put vertices and edges into the scene
+        through a private composite that reaches the undo stack only on Enter,
+        a double-click or loop closure, and Escape undoes it. They are real,
+        visible edges the user drew, so an autosave that includes them is safe;
+        the worst case is a recovered file with segments the user later
+        cancelled. Returning True would block every autosave, the forced one
+        included, for the whole length of a chain, which can be minutes and
+        risks losing far more work. Eraser and Paint report True because their
+        strokes are brief and the mouse button is held anyway.
         """
-        return self._composite is not None and bool(self._composite.children)
+        return False
 
     @property
     def has_active_gesture(self) -> bool:
