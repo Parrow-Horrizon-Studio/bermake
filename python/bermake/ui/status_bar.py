@@ -106,6 +106,10 @@ class StatusBar(QWidget):
     def prompt_text(self) -> str:
         return self._prompt.text()
 
+    def message_text(self) -> str:
+        """The notice last given to set_message, without the other parts."""
+        return self._message
+
     def coordinates_text(self) -> str:
         return self._coordinates.text()
 

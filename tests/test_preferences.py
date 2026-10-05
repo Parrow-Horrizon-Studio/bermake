@@ -85,3 +85,34 @@ def test_compatibility_rendering_round_trips(settings, enabled):
 def test_compatibility_rendering_reads_qsettings_string_booleans(settings, stored, expected):
     settings.setValue(preferences.COMPATIBILITY_RENDERING_KEY, stored)
     assert preferences.read_compatibility_rendering(settings) is expected
+
+
+def test_autosave_interval_defaults_to_five_minutes(settings):
+    assert preferences.AUTOSAVE_INTERVAL_KEY == "autosave/interval_minutes"
+    assert preferences.read_autosave_interval(settings) == 5
+
+
+@pytest.mark.parametrize("minutes", [0, 1, 5, 10, 30])
+def test_autosave_interval_round_trips_every_choice(settings, minutes):
+    preferences.write_autosave_interval(settings, minutes)
+    settings.sync()
+    assert preferences.read_autosave_interval(settings) == minutes
+
+
+@pytest.mark.parametrize("minutes", [0, 1, 5, 10, 30])
+def test_autosave_interval_reads_the_ini_string_from_a_previous_run(tmp_path, minutes):
+    """Written by hand, as a previous run leaves it: Qt shares one in-process
+    cache per file, so only a file this process never opened comes back as the
+    ini backend's string rather than the int that was set."""
+    path = tmp_path / "previous-run.ini"
+    path.write_text(f"[autosave]\ninterval_minutes={minutes}\n", encoding="utf-8")
+    reader = QSettings(str(path), QSettings.Format.IniFormat)
+    assert reader.value(preferences.AUTOSAVE_INTERVAL_KEY) == str(minutes)
+    assert preferences.read_autosave_interval(reader) == minutes
+
+
+@pytest.mark.parametrize("stored", ["7", "abc", "", "-5", "5.5", 2, 60, None])
+def test_an_unknown_autosave_interval_reads_as_five(settings, stored):
+    """Spec 4.4: unknown values read as 5. A corrupt store must not stop startup."""
+    settings.setValue(preferences.AUTOSAVE_INTERVAL_KEY, stored)
+    assert preferences.read_autosave_interval(settings) == 5

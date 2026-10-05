@@ -44,6 +44,26 @@ def _scratch_window_settings(tmp_path, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _scratch_recovery_folder(tmp_path, monkeypatch):
+    """Keep autosave (M7.12, #77) out of the real recovery folder.
+
+    Every MainWindow built anywhere in this suite owns a RecoveryStore and an
+    autosave timer, and the real folder holds a tester's crash recovery files.
+    Callers resolve the folder through the module attribute
+    (`paths.default_recovery_directory()`, never an import of the function by
+    name), so patching that one attribute covers them all. Each test gets its
+    own folder under tmp_path; it is created only when something writes.
+    """
+    try:
+        import bermake.recovery.paths as recovery_paths
+    except Exception:
+        return
+
+    folder = tmp_path / "recovery"
+    monkeypatch.setattr(recovery_paths, "default_recovery_directory", lambda: folder)
+
+
+@pytest.fixture(autouse=True)
 def _no_blocking_close_dialog(monkeypatch):
     """Keep MainWindow's unsaved-changes modal from hanging test teardown.
 
