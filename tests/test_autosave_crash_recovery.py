@@ -125,6 +125,10 @@ print(
     ),
     flush=True,
 )
+sys.stdout.flush()
+# Leave without interpreter teardown: a PySide6 crash at exit on Linux CI must
+# not fail this check, and the parent has everything it needs by now.
+os._exit(0)
 """
 )
 

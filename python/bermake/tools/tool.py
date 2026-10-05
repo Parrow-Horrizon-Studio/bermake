@@ -143,6 +143,7 @@ class Tool(ABC):
         only a tool that writes to the model during a gesture, ahead of the
         command that finishes it, overrides this. The per-tool audit behind
         the overrides is pinned by tests/test_tool_uncommitted_changes.py.
+        Line is a deliberate exception; see LineTool.holds_uncommitted_changes.
         """
         return False
 

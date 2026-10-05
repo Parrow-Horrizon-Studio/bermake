@@ -110,3 +110,18 @@ def test_default_liveness_treats_this_process_as_running(tmp_path):
         started_at=current_process_started_at(),
     )
     assert recoverable_sessions(store) == []
+
+
+def test_an_unconvertible_saved_at_is_quarantined_and_others_are_still_offered(tmp_path):
+    """One hand-edited file whose date has no timestamp (year 1) used to make
+    the sort raise, so recoverable_sessions offered nothing at all."""
+    store = RecoveryStore(tmp_path)
+    _write(store, "a" * 32, "2026-10-04T14:00:00+08:00")
+    _write(store, "b" * 32, "0001-01-01T00:00:00")
+    _write(store, "c" * 32, "2026-10-04T15:00:00+08:00")
+
+    result = recoverable_sessions(store, _dead)
+
+    assert [s.meta.session_id for s in result] == ["c" * 32, "a" * 32]
+    assert (tmp_path / ("b" * 32 + ".broken.berm")).exists()
+    assert (tmp_path / ("b" * 32 + ".broken.json")).exists()

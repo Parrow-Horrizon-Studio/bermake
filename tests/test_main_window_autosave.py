@@ -729,17 +729,17 @@ def _write_recovered_session(window, session_id: str) -> tuple[Path, Path]:
     return folder / f"{session_id}.berm", folder / f"{session_id}.json"
 
 
-def test_reset_document_handing_over_deletes_only_the_windows_own_files(win, clock):
+def test_reset_document_deletes_only_the_windows_own_files(win, clock):
     """Controller ruling (fix round 1, I1): Recover replaces the window's
-    document like New or Open, so the window's own outgoing session goes; only
-    the recovered session's files, named by hand_over_from, are left alone for
+    document like New or Open, so the window's own outgoing session goes; the
+    recovered session's files belong to another Bermake and are left alone for
     the caller to hand over."""
     own = _autosave_once(win, clock)
     own_id = win._session_id
     recovered_id = "f" * 32
     recovered = _write_recovered_session(win, recovered_id)
 
-    _reset(win, hand_over_from=recovered_id)
+    _reset(win)
 
     assert _exist(own) == [False, False]
     assert _exist(recovered) == [True, True]

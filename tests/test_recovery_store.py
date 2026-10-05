@@ -195,6 +195,8 @@ def test_list_sessions_quarantines_damaged_entries(tmp_path, caplog):
         ("pid", 0),
         ("pid", -5),
         ("saved_at", "yesterday"),
+        ("saved_at", "0001-01-01T00:00:00"),
+        ("process_started_at", "0001-01-01T00:00:00"),
         ("process_started_at", "not a time"),
     ],
 )

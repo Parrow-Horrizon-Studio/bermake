@@ -86,7 +86,13 @@ def _meta_from_json(text: str) -> SessionMeta:
     if pid <= 0:
         raise ValueError(f"pid must be positive, not {pid}")
     for name in ("saved_at", "process_started_at"):
-        datetime.fromisoformat(data[name])  # ValueError if it does not parse
+        try:
+            # ValueError if it does not parse. The timestamp is what the startup
+            # sort and the liveness check use, and it raises OSError or
+            # OverflowError for an out-of-range date (for example year 1).
+            datetime.fromisoformat(data[name]).timestamp()
+        except (OSError, OverflowError) as exc:
+            raise ValueError(f"{name} is out of range: {data[name]!r}") from exc
     return SessionMeta(**{name: data[name] for name in _META_FIELDS})
 
 

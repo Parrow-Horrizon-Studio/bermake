@@ -71,8 +71,12 @@ def _counts(model) -> tuple[int, int]:
 
 
 def _choose(win, monkeypatch, action, pick=0):
-    """Answer the recovery prompt with `action` on the `pick`th session."""
+    """Answer the recovery prompt with `action` on the `pick`th session.
+
+    Discard's confirmation is answered Delete here; the tests of the real
+    confirmation box call the real method."""
     asked = []
+    monkeypatch.setattr(win, "_confirm_discard_recovery", lambda name: True)
 
     def ask(sessions):
         asked.append(list(sessions))
@@ -279,6 +283,135 @@ def test_discard_deletes_only_the_selected_session(win, folder, monkeypatch):
     kept = second if gone == first[0] else first
     assert kept[1].exists() and kept[2].exists()
     assert not (folder / f"{gone}.berm").exists()
+
+
+def _record_confirm(win, monkeypatch, answers):
+    """Answer each Discard confirmation from `answers`, recording the names asked."""
+    names = []
+    replies = iter(answers)
+    monkeypatch.setattr(
+        win, "_confirm_discard_recovery", lambda name: names.append(name) or next(replies)
+    )
+    return names
+
+
+def test_discard_asks_for_confirmation_with_the_display_name(win, folder, monkeypatch):
+    write_session(folder, _square(), display_name="Kitchen.berm")
+    asked = []
+    monkeypatch.setattr(
+        win,
+        "_ask_recovery",
+        lambda sessions: asked.append(1) or RecoveryChoice("discard", sessions[0]),
+    )
+    names = _record_confirm(win, monkeypatch, [True])
+    assert win.run_startup_recovery() is False
+    assert names == ["Kitchen.berm"]
+    assert _names(folder) == []
+
+
+def test_cancelling_the_discard_confirmation_keeps_the_files_and_asks_again(
+    win, folder, monkeypatch
+):
+    _sid, berm, meta = write_session(folder, _square())
+    choices = iter(["discard", "later"])
+    asked = []
+
+    def ask(sessions):
+        asked.append(list(sessions))
+        action = next(choices)
+        return RecoveryChoice(action, None if action == "later" else sessions[0])
+
+    monkeypatch.setattr(win, "_ask_recovery", ask)
+    names = _record_confirm(win, monkeypatch, [False])
+    assert win.run_startup_recovery() is False
+    assert len(names) == 1
+    assert len(asked) == 2  # Cancel returned to the recovery dialog
+    assert berm.exists() and meta.exists()
+
+
+def test_cancel_then_recover_still_recovers(win, folder, monkeypatch):
+    write_session(folder, _square())
+    choices = iter(["discard", "recover"])
+    monkeypatch.setattr(
+        win, "_ask_recovery", lambda sessions: RecoveryChoice(next(choices), sessions[0])
+    )
+    _record_confirm(win, monkeypatch, [False])
+    assert win.run_startup_recovery() is True
+    assert _counts(win._model) == (4, 1)
+
+
+def _answer_with(button_text, seen, *, key=None):
+    """Inspect the open QMessageBox, then click `button_text` or press `key`."""
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QMessageBox
+
+    from tests._recovery_helpers import _bounded, _visible
+
+    def act(box):
+        seen.append(
+            {
+                "title": box.windowTitle(),
+                "text": box.text(),
+                "buttons": [b.text().replace("&", "") for b in box.buttons()],
+                "default": box.defaultButton().text() if box.defaultButton() else None,
+                "escape": box.escapeButton().text() if box.escapeButton() else None,
+            }
+        )
+        if key is not None:
+            QTest.keyClick(box, key)
+        else:
+            next(b for b in box.buttons() if b.text() == button_text).click()
+
+    return _bounded(lambda: _visible(QMessageBox), act, 500)
+
+
+def test_the_discard_confirmation_text_and_buttons_are_exact(win):
+    seen = []
+    _answer_with("Cancel", seen)
+    assert win._confirm_discard_recovery("House.berm") is False
+    assert seen[0]["text"] == "Delete the autosaved work for House.berm? This cannot be undone."
+    assert sorted(seen[0]["buttons"]) == ["Cancel", "Delete"]
+    assert seen[0]["default"] == "Cancel"
+    assert seen[0]["escape"] == "Cancel"
+
+
+def test_the_discard_confirmation_delete_button_confirms(win):
+    seen = []
+    _answer_with("Delete", seen)
+    assert win._confirm_discard_recovery("House.berm") is True
+
+
+def test_escape_cancels_the_discard_confirmation(win):
+    from PySide6.QtCore import Qt
+
+    seen = []
+    _answer_with("", seen, key=Qt.Key.Key_Escape)
+    assert win._confirm_discard_recovery("House.berm") is False
+
+
+def test_the_real_confirmation_deletes_on_delete_and_keeps_on_cancel(win, folder, monkeypatch):
+    """The whole flow through the real box, not a stub. The dialog stub ends
+    with Decide later, so a regression fails here instead of looping."""
+    _sid, berm, meta = write_session(folder, _square())
+
+    def script_then_later(*actions):
+        remaining = iter(actions)
+
+        def ask(sessions):
+            action = next(remaining, "later")
+            return RecoveryChoice(action, None if action == "later" else sessions[0])
+
+        monkeypatch.setattr(win, "_ask_recovery", ask)
+
+    script_then_later("discard")  # Cancel returns to the dialog, which says later
+    _answer_with("Cancel", [])
+    assert win.run_startup_recovery() is False
+    assert berm.exists() and meta.exists()
+
+    script_then_later("discard")
+    _answer_with("Delete", [])
+    assert win.run_startup_recovery() is False
+    assert not berm.exists() and not meta.exists()
 
 
 def test_decide_later_keeps_the_files_and_the_window(win, folder, monkeypatch):

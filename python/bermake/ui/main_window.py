@@ -2401,17 +2401,15 @@ class MainWindow(QMainWindow):
         path,
         *,
         environment,
-        hand_over_from: str | None = None,
     ) -> None:
         """Adopt a (model, camera, units, render style, environment) into the live window.
 
         This is the shared New, Open, Revert and Recover path, so it also starts
         a new autosave session and always deletes the outgoing session's files:
-        they belong to the document being replaced. Recover passes
-        `hand_over_from`, the id of the recovered session (left by another,
-        crashed Bermake, so never this window's own id). Its files are not
-        touched here, so the caller can hand them over to the new session
-        (spec 4.3, 4.5).
+        they belong to the document being replaced. A recovered session's
+        files (left by another, crashed Bermake) are never this window's own,
+        so they are not touched here and the caller can hand them over to the
+        new session (spec 4.3, 4.5).
         """
         from dataclasses import replace
 
@@ -2593,19 +2591,37 @@ class MainWindow(QMainWindow):
             if not sessions:
                 return False
             logger.info("Found %d recoverable session(s)", len(sessions))
-            choice = self._ask_recovery(sessions)
-            if choice.session is None:
-                return False  # Decide later: keep everything for next launch
-            if choice.action == "recover":
-                return self.recover_session(choice.session)
-            if choice.action == "discard":
-                session_id = choice.session.meta.session_id
-                self._recovery_store.delete(session_id)
-                logger.info("Discarded recovery session %s", session_id)
-            return False
+            while True:
+                choice = self._ask_recovery(sessions)
+                if choice.session is None:
+                    return False  # Decide later: keep everything for next launch
+                if choice.action == "recover":
+                    return self.recover_session(choice.session)
+                if choice.action == "discard":
+                    meta = choice.session.meta
+                    if not self._confirm_discard_recovery(meta.display_name):
+                        continue  # Cancel: back to the recovery dialog
+                    self._recovery_store.delete(meta.session_id)
+                    logger.info("Discarded recovery session %s", meta.session_id)
+                return False
         except Exception:
             logger.exception("Startup recovery failed; starting without it")
             return False
+
+    def _confirm_discard_recovery(self, display_name: str) -> bool:
+        """True to delete the autosaved work. Cancel is the default and Escape
+        cancels (maintainer decision 2026-10-05). Overridable for testing."""
+        from PySide6.QtWidgets import QMessageBox
+
+        box = QMessageBox(self)
+        box.setWindowTitle("Discard autosaved work")
+        box.setText(f"Delete the autosaved work for {display_name}? This cannot be undone.")
+        delete = box.addButton("Delete", QMessageBox.ButtonRole.DestructiveRole)
+        cancel = box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
+        box.setDefaultButton(cancel)
+        box.setEscapeButton(cancel)
+        box.exec()
+        return box.clickedButton() is delete
 
     def _ask_recovery(self, sessions: list[RecoverySession]):
         """Show the recovery dialog modal over this window and return its
@@ -2654,7 +2670,6 @@ class MainWindow(QMainWindow):
             loaded.style,
             None,
             environment=loaded.environment,
-            hand_over_from=old_id,
         )
         self._doc_controller.mark_dirty()
         self._doc_controller.recovered_name = meta.display_name

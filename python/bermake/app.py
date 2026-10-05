@@ -15,6 +15,8 @@ Startup is an ordered sequence, and the order is load-bearing (M7.9):
    1.x driver the viewport never gets one and its own check never runs.
 5. MainWindow is built inside start_window, so a failure while building it
    still reaches the tester.
+6. After show(), startup recovery runs and, if nothing was recovered, the
+   Welcome dialog follows.
 """
 
 from __future__ import annotations

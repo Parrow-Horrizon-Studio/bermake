@@ -7,7 +7,7 @@ Otherwise, a new vertex is created at the snapped position.
 
 Each click changes the scene at once, but the chain reaches the undo stack as one
 command only on Enter, a double-click or loop closure. ESC rolls the unfinished
-chain back. Until then the tool reports `holds_uncommitted_changes`.
+chain back. It still reports no uncommitted changes, by ruling (see the property).
 """
 
 from __future__ import annotations
