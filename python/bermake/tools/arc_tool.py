@@ -7,12 +7,14 @@ snap), then a bulge point setting the bow. Commits an open 12-segment polyline
 
 from __future__ import annotations
 
+from dataclasses import replace
 from enum import Enum
 
 import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeyEvent, QMouseEvent
 
+from bermake.commands import CompositeCommand
 from bermake.commands.scene_commands import SplitFaceCommand
 from bermake.geometry import arc_2pt, semicircle_snap
 from bermake.tools.shape_support import (
@@ -20,9 +22,11 @@ from bermake.tools.shape_support import (
     chain_cuts_face,
     polyline_segments,
     resolve_drawing_plane,
+    vertex_for_snap,
 )
 from bermake.tools.tool import Tool, ToolContext, ToolOverlay
-from bermake.viewport.snap_engine import MARKER_COLOR_BY_KIND
+from bermake.viewport.picking import world_to_local_point
+from bermake.viewport.snap_engine import SnapKind, marker_color
 
 _NEUTRAL_COLOR = (0.85, 0.85, 0.85)
 _MIN_CHORD = 1e-4
@@ -32,6 +36,62 @@ _SEGMENTS = 12
 # instead of silently corrupting this module-global.
 _ORIGIN_UV = np.zeros(2)
 _ORIGIN_UV.flags.writeable = False
+
+
+def _resolves_to_topology(snap) -> bool:
+    """True when `snap` names an existing vertex or an edge interior.
+
+    Only those are resolved through vertex_for_snap at commit. Any other snap
+    is left to build_open_polyline, which reuses a coincident vertex or adds
+    one, so a plain click never adds a second vertex on top of an existing one.
+    """
+    if snap.kind == SnapKind.ENDPOINT and snap.vertex_id is not None:
+        return True
+    return (
+        snap.edge_id is not None
+        and snap.edge_t is not None
+        and snap.kind in (SnapKind.MIDPOINT, SnapKind.ON_EDGE, SnapKind.INTERSECTION)
+    )
+
+
+# How far off the drawing plane a snap may sit and still count as a point the
+# arc reaches. 1e-4 still missed corner snaps at 2000 m (float32 snap rounding).
+_PLANE_TOL = 1e-3
+# Pinning an arc end onto its resolved vertex moves it by float rounding only.
+_PIN_TOL = 1e-3
+
+
+def _on_plane(plane, snap) -> bool:
+    """True when the snap's point lies on the arc's drawing plane.
+
+    The plane comes from the START snap, and the end is projected onto it. An
+    end that was projected away from its edge (it lies off the plane) is not
+    on that edge, so it must not split it.
+    """
+    d = np.asarray(snap.world_position, np.float64) - plane.origin
+    return abs(float(d @ plane.normal)) <= _PLANE_TOL
+
+
+def _is_stale(scene, snap, world_transform) -> bool:
+    """True when the snap names an edge or vertex that no longer exists, or
+    an edge that has since moved away from the point the snap recorded.
+
+    A snap is stored at its press and resolved up to two clicks later, and an
+    undo in between can remove what it named or move it (undoing a Move).
+    """
+    if snap.edge_id is not None and not scene.edge_is_live(snap.edge_id):
+        return True
+    if snap.edge_id is not None and snap.edge_t is not None:
+        at = scene.point_on_edge(snap.edge_id, snap.edge_t)
+        here = world_to_local_point(snap.world_position, world_transform)
+        if float(np.linalg.norm(at - here)) > _PIN_TOL:
+            return True
+    if snap.vertex_id is not None:
+        try:
+            scene.vertex(snap.vertex_id)
+        except KeyError:
+            return True
+    return False
 
 
 class _State(Enum):
@@ -61,6 +121,10 @@ class ArcTool(Tool):
         self._state = _State.IDLE
         self._plane = None
         self._start: np.ndarray | None = None  # world
+        # The snaps the chord's two ends were clicked on. Kept so the commit can
+        # split an edge an end landed on (#122). None for a typed chord length.
+        self._start_snap = None
+        self._end_snap = None
         self._end_uv: np.ndarray | None = None
         self._cursor_uv: np.ndarray | None = None  # live projected cursor (preview)
         self._snap_marker_pos: np.ndarray | None = None
@@ -81,21 +145,17 @@ class ArcTool(Tool):
         self._reset_gesture()
 
     def on_mouse_move(self, event: QMouseEvent, snap) -> None:
-        from bermake.viewport.snap_engine import SnapKind
-
         if snap.kind == SnapKind.NONE:
             self._snap_marker_pos = None
             self._snap_marker_kind = 0
             return
         self._snap_marker_pos = snap.world_position.copy()
-        self._snap_marker_color = MARKER_COLOR_BY_KIND.get(snap.kind, _NEUTRAL_COLOR)
+        self._snap_marker_color = marker_color(snap, _NEUTRAL_COLOR)
         self._snap_marker_kind = int(snap.kind)
         if self._plane is not None and self._state != _State.IDLE:
             self._cursor_uv = self._plane.project(snap.world_position)
 
     def on_mouse_press(self, event: QMouseEvent, snap) -> None:
-        from bermake.viewport.snap_engine import SnapKind
-
         if snap.kind == SnapKind.NONE:
             return
         s = self._scene  # type: ignore[assignment]
@@ -103,6 +163,7 @@ class ArcTool(Tool):
         if self._state == _State.IDLE:
             self._plane = resolve_drawing_plane(snap, s)
             self._start = snap.world_position.copy()
+            self._start_snap = snap
             self._cursor_uv = _ORIGIN_UV.copy()
             self._state = _State.PLACING_END
             return
@@ -116,6 +177,7 @@ class ArcTool(Tool):
             if float(np.linalg.norm(end_uv)) < _MIN_CHORD:
                 return  # end coincides with start — keep waiting
             self._end_uv = end_uv
+            self._end_snap = snap
             self._cursor_uv = end_uv.copy()
             self._state = _State.PLACING_BULGE
             return
@@ -212,6 +274,7 @@ class ArcTool(Tool):
             if norm < _MIN_CHORD:
                 return False
             self._end_uv = (d / norm * val).astype(np.float64)
+            self._end_snap = None  # a typed chord end is not on any snap
             self._cursor_uv = self._end_uv.copy()
             self._state = _State.PLACING_BULGE
             return True
@@ -237,48 +300,116 @@ class ArcTool(Tool):
         return False
 
     def _commit_polyline(self, world: np.ndarray) -> None:
-        """Commit the drawn arc as one undo step, and split whichever single
-        face (if any) the chord crosses -- the same face-split check
-        LineTool applies on its own gesture-end paths (M7.6a task 5).
+        """Commit the drawn arc as one undo step.
+
+        The step holds, in order: a split of each edge a chord end landed on
+        (#122, as LineTool does), the arc's vertices and edges, and the split
+        of whichever single face (if any) the chord then crosses (M7.6a). One
+        undo reverses all of it.
 
         build_open_polyline hands back the resolved vertex-id chain along
         with the composite, so chain_cuts_face can be asked about it
-        directly -- no separate position lookup needed, and none of
-        build_open_polyline's own world->local conversion needs repeating
-        here. The split command is appended to the SAME composite, before
-        push_executed, so one undo reverses both the arc and the split.
+        directly. The face split is appended to the SAME outer composite,
+        before push_executed.
         """
         s = self._scene
-        result = build_open_polyline(
-            s, world, name="Draw Arc", world_transform=self._world_transform()
-        )
+        outer = CompositeCommand(name="Draw Arc")
+        # Resolve both ends first. An end that lands on an edge's interior
+        # splits that edge (D6: always, even when no face ends up cut), so the
+        # end is a real loop vertex and build_open_polyline reuses it because
+        # the arc's first and last points coincide with it.
+        # A snap whose edge or vertex died since its press (an undo mid-gesture)
+        # is a plain point: it splits nothing. Checked for both before any split
+        # runs, because the start's own split may retire the end's edge later
+        # (the same-edge case below handles that one).
+        start_snap = self._start_snap
+        end_snap = self._end_snap
+        wt = self._world_transform()
+        if start_snap is not None and _is_stale(s, start_snap, wt):
+            start_snap = None
+        if end_snap is not None and _is_stale(s, end_snap, wt):
+            end_snap = None
+        # The start is the plane's origin, so it is on the plane by construction.
+        # An end off the plane was projected onto it and is not where its edge is.
+        plane = self._plane
+        if end_snap is not None and not _on_plane(plane, end_snap):
+            end_snap = None
+        host_ends = None
+        start_vid = None
+        end_vid = None
+        if start_snap is not None and _resolves_to_topology(start_snap):
+            if start_snap.edge_id is not None and s.edge_is_live(start_snap.edge_id):
+                e = s.edge(start_snap.edge_id)
+                host_ends = (e.v1_id, e.v2_id)
+            start_vid = vertex_for_snap(self._tool_context(), start_snap, outer)
+        if end_snap is not None and _resolves_to_topology(end_snap):
+            if (
+                host_ends is not None
+                and start_vid is not None
+                and end_snap.edge_id == start_snap.edge_id
+                and not s.edge_is_live(end_snap.edge_id)
+            ):
+                end_snap = self._reresolve_on_sub_edges(end_snap, host_ends, start_vid)
+            end_vid = vertex_for_snap(self._tool_context(), end_snap, outer)
+        # Build in the scene's local frame with each end set exactly onto the
+        # vertex it resolved to, so the join never depends on float rounding of
+        # the plane round-trip (it missed far from the origin). An end is only
+        # moved when it is already there to within float rounding, so the arc
+        # is never bent out of its plane.
+        local = np.array([world_to_local_point(p, wt) for p in world], dtype=np.float32)
+        for idx, vid in ((0, start_vid), (-1, end_vid)):
+            if vid is None:
+                continue
+            pos = s.vertex(vid).position
+            if float(np.linalg.norm(local[idx] - pos)) <= _PIN_TOL:
+                local[idx] = pos
+        result = build_open_polyline(s, local, name="Draw Arc", world_transform=None)
         if result is None:
+            for cmd in reversed(outer.children):
+                cmd.undo(s)
             return
         composite, chain = result
-        # KNOWN LIMITATION (branch review Finding 3): unlike LineTool, ArcTool
-        # has no `_vertex_for_snap` edge-splitting step, so an endpoint that
-        # merely lands on an edge's INTERIOR is never turned into a loop
-        # vertex first -- build_open_polyline only reuses a vertex already
-        # within _COINCIDENT_EPS and otherwise drops a free-floating one that
-        # is not part of any face's boundary loop. chain_cuts_face requires
-        # both chain ends to already be loop vertices, so an arc whose
-        # endpoints land mid-edge (the common case) never splits, even
-        # though the identical corner-to-corner gesture does. See
-        # tests/test_arc_tool_face_split.py for the pinned-behaviour test;
-        # do not "fix" this here without reading Finding 3's rationale in
-        # the M7.6a final-fix-wave review first.
+        outer.children.append(composite)
         fid = chain_cuts_face(s, chain)
         if fid is not None:
             split_cmd = SplitFaceCommand(fid, chain)
             split_cmd.do(s)
-            composite.children.append(split_cmd)
+            outer.children.append(split_cmd)
         if self._command_stack is not None:
-            self._command_stack.push_executed(composite, self._scene)
+            self._command_stack.push_executed(outer, self._scene)
+
+    def _tool_context(self) -> ToolContext:
+        return ToolContext(scene=self._scene, model=self._model)
+
+    def _reresolve_on_sub_edges(self, snap, host_ends, split_vid):
+        """`snap` re-aimed at whichever half of a just-split edge holds it.
+
+        Both chord ends on one edge: the first end's split retired the host
+        edge's id and left two halves, (a, split_vid) and (split_vid, b). The
+        second end is looked up again among those halves with
+        closest_point_on_edge, so it splits the right one at the right t.
+        """
+        s = self._scene
+        pos = np.asarray(
+            world_to_local_point(snap.world_position, self._world_transform()), np.float32
+        )
+        best = None
+        for other in host_ends:
+            e_id = s.edge_between(other, split_vid)
+            if e_id is None:
+                continue
+            point, t = s.closest_point_on_edge(e_id, pos)
+            d = float(np.linalg.norm(point - pos))
+            if best is None or d < best[0]:
+                best = (d, e_id, t)
+        return snap if best is None else replace(snap, edge_id=best[1], edge_t=best[2])
 
     def _reset_gesture(self) -> None:
         self._state = _State.IDLE
         self._plane = None
         self._start = None
+        self._start_snap = None
+        self._end_snap = None
         self._end_uv = None
         self._cursor_uv = None
         self._snap_marker_pos = None

@@ -3,7 +3,6 @@ import pytest
 
 from bermake.io.document_codec import geometry_from_dict, geometry_to_dict
 from bermake.io.errors import BermakeFormatError
-from bermake.io.bermake_file import SCHEMA_VERSION
 from bermake.scene.scene import Scene, Side
 
 
@@ -13,10 +12,6 @@ def _quad(scene, z=0.0):
         for p in [(0, 0, z), (1, 0, z), (1, 1, z), (0, 1, z)]
     ]
     return scene.add_face_from_loop(ids)
-
-
-def test_schema_version_is_seven():
-    assert SCHEMA_VERSION == 9
 
 
 def test_a_document_with_no_stored_uvs_writes_empty_dicts():

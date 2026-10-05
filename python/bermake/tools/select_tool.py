@@ -17,6 +17,7 @@ from bermake.units import Units
 from bermake.viewport.picking import pick_selectable
 
 _HOVER_EDGE_COLOR = (0.45, 0.70, 1.00)
+_HOVER_VERTEX_PX = 7  # side of the unfilled hover square, in screen pixels (#125)
 _HOVER_FILL_COLOR = (0.40, 0.70, 1.00, 0.18)
 _NEUTRAL_COLOR = (0.85, 0.85, 0.85)
 _BOX_WINDOW_COLOR = (0.25, 0.50, 0.95)  # left->right, enclose-only
@@ -485,36 +486,45 @@ class SelectTool(Tool):
         box_color = _BOX_WINDOW_COLOR if self._box_window else _BOX_CROSSING_COLOR
         segs = np.zeros((0, 3), dtype=np.float32)
         fills: list[np.ndarray] = []
+        markers: list = []
         if not self._is_box and self._hovered is not None and self._scene is not None:
             kind, ent_id = self._hovered
-            # Final review I2: hover can now report a vertex, and the face
-            # arm below used to be a bare `else`, so a vertex id would have
-            # been handed to `face_loop`. Ids are allocated per kind, so that
-            # id usually names a real face and the hover highlight would have
-            # lit an unrelated polygon. Naming the face arm explicitly means
-            # a vertex (and any future kind) simply draws no preview here --
-            # the selected-vertex glyph pass is the only vertex chrome.
-            if kind == "edge":
+            # Every arm is named explicitly. Final review I2: hover can report
+            # a vertex, and the face arm used to be a bare `else`, so a vertex
+            # id would have been handed to `face_loop`. Ids are allocated per
+            # kind, so that id usually names a real face and the hover
+            # highlight would have lit an unrelated polygon. The vertex arm
+            # draws its own unfilled screen-space square (#125), distinct from
+            # the filled glyph a selected vertex gets. The overlay is consumed
+            # in world space, so each arm lifts its local geometry through the
+            # active group transform.
+            from bermake.geometry.transforms import apply_mat, is_identity_transform
+
+            wt = self._world_transform()
+            use_wt = wt is not None and not is_identity_transform(wt)
+            wt_arr = np.asarray(wt, dtype=np.float64) if use_wt else None
+
+            def _to_world_sel(local_pos: np.ndarray) -> np.ndarray:
+                if not use_wt:
+                    return local_pos
+                return apply_mat(local_pos.reshape(1, 3), wt_arr)[0]
+
+            if kind == "vertex":
+                try:
+                    pos = np.asarray(self._scene.vertex(ent_id).position, dtype=np.float32)
+                    markers.append((_to_world_sel(pos), _HOVER_VERTEX_PX, _HOVER_EDGE_COLOR))
+                except KeyError:
+                    pass
+            elif kind == "edge":
                 try:
                     e = self._scene.edge(ent_id)
                     p1 = np.asarray(self._scene.vertex(e.v1_id).position, dtype=np.float32)
                     p2 = np.asarray(self._scene.vertex(e.v2_id).position, dtype=np.float32)
-                    segs = np.array([p1, p2], dtype=np.float32)
+                    segs = np.array([_to_world_sel(p1), _to_world_sel(p2)], dtype=np.float32)
                 except KeyError:
                     pass
             elif kind == "face":
                 try:
-                    from bermake.geometry.transforms import apply_mat, is_identity_transform
-
-                    wt = self._world_transform()
-                    use_wt = wt is not None and not is_identity_transform(wt)
-                    wt_arr = np.asarray(wt, dtype=np.float64) if use_wt else None
-
-                    def _to_world_sel(local_pos: np.ndarray) -> np.ndarray:
-                        if not use_wt:
-                            return local_pos
-                        return apply_mat(local_pos.reshape(1, 3), wt_arr)[0]
-
                     loop = self._scene.face_loop(ent_id)
                     fills = [
                         np.array(
@@ -556,6 +566,7 @@ class SelectTool(Tool):
             box_rect_color=box_color,
             box_rect_dashed=not self._box_window,
             world_polylines=world_polylines,
+            screen_markers=markers,
             hovered_annotation_id=self._hovered_annotation if not self._is_box else None,
         )
 

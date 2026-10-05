@@ -99,7 +99,7 @@ def test_load_rejects_missing_document_entry(tmp_path):
     path = tmp_path / "incomplete.berm"
     with zipfile.ZipFile(path, "w") as zf:
         zf.writestr("manifest.json",
-                    json.dumps({"format": "bermake", "schema_version": 1}))
+                    json.dumps({"format": "bermake", "schema_version": 9}))
     with pytest.raises(BermakeFormatError):
         load_document(path)
 
@@ -219,19 +219,15 @@ def test_rich_document_roundtrip_through_real_zip_and_json(tmp_path):
     assert loaded.units.imperial_denominator == 8
 
 
-def test_load_schema_version_1_document_without_annotations_key(tmp_path):
-    """Back-compat test for v1 documents that predate the per-Definition
-    'annotations' array. The real bermake_file load path must handle a v1
-    document whose definitions lack the 'annotations' key entirely.
+def test_document_without_annotations_key_loads():
+    """The codec defaults a definition's missing 'annotations' key to an empty list.
 
-    This exercises the full save/load pipeline (zip + manifest + json), not
-    just the dict codec, ensuring the version gate accepts v1 files and
-    document_from_dict correctly defaults missing annotations to empty lists."""
-    path = tmp_path / "old_v1.berm"
+    A document-level test (document_from_dict), not a file-level one: no real file
+    can carry an old schema now (#134), but the codec's optional-key defaulting is
+    what additive schema changes rely on, so it stays pinned."""
+    from bermake.io.document_codec import document_from_dict
 
-    # Construct a minimal v1 document by hand: the archive layout must match
-    # exactly what save_document produces, but with schema_version=1 and no
-    # "annotations" keys in the definitions.
+    # A minimal document built by hand, with no "annotations" keys in the definitions.
     doc_data = {
         "units": {
             "system": "metric",
@@ -275,20 +271,9 @@ def test_load_schema_version_1_document_without_annotations_key(tmp_path):
         },
     }
 
-    manifest = {
-        "format": "bermake",
-        "schema_version": 1,
-        "app_version": "0.0.0-test",
-    }
+    loaded = document_from_dict(doc_data)
 
-    with zipfile.ZipFile(path, "w") as zf:
-        zf.writestr("manifest.json", json.dumps(manifest, separators=(",", ":")))
-        zf.writestr("document.json", json.dumps(doc_data, separators=(",", ":")))
-
-    # Load the v1 file through the real bermake_file pipeline.
-    loaded = load_document(path)
-
-    # The v1 document must load without error.
+    # The document must load without error.
     assert loaded.model.root.id == 1
     assert loaded.model.root.name == "Root"
 
@@ -328,28 +313,16 @@ def test_save_load_round_trips_scenes_and_style(tmp_path):
     assert loaded.style.xray is True
 
 
-def test_v2_file_without_scenes_still_opens(tmp_path):
-    # Hand-craft a v2 .berm (schema_version 2, document.json without
-    # scenes/style) and confirm the version gate accepts it and load yields
-    # an empty ViewLibrary + default RenderStyle.
-    import json
-    import zipfile
-
-    from bermake.io.document_codec import document_to_dict
-    from bermake.io.bermake_file import load_document
-    from bermake.viewport.camera import Camera
-    from bermake.viewport.render_style import RenderStyle
+def test_document_without_scenes_and_style_keys_still_loads():
+    # The codec defaults absent "scenes" and "style" to an empty ViewLibrary and the
+    # default RenderStyle. A document-level test: no real file carries an old
+    # schema now (#134), but this defaulting is what additive changes rely on.
+    from bermake.io.document_codec import document_from_dict, document_to_dict
 
     data = document_to_dict(_model_with_box(), Camera(), DocumentSettings(), RenderStyle())
     del data["scenes"]
     del data["style"]
-    manifest = {"format": "bermake", "schema_version": 2, "app_version": "0.2.4"}
 
-    path = tmp_path / "legacy.berm"
-    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("manifest.json", json.dumps(manifest))
-        zf.writestr("document.json", json.dumps(data))
-
-    loaded = load_document(path)
+    loaded = document_from_dict(data)
     assert loaded.model.views.views() == []
     assert loaded.style == RenderStyle()

@@ -524,6 +524,31 @@ std::vector<std::int32_t> HalfEdgeMesh::face_triangles(std::uint32_t f_id) const
     return faces_[f_id].tris;
 }
 
+void HalfEdgeMesh::set_face_triangles(std::uint32_t f_id,
+                                      const std::vector<std::int32_t>& triangles) {
+    // Validate everything first; the face is only written once nothing can fail.
+    if (!face_is_live(f_id)) {
+        throw std::invalid_argument("HalfEdgeMesh::set_face_triangles: face " +
+                                    std::to_string(f_id) + " is not live");
+    }
+    if (triangles.size() % 3 != 0) {
+        throw std::invalid_argument(
+            "HalfEdgeMesh::set_face_triangles: " + std::to_string(triangles.size()) +
+            " vertex ids is not a whole number of triangles");
+    }
+    const std::vector<std::uint32_t>& loop = faces_[f_id].loop;
+    for (const std::int32_t t : triangles) {
+        if (t < 0 ||
+            std::find(loop.begin(), loop.end(), static_cast<std::uint32_t>(t)) == loop.end()) {
+            throw std::invalid_argument("HalfEdgeMesh::set_face_triangles: vertex " +
+                                        std::to_string(t) + " is not on face " +
+                                        std::to_string(f_id) + "'s boundary loop");
+        }
+    }
+    faces_[f_id].tris = triangles;
+    dirty_ = true;
+}
+
 namespace {
 
 inline float dot3(std::array<float, 3> a, std::array<float, 3> b) {
@@ -746,6 +771,7 @@ std::uint32_t bermake::HalfEdgeMesh::dissolve_edge(std::uint32_t e_id) {
     // Retriangulate the merged loop with a simple fan (works for convex; the
     // merged shape from coplanar dissolves is convex by construction in M3c's
     // Case 2). For now use fan from vertex 0.
+    // Scene re-triangulates this face afterwards (set_face_triangles, M7.11 D5).
     assert(merged_loop.size() >= 3 &&
            "dissolve_edge: merged loop must have at least 3 vertices (two faces of >=3 sides "
            "sharing exactly one edge cannot produce fewer)");
@@ -987,6 +1013,7 @@ std::optional<bermake::SplitEdgeResult> bermake::HalfEdgeMesh::split_edge(std::u
     auto rebuild = [&](const std::vector<std::uint32_t>& loop) -> std::uint32_t {
         if (loop.empty()) return INVALID_ID;
         std::vector<std::uint32_t> nl = loop_with_inserted(loop, va, vb, w);
+        // Scene re-triangulates this face afterwards (set_face_triangles, M7.11 D5).
         std::vector<std::int32_t> tris;
         tris.reserve((nl.size() - 2) * 3);
         for (std::size_t i = 1; i + 1 < nl.size(); ++i) {

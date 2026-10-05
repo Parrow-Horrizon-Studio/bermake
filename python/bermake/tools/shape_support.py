@@ -19,7 +19,12 @@ from itertools import pairwise
 import numpy as np
 
 from bermake.commands import CompositeCommand
-from bermake.commands.scene_commands import AddEdgeCommand, AddFaceCommand, AddVertexCommand
+from bermake.commands.scene_commands import (
+    AddEdgeCommand,
+    AddFaceCommand,
+    AddVertexCommand,
+    SplitEdgeCommand,
+)
 from bermake.geometry import DrawingPlane
 from bermake.viewport.picking import world_to_local_point
 
@@ -76,6 +81,53 @@ def _resolve_ring(scene, composite, world_points):
         if not vids or vids[-1] != vid:
             vids.append(vid)
     return vids
+
+
+def vertex_for_snap(ctx, snap, composite: CompositeCommand) -> int:
+    """Resolve a snap to a vertex id, recording what it had to do in `composite`.
+
+    An ENDPOINT snap reuses its vertex. A MIDPOINT, ON_EDGE or INTERSECTION snap
+    on an edge splits that edge (a SplitEdgeCommand appended to `composite`) and
+    returns the new vertex, so the point becomes a real loop vertex rather than
+    a T-junction. Anything else adds a vertex (an AddVertexCommand appended to
+    `composite`). `ctx` supplies `.scene` and `.model` (a ToolContext does).
+
+    Shared by LineTool and ArcTool so both resolve a click the same way.
+    """
+    from bermake.viewport.snap_engine import SnapKind
+
+    scene = ctx.scene
+    model = getattr(ctx, "model", None)
+    if snap.kind == SnapKind.ENDPOINT and snap.vertex_id is not None:
+        return snap.vertex_id
+    if (
+        snap.edge_id is not None
+        and snap.edge_t is not None
+        and snap.kind in (SnapKind.MIDPOINT, SnapKind.ON_EDGE, SnapKind.INTERSECTION)
+    ):
+        split = SplitEdgeCommand(snap.edge_id, snap.edge_t)
+        split.do(scene)
+        if split.new_vertex_id is not None:
+            composite.children.append(split)
+            return split.new_vertex_id
+        # Split was a no-op (degenerate/coincident edge_t). Reuse the host
+        # edge's nearest endpoint rather than dropping a free vertex on the
+        # edge interior (which would be a T-junction).
+        edge = scene.edge(snap.edge_id)
+        pos = np.asarray(snap.world_position, dtype=np.float32)
+        v1p = scene.vertex(edge.v1_id).position
+        v2p = scene.vertex(edge.v2_id).position
+        return (
+            edge.v1_id
+            if float(np.linalg.norm(pos - v1p)) <= float(np.linalg.norm(pos - v2p))
+            else edge.v2_id
+        )
+    wt = model.active_world_transform if model is not None else None
+    local = world_to_local_point(snap.world_position, wt)
+    cmd = AddVertexCommand(local)
+    cmd.do(scene)
+    composite.children.append(cmd)
+    return cmd.vertex_id
 
 
 def build_closed_face(scene, world_points, name: str = "Draw Shape", world_transform=None):

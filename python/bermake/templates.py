@@ -104,7 +104,9 @@ TEMPLATES: tuple[Template, ...] = (
     Template(
         key="studio",
         name="Studio",
-        description="Dark background, metres. The viewport's default before environment presets.",
+        description=(
+            "Dark background with no sky or ground, metres. For long sessions and dark rooms."
+        ),
         units=Units(
             system=UnitSystem.METRIC,
             metric_unit="m",

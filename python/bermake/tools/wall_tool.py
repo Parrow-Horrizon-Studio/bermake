@@ -14,7 +14,7 @@ from PySide6.QtGui import QKeyEvent, QMouseEvent
 from bermake.commands.wall_commands import CreateWallCommand
 from bermake.tools.tool import Tool, ToolContext, ToolOverlay
 from bermake.viewport.picking import world_to_local_point
-from bermake.viewport.snap_engine import MARKER_COLOR_BY_KIND, SnapKind
+from bermake.viewport.snap_engine import SnapKind, marker_color
 
 _NEUTRAL = (0.85, 0.85, 0.85)
 
@@ -84,7 +84,7 @@ class WallTool(Tool):
             self._snap_kind = 0
             return
         self._snap_pos = np.asarray(snap.world_position, np.float32).copy()
-        self._snap_color = MARKER_COLOR_BY_KIND.get(snap.kind, _NEUTRAL)
+        self._snap_color = marker_color(snap, _NEUTRAL)
         self._snap_kind = int(snap.kind)
         if self._anchor is not None:
             self._preview_tip = np.asarray(snap.world_position, np.float32).copy()

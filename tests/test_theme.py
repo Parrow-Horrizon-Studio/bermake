@@ -154,7 +154,7 @@ def test_a_palette_change_re_tints_the_properties_tab_strip(app):
     icons.clear_icon_cache()
     window._rebuild_all_icons()
     color_name = window.palette().windowText().color().name()
-    cached_at_current = {stem for stem, color in icons._icon_cache if color == color_name}
+    cached_at_current = {stem for stem, color, _checked in icons._icon_cache if color == color_name}
     missing = TAB_ICONS - cached_at_current
     assert not missing, f"tab icons not re-tinted at the new colour: {sorted(missing)}"
 
@@ -206,7 +206,7 @@ def test_a_palette_change_re_tints_the_action_icons(app):
     icons.clear_icon_cache()
     window._rebuild_all_icons()
     color_name = window.palette().windowText().color().name()
-    cached_at_current = {stem for stem, color in icons._icon_cache if color == color_name}
+    cached_at_current = {stem for stem, color, _checked in icons._icon_cache if color == color_name}
     expected = {spec.icon for spec in actions.ACTIONS if spec.icon is not None}
     assert expected <= cached_at_current
 

@@ -69,9 +69,18 @@ __all__ = [
 ]
 
 
+# The three world-axis colours, indexed by `SnapResult.axis` (0 = X red,
+# 1 = Y green, 2 = Z blue). Shared by the Line tool's AXIS_LOCK rubber band and
+# the From-Point marker.
+AXIS_COLORS: tuple[tuple[float, float, float], ...] = (
+    (0.95, 0.30, 0.30),  # X: red
+    (0.30, 0.85, 0.30),  # Y: green
+    (0.30, 0.40, 0.95),  # Z: blue
+)
+
 # Snap-marker colors, keyed by kind. Shared by tools (overlay color); the
 # renderer is shape-only. AXIS_LOCK has no marker color (the rubber-band shows
-# the axis color instead).
+# the axis color instead). Tools read this through `marker_color`.
 MARKER_COLOR_BY_KIND = {
     SnapKind.GRID: (0.70, 0.70, 0.70),
     SnapKind.MIDPOINT: (0.13, 0.77, 0.84),  # cyan
@@ -89,12 +98,25 @@ MARKER_COLOR_BY_KIND = {
     # guide's own construction-geometry color (draw_plan/viewport_widget).
     SnapKind.ON_GUIDE: (0.45, 0.45, 0.52),
     SnapKind.GUIDE_POINT: (0.45, 0.45, 0.52),
-    # FROM_POINT gets no entry, and every consumer looks this dict up as
-    # MARKER_COLOR_BY_KIND.get(snap.kind, <neutral>), so today it just renders
-    # neutral like any other unlisted kind. Colouring it by snap.axis (like
-    # AXIS_LOCK's rubber-band) would need plumbing snap.axis through all
-    # eleven call sites for a Task-4-scale change; deferred, not done.
+    # FROM_POINT has no entry here: its colour depends on `snap.axis`, so
+    # consumers go through `marker_color` below, not this dict directly.
 }
+
+
+def marker_color(
+    snap: SnapResult, fallback: tuple[float, float, float]
+) -> tuple[float, float, float]:
+    """The overlay colour for `snap`'s marker.
+
+    A From-Point marker takes the colour of the axis it radiates along (#123);
+    every other kind keeps its per-kind colour, or `fallback` when it has none.
+    The rubber band is deliberately not coloured here: Bermake draws no
+    inference line, so tinting the line being drawn would read as an axis lock.
+    """
+    if snap.kind is SnapKind.FROM_POINT and snap.axis is not None:
+        return AXIS_COLORS[snap.axis]
+    return MARKER_COLOR_BY_KIND.get(snap.kind, fallback)
+
 
 # Precedence, highest first. Decoupled from the enum's integer values.
 #
