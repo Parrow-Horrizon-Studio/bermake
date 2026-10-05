@@ -54,7 +54,7 @@ you pause, not in the middle of a drag, and your own file is never touched.
 
 If Bermake closes unexpectedly, the next launch offers to recover the work.
 Recovered work opens as unsaved, with "(recovered)" in the title; Save asks
-where to put it, starting at the original file's folder and name.
+where to put it, starting at the original file's folder and name, if it had one.
 
 Autosaves are kept in this folder:
 
