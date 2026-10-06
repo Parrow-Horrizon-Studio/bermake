@@ -173,31 +173,45 @@ def test_accepting_the_gl_fallback_stores_it_and_relaunches(
     assert preferences.read_compatibility_rendering(_settings(tmp_path)) is True
 
 
-def test_a_modal_dialog_defers_the_gl_fallback_prompt(main_window, monkeypatch, qtbot):
+def test_a_modal_dialog_defers_the_gl_fallback_prompt(main_window, monkeypatch):
     """The Welcome dialog's startup nested event loop must not see this.
 
     While a modal is active, _on_gl_unavailable re-posts itself instead of
     prompting; once the modal is gone it proceeds normally.
+
+    The re-post is captured and run by hand rather than waited for: on the CI
+    Windows runner a real 200 ms timer has gone undelivered for over 10 s,
+    which made this test flaky (#147) without saying anything about the code.
     """
     main_window._mesa_available = True
     monkeypatch.setattr(main_window_module, "compatibility_rendering_active", lambda: False)
     seen = []
     main_window._prompt_gl_fallback = lambda message, offer: seen.append((message, offer)) or False
+    posted = []
+
+    class _Timer:
+        @staticmethod
+        def singleShot(msec, context, callback):
+            posted.append((msec, context, callback))
+
+    monkeypatch.setattr(main_window_module, "QTimer", _Timer)
     main_window._active_modal = lambda: object()
 
     main_window._on_gl_unavailable("no usable OpenGL")
 
     assert seen == []
+    assert [(msec, context) for msec, context, _ in posted] == [(200, main_window)]
+
+    # Still modal when the retry runs: it re-posts again and still does not prompt.
+    posted.pop()[2]()
+    assert seen == []
+    assert len(posted) == 1
 
     main_window._active_modal = lambda: None
+    posted.pop()[2]()
 
-    def prompted():
-        assert seen == [("no usable OpenGL", True)]
-
-    # The retry fires 200 ms after the modal goes, but on the CI Windows
-    # runner the window's own queued startup work has delayed it by several
-    # seconds; waitUntil returns as soon as the prompt arrives.
-    qtbot.waitUntil(prompted, timeout=10000)
+    assert seen == [("no usable OpenGL", True)]
+    assert posted == []
 
 
 def test_a_failed_relaunch_is_logged(main_window, caplog):
