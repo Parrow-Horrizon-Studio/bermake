@@ -30,10 +30,17 @@ class CursorStyle(Enum):
     CROSSHAIR: the tool places a point and needs a precise hotspot.
     ARROW: the tool picks an existing entity, where a crosshair would imply
     an accuracy that is not being used.
+    POINTER: the arrow alone, no badge, for the picking tool whose own icon
+    is that arrow (Select), where a badge would show the arrow twice (#146).
+    GLYPH: the tool's own glyph alone, centred on the hotspot, for a placing
+    tool whose icon already marks a point (Move), where a crosshair under it
+    would show the same shape twice (#146).
     """
 
     CROSSHAIR = "crosshair"
     ARROW = "arrow"
+    POINTER = "pointer"
+    GLYPH = "glyph"
 
 
 class ContextTarget(Enum):
@@ -324,7 +331,7 @@ ACTIONS: tuple[ActionSpec, ...] = (
         group=THEME_GROUP,
     ),
     # --- Tools --------------------------------------------------------
-    _tool("tool_select", "Select", "Space", _AR),
+    _tool("tool_select", "Select", "Space", CursorStyle.POINTER),
     _tool("tool_eraser", "Eraser", "E", _AR),
     _tool("tool_paint", "Paint", "B", _AR),
     _tool("tool_line", "Line", "L", _CH),
@@ -338,7 +345,7 @@ ACTIONS: tuple[ActionSpec, ...] = (
     # the path is preselected with Select before this tool is ever armed, so
     # there is no natural single letter left free that reads as "sweep".
     _tool("tool_follow_me", "Follow Me", None, _AR),
-    _tool("tool_move", "Move", "M", _CH),
+    _tool("tool_move", "Move", "M", CursorStyle.GLYPH),
     _tool("tool_rotate", "Rotate", "Q", _CH),
     _tool("tool_scale", "Scale", "S", _CH),
     _tool("tool_tape_measure", "Tape Measure", "T", _CH),

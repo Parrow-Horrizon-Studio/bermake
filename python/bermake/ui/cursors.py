@@ -9,6 +9,12 @@ Two bases, matching the semantics of the tools:
   ARROW     - the tool picks an existing entity, where a crosshair would
               imply an accuracy that is not being used.
 
+Two tools skip the base-plus-badge recipe, because their icon already looks
+like a base and the cursor would show the same shape twice (#146):
+  POINTER - Select: the arrow alone, no badge.
+  GLYPH   - Move: the tool's own glyph alone, drawn larger and centred on the
+            hotspot, with no crosshair under it.
+
 The badge glyph is haloed in white before its black ink is painted on top --
 the same technique the crosshair and arrow bases already use, and for the
 same reason: Bermake's viewport clears to a near-black
@@ -41,6 +47,9 @@ from bermake.ui.icons import icon_pixmap
 CURSOR_SIZE = 32
 BADGE_SIZE = 16
 _BADGE_ORIGIN = (CURSOR_SIZE - BADGE_SIZE, CURSOR_SIZE - BADGE_SIZE)
+GLYPH_SIZE = 24
+GLYPH_HOTSPOT = (CURSOR_SIZE // 2, CURSOR_SIZE // 2)
+_GLYPH_ORIGIN = (GLYPH_HOTSPOT[0] - GLYPH_SIZE // 2, GLYPH_HOTSPOT[1] - GLYPH_SIZE // 2)
 CROSSHAIR_HOTSPOT = (11, 11)
 ARROW_HOTSPOT = (0, 0)
 _CROSSHAIR_ARM = 8
@@ -72,8 +81,13 @@ def _paint_crosshair(painter: QPainter) -> None:
 _HALO_OFFSETS = ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1))
 
 
-def _paint_badge(painter: QPainter, stem: str, dpr: float) -> None:
-    """Composite `stem`'s glyph into the lower-right corner, haloed in white.
+def _paint_glyph(
+    painter: QPainter, stem: str, dpr: float, origin: tuple[int, int], logical_size: int
+) -> None:
+    """Composite `stem`'s glyph at `origin`, `logical_size` wide, haloed in white.
+
+    A badge is the glyph at BADGE_SIZE in the lower-right corner; the GLYPH
+    style draws it at GLYPH_SIZE centred on the hotspot.
 
     Same technique as `_paint_crosshair`'s white underlay: the glyph is
     painted once per offset in `_HALO_OFFSETS` in white, then once more on
@@ -85,15 +99,15 @@ def _paint_badge(painter: QPainter, stem: str, dpr: float) -> None:
     rendered at `dpr` physical pixels and tagged with `setDevicePixelRatio`
     so both the halo and the ink stay crisp at any ratio.
     """
-    size = round(BADGE_SIZE * dpr)
+    size = round(logical_size * dpr)
     white = icon_pixmap(stem, size, _OUTLINE)
     white.setDevicePixelRatio(dpr)
     for dx, dy in _HALO_OFFSETS:
-        painter.drawPixmap(_BADGE_ORIGIN[0] + dx, _BADGE_ORIGIN[1] + dy, white)
+        painter.drawPixmap(origin[0] + dx, origin[1] + dy, white)
 
     ink = icon_pixmap(stem, size, _INK)
     ink.setDevicePixelRatio(dpr)
-    painter.drawPixmap(*_BADGE_ORIGIN, ink)
+    painter.drawPixmap(*origin, ink)
 
 
 def _paint_arrow(painter: QPainter) -> None:
@@ -113,7 +127,7 @@ def _paint_arrow(painter: QPainter) -> None:
 
 
 def compose_cursor(style: CursorStyle, stem: str, dpr: float = 1.0) -> QCursor:
-    """Paint `stem`'s glyph into the lower-right of `style`'s base pixmap.
+    """Build `style`'s cursor for the tool whose icon is `stem` (see the module docstring).
 
     `dpr` selects the physical resolution the cursor is rendered at; see the
     module docstring for how the pixmap and the hotspot stay in sync.
@@ -129,12 +143,18 @@ def compose_cursor(style: CursorStyle, stem: str, dpr: float = 1.0) -> QCursor:
 
     if style is CursorStyle.CROSSHAIR:
         _paint_crosshair(painter)
+        _paint_glyph(painter, stem, dpr, _BADGE_ORIGIN, BADGE_SIZE)
         hotspot = CROSSHAIR_HOTSPOT
-    else:
+    elif style is CursorStyle.ARROW:
+        _paint_arrow(painter)
+        _paint_glyph(painter, stem, dpr, _BADGE_ORIGIN, BADGE_SIZE)
+        hotspot = ARROW_HOTSPOT
+    elif style is CursorStyle.POINTER:
         _paint_arrow(painter)
         hotspot = ARROW_HOTSPOT
-
-    _paint_badge(painter, stem, dpr)
+    else:
+        _paint_glyph(painter, stem, dpr, _GLYPH_ORIGIN, GLYPH_SIZE)
+        hotspot = GLYPH_HOTSPOT
     painter.end()
 
     built = QCursor(pixmap, hotspot[0], hotspot[1])
