@@ -150,3 +150,57 @@ def test_clear_cursor_cache_drops_previously_built_cursors(qtbot):
     cursors.clear_cursor_cache()
     after = cursors.cursor_for("tool_arc")
     assert before is not after
+
+
+# --- no tool shows the same shape twice (#146) -------------------------
+
+
+def _ink(image, x0, y0, x1, y1):
+    return sum(
+        1 for y in range(y0, y1) for x in range(x0, x1) if image.pixelColor(x, y).alpha() > 0
+    )
+
+
+def test_select_and_move_use_the_single_shape_styles():
+    assert actions.action_by_id("tool_select").cursor is actions.CursorStyle.POINTER
+    assert actions.action_by_id("tool_move").cursor is actions.CursorStyle.GLYPH
+
+
+def test_select_cursor_is_the_arrow_alone(qtbot):
+    # Select's own icon is an arrow, so a badge would draw a second arrow.
+    half = cursors.CURSOR_SIZE // 2
+    image = cursors.cursor_for("tool_select").pixmap().toImage()
+    assert _ink(image, half, half, cursors.CURSOR_SIZE, cursors.CURSOR_SIZE) == 0
+    assert _ink(image, 0, 0, half, half) > 0
+
+
+def test_move_cursor_is_its_glyph_centred_on_the_hotspot(qtbot):
+    cursor = cursors.cursor_for("tool_move")
+    hx, hy = cursors.GLYPH_HOTSPOT
+    assert (cursor.hotSpot().x(), cursor.hotSpot().y()) == (hx, hy)
+    image = cursor.pixmap().toImage()
+    assert image.pixelColor(hx, hy).alpha() > 0
+    # The four-way arrows are symmetric about their centre, which lands on the
+    # hotspot pixel's top-left corner (the 24-unit icon's centre, 12, is a
+    # pixel edge). Split the ink there: each side must carry the same amount.
+    size = cursors.CURSOR_SIZE
+    left, right = _ink(image, 0, 0, hx, size), _ink(image, hx, 0, size, size)
+    top, bottom = _ink(image, 0, 0, size, hy), _ink(image, 0, hy, size, size)
+    assert abs(left - right) <= 0.05 * max(left, right)
+    assert abs(top - bottom) <= 0.05 * max(top, bottom)
+
+
+def test_move_cursor_has_no_crosshair_under_its_glyph(qtbot):
+    # The crosshair's top arm reaches up to y = hotspot - arm; the Move glyph,
+    # centred lower, leaves that pixel clear.
+    image = cursors.cursor_for("tool_move").pixmap().toImage()
+    cx, cy = cursors.CROSSHAIR_HOTSPOT
+    assert image.pixelColor(cx, cy - cursors._CROSSHAIR_ARM + 1).alpha() == 0
+
+
+def test_glyph_cursor_at_2x_keeps_the_device_independent_hotspot(qtbot):
+    cursor = cursors.compose_cursor(actions.CursorStyle.GLYPH, "tool_move", dpr=2.0)
+    assert cursor.pixmap().width() == cursors.CURSOR_SIZE * 2
+    assert (cursor.hotSpot().x(), cursor.hotSpot().y()) == cursors.GLYPH_HOTSPOT
+    hx, hy = cursors.GLYPH_HOTSPOT
+    assert cursor.pixmap().toImage().pixelColor(hx * 2, hy * 2).alpha() > 0
