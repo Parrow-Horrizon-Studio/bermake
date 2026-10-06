@@ -6,6 +6,8 @@ import numpy as np
 import pytest
 from bermake.commands.group_commands import MakeGroupCommand
 from bermake.model.model import Model
+from PySide6.QtCore import QTimer as _QTimer
+from PySide6.QtWidgets import QApplication as _QApplication
 
 # Ensure Qt uses the offscreen platform in CI / headless environments.
 # This must run BEFORE QApplication is created (i.e., before any pytest-qt fixture).
@@ -41,6 +43,54 @@ def _scratch_window_settings(tmp_path, monkeypatch):
         return QSettings(ini_path, QSettings.Format.IniFormat)
 
     monkeypatch.setattr(main_window_module, "QSettings", _scratch_settings)
+
+
+@pytest.fixture(autouse=True)
+def _scratch_recovery_folder(tmp_path, monkeypatch):
+    """Keep autosave (M7.12, #77) out of the real recovery folder.
+
+    Every MainWindow built anywhere in this suite owns a RecoveryStore and an
+    autosave timer, and the real folder holds a tester's crash recovery files.
+    Callers resolve the folder through the module attribute
+    (`paths.default_recovery_directory()`, never an import of the function by
+    name), so patching that one attribute covers them all. Each test gets its
+    own folder under tmp_path; it is created only when something writes.
+    """
+    try:
+        import bermake.recovery.paths as recovery_paths
+    except Exception:
+        return
+
+    folder = tmp_path / "recovery"
+    monkeypatch.setattr(recovery_paths, "default_recovery_directory", lambda: folder)
+
+
+def stop_autosave_timers() -> None:
+    """Stop the autosave timer of every MainWindow still alive.
+
+    A test that builds a bare MainWindow() and never closes it leaves the
+    window alive until the garbage collector breaks its signal cycles, and its
+    1 s timer keeps ticking through later tests: an autosave there would call
+    whatever save_document a later test has patched and log into its caplog.
+    Qt names are bound at import and windows are found by their timer, not by
+    isinstance(MainWindow): tests swap PySide6.QtWidgets.QApplication and
+    bermake.ui.main_window.MainWindow for fakes, and this runs before their
+    monkeypatches are undone.
+    """
+    app = _QApplication.instance()
+    if app is None:
+        return
+    for widget in app.topLevelWidgets():
+        timer = getattr(widget, "_autosave_timer", None)
+        if isinstance(timer, _QTimer):
+            timer.stop()
+
+
+@pytest.fixture(autouse=True)
+def _stop_leftover_autosave_timers():
+    """After each test, no window it left behind may autosave in the next one."""
+    yield
+    stop_autosave_timers()
 
 
 @pytest.fixture(autouse=True)

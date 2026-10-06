@@ -5,7 +5,9 @@ gesture closes the loop and creates a face (provided ≥ 3 vertices exist).
 Snapping onto some other existing vertex extends the polyline to it.
 Otherwise, a new vertex is created at the snapped position.
 
-ESC clears the visible gesture state; it does not un-add committed vertices.
+Each click changes the scene at once, but the chain reaches the undo stack as one
+command only on Enter, a double-click or loop closure. ESC rolls the unfinished
+chain back. It still reports no uncommitted changes, by ruling (see the property).
 """
 
 from __future__ import annotations
@@ -302,6 +304,22 @@ class LineTool(Tool):
             snap_marker_color=self._snap_marker_color,
             snap_marker_kind=self._snap_marker_kind,
         )
+
+    @property
+    def holds_uncommitted_changes(self) -> bool:
+        """Always False, by controller ruling (M7.12, #77), though not for lack of changes.
+
+        Mid-chain, the clicks have already put vertices and edges into the scene
+        through a private composite that reaches the undo stack only on Enter,
+        a double-click or loop closure, and Escape undoes it. They are real,
+        visible edges the user drew, so an autosave that includes them is safe;
+        the worst case is a recovered file with segments the user later
+        cancelled. Returning True would block every autosave, the forced one
+        included, for the whole length of a chain, which can be minutes and
+        risks losing far more work. Eraser and Paint report True because their
+        strokes are brief and the mouse button is held anyway.
+        """
+        return False
 
     @property
     def has_active_gesture(self) -> bool:

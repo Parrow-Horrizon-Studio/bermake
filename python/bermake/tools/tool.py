@@ -132,6 +132,22 @@ class Tool(ABC):
     def deactivate(self) -> None: ...
 
     @property
+    def holds_uncommitted_changes(self) -> bool:
+        """True while the Model/Scene holds a temporary change this tool made
+        that a cancel would roll back (M7.12, #77).
+
+        Autosave reads the model while the user works, so it must not run
+        while this is True: it would save half-finished geometry that Escape
+        is about to remove. Committed commands do not count, and neither does
+        anything the tool only draws in its overlay. The default is False;
+        only a tool that writes to the model during a gesture, ahead of the
+        command that finishes it, overrides this. The per-tool audit behind
+        the overrides is pinned by tests/test_tool_uncommitted_changes.py.
+        Line is a deliberate exception; see LineTool.holds_uncommitted_changes.
+        """
+        return False
+
+    @property
     def consumes_arrow_keys(self) -> bool:
         """True if this tool binds Up/Down itself during a gesture.
 

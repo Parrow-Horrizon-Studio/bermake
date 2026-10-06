@@ -4,14 +4,19 @@ from __future__ import annotations
 
 import logging
 import math
+import os
+import time
+import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import ClassVar
 
 import numpy as np
-from PySide6.QtCore import QBuffer, QIODevice, QPoint, QSettings, Qt, QTimer
+from PySide6.QtCore import QBuffer, QEvent, QIODevice, QPoint, QSettings, Qt, QTimer
 from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
 
+from bermake import __version__
 from bermake.commands import CommandStack
 from bermake.commands.scene_commands import ClearSceneCommand
 from bermake.commands.view_commands import (
@@ -42,6 +47,12 @@ from bermake.io.obj_io import read_obj_texture_bytes
 from bermake.model import Model
 from bermake.model.model_queries import instance_path
 from bermake.model.tag import TagLibrary
+from bermake.recovery import liveness as recovery_liveness
+from bermake.recovery import paths as recovery_paths
+from bermake.recovery import startup as recovery_startup
+from bermake.recovery.liveness import current_process_started_at
+from bermake.recovery.scheduler import DEFAULT_INTERVAL, AutosaveScheduler
+from bermake.recovery.store import RecoverySession, RecoveryStore, SessionMeta
 from bermake.selection import Selection
 from bermake.tools import (
     ArcTool,
@@ -68,6 +79,7 @@ from bermake.tools.primitive_tool import BoxTool, ConeTool, CylinderTool, Sphere
 from bermake.tools.roof_tool import RoofTool
 from bermake.tools.text_tool import TextTool
 from bermake.tools.wall_tool import WallTool
+from bermake.ui import actions as actions_registry
 from bermake.ui import preferences, selection_controller
 from bermake.ui.cursors import cursor_for
 from bermake.ui.document_controller import DocumentController
@@ -101,6 +113,21 @@ from bermake.views.capture import apply_tags_and_style, capture_view
 # M7.5b Task 11 (#78): container thumbnails are for a file browser preview, so
 # the long edge is capped well below full viewport resolution.
 _THUMBNAIL_MAX_EDGE = 512
+
+# M7.12 (#77): the events that count as the user working, for autosave's
+# "2 seconds without input" pause.
+_INPUT_EVENT_TYPES = frozenset(
+    (
+        QEvent.Type.KeyPress,
+        QEvent.Type.KeyRelease,
+        QEvent.Type.MouseButtonPress,
+        QEvent.Type.MouseButtonRelease,
+        QEvent.Type.MouseMove,
+        QEvent.Type.Wheel,
+    )
+)
+_AUTOSAVE_TICK_MS = 1000
+_AUTOSAVE_FAILED_MESSAGE = "Autosave failed; will retry"
 
 # M7.6b: arrow keys arm an inference lock on the matching axis, unless the
 # active tool claims Up/Down for itself (Tool.consumes_arrow_keys).
@@ -316,6 +343,17 @@ class MainWindow(QMainWindow):
         self._view_animator = ViewAnimator(self._viewport.camera, self._viewport.update, self)
         self._viewport.set_camera_input_callback(self._view_animator.cancel)
 
+        # Autosave (M7.12, #77). Built before any dirty signal source is wired
+        # below, because _on_document_changed feeds the scheduler. The folder
+        # is resolved through the module attribute so the test suite's guard
+        # patches one place. The interval is the default until the stored
+        # preference is read, once self._settings exists.
+        self._recovery_store = RecoveryStore(recovery_paths.default_recovery_directory())
+        self._session_id = uuid.uuid4().hex
+        # Where a recovered document came from; Save As offers it (Task 6).
+        self._suggested_save_path: str | None = None
+        self._autosave = AutosaveScheduler(DEFAULT_INTERVAL)
+
         # Document session state (path / dirty / title) + dirty signal sources.
         self._doc_controller = DocumentController()
         self._command_stack.add_change_listener(self._on_document_changed)
@@ -446,6 +484,8 @@ class MainWindow(QMainWindow):
         # Guard for None so headless unit tests without a QApplication still work.
         from PySide6.QtWidgets import QApplication
 
+        # The same filter records the time of the last input, for autosave.
+        self._last_input = time.monotonic()
         _app = QApplication.instance()
         if _app is not None:
             _app.installEventFilter(self)
@@ -525,6 +565,29 @@ class MainWindow(QMainWindow):
         # Reflect the saved theme choice (M7.7). Deferred to here, after
         # self._settings exists, rather than beside self._theme_actions above.
         self._theme_actions[preferences.read_theme(self._settings)].setChecked(True)
+
+        # File > Autosave (M7.12): show the stored interval and run with it.
+        # Like the theme checkmark, and unlike the compatibility one, this is
+        # set without blocking signals: these grouped entries run their handler
+        # on `triggered`, which setChecked does not emit, so nothing is written
+        # back. Blocking would also hide the change from the QActionGroup, which
+        # then let a click on the restored entry uncheck it.
+        self._autosave_actions = {
+            spec.handler_arg: self._actions[spec.id]
+            for spec in actions_registry.ACTIONS
+            if spec.group == actions_registry.AUTOSAVE_GROUP
+        }
+        interval = preferences.read_autosave_interval(self._settings)
+        self._autosave_actions[interval].setChecked(True)
+        self._autosave.set_interval(interval)
+        # The "Autosaved HH:MM" text this window last showed, so it is cleared
+        # only while it is still the message on screen (spec 4.4).
+        self._autosaved_message: str | None = None
+        self._tick_error_logged = False
+        self._autosave_timer = QTimer(self)
+        self._autosave_timer.setInterval(_AUTOSAVE_TICK_MS)
+        self._autosave_timer.timeout.connect(self._autosave_tick)
+        self._autosave_timer.start()
 
         # M7.9: show the stored compatibility preference. Signals are blocked
         # because this checkable action connects through `toggled`, and
@@ -707,7 +770,8 @@ class MainWindow(QMainWindow):
         return False
 
     def eventFilter(self, obj, event):
-        from PySide6.QtCore import QEvent
+        if event.type() in _INPUT_EVENT_TYPES:
+            self._last_input = time.monotonic()
 
         if event.type() in (QEvent.Type.KeyPress, QEvent.Type.KeyRelease):
             if event.key() == Qt.Key.Key_Shift:
@@ -1951,10 +2015,139 @@ class MainWindow(QMainWindow):
 
     def _on_document_changed(self) -> None:
         self._doc_controller.mark_dirty()
+        self._autosave.note_change()
+        self._clear_autosaved_message()
         self._update_window_title()
+
+    # --- Autosave (M7.12, #77; spec 4.2 to 4.4) ---------------------------
+
+    def _autosave_tick(self) -> None:
+        """Once a second: save if an autosave is due and this is a safe moment.
+
+        QApplication is the module-level import, bound once, so a test that
+        swaps the PySide6.QtWidgets attribute cannot break a window still
+        ticking from an earlier test. Nothing escapes into the event loop.
+        """
+        try:
+            active = self._tool_manager.active
+            due = self._autosave.should_save(
+                idle_for=time.monotonic() - self._last_input,
+                button_held=bool(QApplication.mouseButtons()),
+                tool_busy=bool(active is not None and active.holds_uncommitted_changes),
+                modal_open=QApplication.activeModalWidget() is not None,
+            )
+        except Exception:
+            # Once per stuck spell, not once a second: a repeating fault would
+            # otherwise push the history a bug report needs out of the log.
+            if not self._tick_error_logged:
+                logger.exception("Autosave could not check whether to save")
+                self._tick_error_logged = True
+            return
+        self._tick_error_logged = False
+        if due:
+            self._autosave_now()
+
+    def _autosave_meta(self) -> SessionMeta:
+        path = self._doc_controller.current_path
+        if path is None and self._suggested_save_path:
+            # A recovered document keeps its original name across a second crash.
+            original = self._suggested_save_path
+            name = Path(original).name
+        else:
+            original = str(path) if path is not None else None
+            name = path.name if path is not None else "Untitled"
+        return SessionMeta(
+            session_id=self._session_id,
+            original_path=original,
+            display_name=name,
+            saved_at=datetime.now().astimezone().isoformat(timespec="seconds"),
+            app_version=__version__,
+            pid=os.getpid(),
+            process_started_at=current_process_started_at(),
+        )
+
+    def _autosave_now(self) -> bool:
+        """Write this session's recovery files. Returns whether it saved; never
+        raises, because it runs from a timer in the event loop."""
+        try:
+            self._recovery_store.write(
+                self._autosave_meta(),
+                lambda target: save_document(
+                    target,
+                    self._model,
+                    self._viewport.camera,
+                    self._doc,
+                    self._render_style,
+                    thumbnail=None,
+                ),
+            )
+        except (OSError, BermakeIOError):
+            logger.warning("Autosave to %s failed", self._recovery_store.folder, exc_info=True)
+            return self._autosave_failed()
+        except Exception:
+            # Not a disk problem, so a bug; still never worth a dialog, or an
+            # exception out of the timer once a second.
+            logger.exception("Autosave to %s failed unexpectedly", self._recovery_store.folder)
+            return self._autosave_failed()
+        self._autosave.note_saved()
+        # Stays until the next change, Save, New, Open, Revert or Recover, or
+        # until another message replaces it (spec 4.4).
+        self._autosaved_message = f"Autosaved {datetime.now():%H:%M}"
+        self._status_bar.set_message(self._autosaved_message)
+        return True
+
+    def _autosave_failed(self) -> bool:
+        self._autosave.note_failed()
+        self._status_bar.set_message(_AUTOSAVE_FAILED_MESSAGE)
+        return False
+
+    def _clear_autosaved_message(self) -> None:
+        """Remove "Autosaved HH:MM" if it is still the message showing; any
+        other message that has replaced it is left alone."""
+        shown, self._autosaved_message = self._autosaved_message, None
+        if shown is not None and self._status_bar.message_text() == shown:
+            self._status_bar.set_message("")
+
+    def _delete_session_files(self) -> None:
+        """Remove this session's recovery files. A locked file is logged, not
+        raised, so it can never fail a Save, a close, New or Open."""
+        try:
+            self._recovery_store.delete(self._session_id)
+        except OSError:
+            logger.warning(
+                "Could not delete the recovery files of session %s",
+                self._session_id,
+                exc_info=True,
+            )
+
+    def _start_new_session(self) -> None:
+        """A new document: drop the old session's files, take a fresh id, and
+        start with nothing to protect."""
+        self._delete_session_files()
+        self._session_id = uuid.uuid4().hex
+        self._autosave.note_saved()
+
+    def _set_autosave_interval(self, minutes: int) -> None:
+        """File > Autosave. Changing the interval restarts the countdown."""
+        preferences.write_autosave_interval(self._settings, minutes)
+        self._autosave.set_interval(minutes)
 
     def _update_window_title(self) -> None:
         self.setWindowTitle(self._doc_controller.display_title())
+        self._update_revert_enabled()
+
+    def _update_revert_enabled(self) -> None:
+        """Revert to Saved needs a path to reload and changes to discard.
+
+        Called from _update_window_title, which already runs whenever the path
+        or the dirty state changes (spec 4.6).
+        """
+        # The title is first set while the actions are still being built.
+        action = getattr(self, "_actions", {}).get("file_revert")
+        if action is not None:
+            action.setEnabled(
+                self._doc_controller.current_path is not None and self._doc_controller.dirty
+            )
 
     def _on_export_obj(self) -> None:
         path = self._prompt_save_path("OBJ files (*.obj)", "Export OBJ")
@@ -2054,12 +2247,18 @@ class MainWindow(QMainWindow):
         self._viewport.update()
 
     def _prompt_save_path(
-        self, file_filter: str = "Bermake files (*.berm)", title: str = "Save As"
+        self,
+        file_filter: str = "Bermake files (*.berm)",
+        title: str = "Save As",
+        suggested: str | None = None,
     ) -> str | None:
-        """Return a chosen save path (or None). Overridable for testing."""
+        """Return a chosen save path (or None). Overridable for testing.
+
+        `suggested` pre-fills the dialog's folder and file name; a recovered
+        document suggests the file it came from (spec 4.5)."""
         from PySide6.QtWidgets import QFileDialog
 
-        path, _ = QFileDialog.getSaveFileName(self, title, "", file_filter)
+        path, _ = QFileDialog.getSaveFileName(self, title, suggested or "", file_filter)
         return path or None
 
     def _capture_thumbnail(self) -> bytes | None:
@@ -2123,6 +2322,11 @@ class MainWindow(QMainWindow):
             return False
         self._doc_controller.set_path(path)
         self._doc_controller.mark_clean()
+        # A recovered document now has a real path; Save As offers that.
+        self._suggested_save_path = None
+        # The saved file is now the newest copy (spec 4.3).
+        self._delete_session_files()
+        self._autosave.note_saved()
         self._update_window_title()
         self._status_bar.set_message(f"Saved {Path(path).name}")
         return True
@@ -2133,20 +2337,23 @@ class MainWindow(QMainWindow):
         return self._save_to(self._doc_controller.current_path)
 
     def _on_file_save_as(self) -> bool:
-        path = self._prompt_save_path()
+        path = self._prompt_save_path(suggested=self._suggested_save_path)
         if not path:
             return False
         return self._save_to(path)
+
+    def _unsaved_changes_name(self) -> str:
+        """The name the unsaved-changes prompt asks about."""
+        controller = self._doc_controller
+        if controller.current_path is not None:
+            return controller.current_path.name
+        return controller.recovered_name or "Untitled"
 
     def _prompt_discard(self) -> str:
         """Return 'save' | 'discard' | 'cancel'. Overridable for testing."""
         from PySide6.QtWidgets import QMessageBox
 
-        name = (
-            self._doc_controller.current_path.name
-            if self._doc_controller.current_path
-            else "Untitled"
-        )
+        name = self._unsaved_changes_name()
         box = QMessageBox(self)
         box.setWindowTitle("Unsaved changes")
         box.setText(f"Save changes to {name}?")
@@ -2179,12 +2386,32 @@ class MainWindow(QMainWindow):
         # remembered even if the user then cancels the close.
         save_window_state(self, self._settings)
         if self._confirm_discard_if_dirty():
+            # A normal close: files left behind would mean a crash (spec 4.3).
+            self._autosave_timer.stop()
+            self._delete_session_files()
             event.accept()
         else:
             event.ignore()
 
-    def _reset_document(self, model, camera_state, units, style, path, *, environment) -> None:
-        """Adopt a (model, camera, units, render style, environment) into the live window."""
+    def _reset_document(
+        self,
+        model,
+        camera_state,
+        units,
+        style,
+        path,
+        *,
+        environment,
+    ) -> None:
+        """Adopt a (model, camera, units, render style, environment) into the live window.
+
+        This is the shared New, Open, Revert and Recover path, so it also starts
+        a new autosave session and always deletes the outgoing session's files:
+        they belong to the document being replaced. A recovered session's
+        files (left by another, crashed Bermake) are never this window's own,
+        so they are not touched here and the caller can hand them over to the
+        new session (spec 4.3, 4.5).
+        """
         from dataclasses import replace
 
         # M7.5b Task 9: the incoming Model's TextureLibrary restarts id
@@ -2217,6 +2444,10 @@ class MainWindow(QMainWindow):
         # PREVIOUS document's hierarchy under the previous root label (spec
         # 1.7: "Document New / Open -> rebuild and rebind libraries").
         self._rebuild_outliner()
+        self._suggested_save_path = None
+        self._doc_controller.recovered_name = None
+        self._start_new_session()
+        self._clear_autosaved_message()
         self._refresh_status_text()
         self._update_window_title()
         self._viewport.update()
@@ -2268,6 +2499,48 @@ class MainWindow(QMainWindow):
             environment=loaded.environment,
         )
 
+    def _prompt_revert(self, name: str) -> bool:
+        """True to discard the changes and reload. Overridable for testing."""
+        from PySide6.QtWidgets import QMessageBox
+
+        box = QMessageBox(self)
+        box.setWindowTitle("Revert to Saved")
+        box.setText(f"Discard all changes since you last saved {name}? This cannot be undone.")
+        revert = box.addButton("Revert", QMessageBox.ButtonRole.DestructiveRole)
+        cancel = box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
+        box.setDefaultButton(cancel)
+        box.setEscapeButton(cancel)
+        box.exec()
+        return box.clickedButton() is revert
+
+    def _on_file_revert(self) -> None:
+        """File > Revert to Saved: reload the document's file (spec 4.6).
+
+        The same load and reset as Open, so the undo history is cleared and a
+        new autosave session replaces the old one. A file that can no longer be
+        read leaves the current document, with its changes, untouched.
+        """
+        path = self._doc_controller.current_path
+        if path is None or not self._doc_controller.dirty:
+            return
+        if not self._prompt_revert(path.name):
+            return
+        try:
+            loaded = load_document(path)
+        except (BermakeIOError, OSError) as e:
+            from PySide6.QtWidgets import QMessageBox
+
+            QMessageBox.critical(self, "Open failed", str(e))
+            return
+        self._reset_document(
+            loaded.model,
+            loaded.camera_state,
+            loaded.units,
+            loaded.style,
+            path,
+            environment=loaded.environment,
+        )
+
     def _on_show_welcome(self) -> None:
         """Show the welcome dialog on demand (Help > Welcome to Bermake).
 
@@ -2302,6 +2575,166 @@ class MainWindow(QMainWindow):
     def show_welcome_dialog(self) -> None:
         """Public entry point for app.py's startup call."""
         self._on_show_welcome()
+
+    # --- Recovery at startup (M7.12, #77; spec 4.5 and 5) ------------------
+
+    def run_startup_recovery(self) -> bool:
+        """Offer work left by a Bermake that is no longer running.
+
+        Returns True only if a session was recovered, in which case app.py
+        skips the Welcome dialog. Nothing here may stop Bermake from starting,
+        so every failure is logged and reads as "nothing recovered".
+        """
+        try:
+            # Both resolved at call time, so a test can patch either module.
+            sessions = recovery_startup.recoverable_sessions(
+                self._recovery_store, recovery_liveness.process_is_running
+            )
+            if not sessions:
+                return False
+            logger.info("Found %d recoverable session(s)", len(sessions))
+            while True:
+                choice = self._ask_recovery(sessions)
+                if choice.session is None:
+                    return False  # Decide later: keep everything for next launch
+                if choice.action == "recover":
+                    return self.recover_session(choice.session)
+                if choice.action == "discard":
+                    meta = choice.session.meta
+                    if not self._confirm_discard_recovery(meta.display_name):
+                        continue  # Cancel: back to the recovery dialog
+                    self._recovery_store.delete(meta.session_id)
+                    logger.info("Discarded recovery session %s", meta.session_id)
+                return False
+        except Exception:
+            logger.exception("Startup recovery failed; starting without it")
+            return False
+
+    def _confirm_discard_recovery(self, display_name: str) -> bool:
+        """True to delete the autosaved work. Cancel is the default and Escape
+        cancels (maintainer decision 2026-10-05). Overridable for testing."""
+        from PySide6.QtWidgets import QMessageBox
+
+        box = QMessageBox(self)
+        box.setWindowTitle("Discard autosaved work")
+        box.setText(f"Delete the autosaved work for {display_name}? This cannot be undone.")
+        delete = box.addButton("Delete", QMessageBox.ButtonRole.DestructiveRole)
+        cancel = box.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
+        box.setDefaultButton(cancel)
+        box.setEscapeButton(cancel)
+        box.exec()
+        return box.clickedButton() is delete
+
+    def _ask_recovery(self, sessions: list[RecoverySession]):
+        """Show the recovery dialog modal over this window and return its
+        RecoveryChoice. Overridable for testing."""
+        from bermake.ui.recovery_dialog import RecoveryDialog
+
+        dialog = RecoveryDialog(sessions, self)
+        try:
+            return dialog.exec()
+        finally:
+            dialog.deleteLater()
+
+    def recover_session(self, session: RecoverySession) -> bool:
+        """Open a recovered session as unsaved work, not tied to its original
+        file (D4), and hand its files over to this window's new session.
+
+        A session that cannot be opened is quarantined (kept as
+        `<id>.broken.*`), logged, and reported to the tester. Returns whether
+        the session was recovered.
+        """
+        meta = session.meta
+        old_id = meta.session_id
+        try:
+            loaded = load_document(session.berm_path)
+        except Exception as exc:  # BermakeIOError, OSError, or a bug: never fatal
+            logger.warning(
+                "Could not open recovery session %s from %s",
+                old_id,
+                session.berm_path,
+                exc_info=True,
+            )
+            try:
+                self._recovery_store.quarantine(old_id, f"could not be opened: {exc}")
+            except Exception:
+                logger.exception("Could not quarantine recovery session %s", old_id)
+            self._show_recovery_failed(
+                f"Bermake could not open the autosaved work for {meta.display_name}. "
+                f"It was kept in {self._recovery_store.folder} for a bug report."
+            )
+            return False
+
+        self._reset_document(
+            loaded.model,
+            loaded.camera_state,
+            loaded.units,
+            loaded.style,
+            None,
+            environment=loaded.environment,
+        )
+        self._doc_controller.mark_dirty()
+        self._doc_controller.recovered_name = meta.display_name
+        self._suggested_save_path = meta.original_path
+        try:
+            # The new metadata: the new session id, this process, now.
+            self._recovery_store.hand_over(old_id, self._autosave_meta())
+        except Exception:
+            logger.warning(
+                "Could not hand recovery session %s over to %s",
+                old_id,
+                self._session_id,
+                exc_info=True,
+            )
+            self._protect_after_failed_hand_over(old_id)
+        else:
+            # The disk copy matches the window (spec 4.5).
+            self._autosave.note_saved()
+        logger.info("Recovered session %s as session %s", old_id, self._session_id)
+        self._update_window_title()
+        return True
+
+    def _protect_after_failed_hand_over(self, old_id: str) -> None:
+        """The recovered work is in the window but the hand-over failed part
+        way, so it is not on disk under a live session. Write this session now,
+        whatever the interval (even Off): waiting for the next autosave would
+        leave a second crash with nothing to offer (review I1).
+
+        If that works, the old session is redundant: drop it, or it would be
+        offered again after the user's Save. If it fails too, put the old
+        session back together (the rename may already have happened) so it is
+        still offered at the next launch, and keep retrying at the interval.
+        """
+        self._autosave.note_change()
+        if self._autosave_now():
+            try:
+                self._recovery_store.delete(old_id)
+            except OSError:
+                logger.warning(
+                    "Could not delete recovery session %s after recovering it",
+                    old_id,
+                    exc_info=True,
+                )
+            return
+        store = self._recovery_store
+        moved, original = store.berm_path(self._session_id), store.berm_path(old_id)
+        try:
+            if moved.exists() and not original.exists():
+                os.replace(moved, original)
+        except OSError:
+            logger.warning(
+                "Could not move %s back to %s; both may be quarantined at the next launch",
+                moved,
+                original,
+                exc_info=True,
+            )
+        logger.warning("Recovered work is not autosaved yet; recovery session %s is kept", old_id)
+
+    def _show_recovery_failed(self, message: str) -> None:
+        """Tell the tester a recovery could not be opened. Overridable for testing."""
+        from PySide6.QtWidgets import QMessageBox
+
+        QMessageBox.warning(self, "Recovery failed", message)
 
     # --- Compatibility rendering (M7.9) -----------------------------------
 

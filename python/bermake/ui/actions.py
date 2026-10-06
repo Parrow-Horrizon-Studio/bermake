@@ -21,6 +21,7 @@ FACE_STYLE_GROUP = "face_style"
 UNITS_GROUP = "units"
 ENVIRONMENT_GROUP = "environment"
 THEME_GROUP = "theme"
+AUTOSAVE_GROUP = "autosave"
 
 
 class CursorStyle(Enum):
@@ -86,11 +87,23 @@ class ToolbarSpec:
 
 
 @dataclass(frozen=True, slots=True)
-class MenuSpec:
-    """One top-level menu. A None entry in action_ids is a separator."""
+class SubmenuSpec:
+    """A nested menu, placed as an entry inside MenuSpec.action_ids (M7.12).
+
+    A None entry in action_ids is a separator. Submenus do not nest further.
+    """
 
     title: str
     action_ids: tuple[str | None, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class MenuSpec:
+    """One top-level menu. A None entry in action_ids is a separator, and a
+    SubmenuSpec entry is a nested menu."""
+
+    title: str
+    action_ids: tuple[str | SubmenuSpec | None, ...]
 
 
 def _tool(action_id: str, label: str, shortcut: str | None, cursor: CursorStyle) -> ActionSpec:
@@ -122,6 +135,49 @@ ACTIONS: tuple[ActionSpec, ...] = (
     ActionSpec("file_open", "Open…", "_on_file_open", icon="file_open", shortcut="Ctrl+O"),
     ActionSpec("file_save", "Save", "_on_file_save", icon="file_save", shortcut="Ctrl+S"),
     ActionSpec("file_save_as", "Save As…", "_on_file_save_as", shortcut="Ctrl+Shift+S"),
+    # File > Autosave (M7.12): the interval in minutes, 0 meaning Off.
+    ActionSpec(
+        "file_autosave_off",
+        "Off",
+        "_set_autosave_interval",
+        handler_arg=0,
+        checkable=True,
+        group=AUTOSAVE_GROUP,
+    ),
+    ActionSpec(
+        "file_autosave_1",
+        "Every Minute",
+        "_set_autosave_interval",
+        handler_arg=1,
+        checkable=True,
+        group=AUTOSAVE_GROUP,
+    ),
+    ActionSpec(
+        "file_autosave_5",
+        "Every 5 Minutes",
+        "_set_autosave_interval",
+        handler_arg=5,
+        checkable=True,
+        group=AUTOSAVE_GROUP,
+    ),
+    ActionSpec(
+        "file_autosave_10",
+        "Every 10 Minutes",
+        "_set_autosave_interval",
+        handler_arg=10,
+        checkable=True,
+        group=AUTOSAVE_GROUP,
+    ),
+    ActionSpec(
+        "file_autosave_30",
+        "Every 30 Minutes",
+        "_set_autosave_interval",
+        handler_arg=30,
+        checkable=True,
+        group=AUTOSAVE_GROUP,
+    ),
+    # Enabled only for a saved document with unsaved changes (M7.12, spec 4.6).
+    ActionSpec("file_revert", "Revert to Saved", "_on_file_revert"),
     ActionSpec("file_import_obj", "Import OBJ…", "_on_import_obj"),
     ActionSpec("file_export_obj", "Export OBJ…", "_on_export_obj"),
     ActionSpec("file_import_gltf", "Import glTF…", "_on_import_gltf"),
@@ -208,8 +264,8 @@ ACTIONS: tuple[ActionSpec, ...] = (
         group=UNITS_GROUP,
     ),
     # --- Environment (M7.7) -------------------------------------------------
-    # Flat entries in View rather than a submenu: MenuSpec is one top-level menu
-    # holding a tuple of action ids, with no nesting. Labels carry no dash.
+    # Flat entries in View rather than a submenu: they predate SubmenuSpec
+    # (M7.12), when a MenuSpec could not nest. Labels carry no dash.
     ActionSpec(
         "view_env_sky_ground",
         "Sky and Ground",
@@ -461,6 +517,17 @@ MENUS: tuple[MenuSpec, ...] = (
             None,
             "file_save",
             "file_save_as",
+            SubmenuSpec(
+                "Autosave",
+                (
+                    "file_autosave_off",
+                    "file_autosave_1",
+                    "file_autosave_5",
+                    "file_autosave_10",
+                    "file_autosave_30",
+                ),
+            ),
+            "file_revert",
             None,
             "file_import_obj",
             "file_export_obj",

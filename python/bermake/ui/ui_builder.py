@@ -110,14 +110,27 @@ def build_menubar(window: QMainWindow) -> dict[str, QMenu]:
 
     for menu_spec in actions.MENUS:
         menu = menubar.addMenu(menu_spec.title)
-        for action_id in menu_spec.action_ids:
-            if action_id is None:
-                menu.addSeparator()
-            else:
-                menu.addAction(built[action_id])
+        _fill_menu(menu, menu_spec.action_ids, built)
         menus[menu_spec.title] = menu
 
     return menus
+
+
+def _fill_menu(menu: QMenu, entries, built: dict[str, QAction]) -> None:
+    """Add a menu's entries: None is a separator, a SubmenuSpec a nested menu."""
+    for entry in entries:
+        if entry is None:
+            menu.addSeparator()
+        elif isinstance(entry, actions.SubmenuSpec):
+            # Parented in the constructor, not made by menu.addMenu(title). With
+            # addMenu(title), a later QAction.menu() wrapper took ownership in
+            # PySide6, and the submenu was deleted once that wrapper was
+            # collected (seen in tests/test_ui_builder_submenu.py).
+            submenu = QMenu(entry.title, menu)
+            menu.addMenu(submenu)
+            _fill_menu(submenu, entry.action_ids, built)
+        else:
+            menu.addAction(built[entry])
 
 
 def build_toolbars(window: QMainWindow) -> dict[str, QToolBar]:

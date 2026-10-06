@@ -19,12 +19,14 @@ from __future__ import annotations
 
 from PySide6.QtCore import QSettings
 
+from bermake.recovery.scheduler import DEFAULT_INTERVAL, INTERVAL_CHOICES
 from bermake.templates import DEFAULT_TEMPLATE_KEY
 
 THEME_KEY = "appearance/theme"
 SHOW_WELCOME_KEY = "welcome/show_on_startup"
 DEFAULT_TEMPLATE_PREF_KEY = "welcome/default_template"
 COMPATIBILITY_RENDERING_KEY = "graphics/compatibility_rendering"
+AUTOSAVE_INTERVAL_KEY = "autosave/interval_minutes"
 
 THEME_LIGHT = "light"
 THEME_DARK = "dark"
@@ -95,3 +97,23 @@ def read_compatibility_rendering(settings: QSettings) -> bool:
 
 def write_compatibility_rendering(settings: QSettings, enabled: bool) -> None:
     settings.setValue(COMPATIBILITY_RENDERING_KEY, bool(enabled))
+
+
+def read_autosave_interval(settings: QSettings) -> int:
+    """The autosave interval in minutes, one of INTERVAL_CHOICES (0 is Off).
+
+    Anything else, including the ini backend's strings that do not parse as one
+    of the choices, reads as DEFAULT_INTERVAL (M7.12, spec 4.4).
+    """
+    value = settings.value(AUTOSAVE_INTERVAL_KEY, DEFAULT_INTERVAL)
+    if isinstance(value, bool):
+        return DEFAULT_INTERVAL
+    try:
+        minutes = int(str(value).strip())
+    except (TypeError, ValueError):
+        return DEFAULT_INTERVAL
+    return minutes if minutes in INTERVAL_CHOICES else DEFAULT_INTERVAL
+
+
+def write_autosave_interval(settings: QSettings, minutes: int) -> None:
+    settings.setValue(AUTOSAVE_INTERVAL_KEY, int(minutes))

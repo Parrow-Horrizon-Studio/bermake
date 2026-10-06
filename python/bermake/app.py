@@ -15,6 +15,8 @@ Startup is an ordered sequence, and the order is load-bearing (M7.9):
    1.x driver the viewport never gets one and its own check never runs.
 5. MainWindow is built inside start_window, so a failure while building it
    still reaches the tester.
+6. After show(), startup recovery runs and, if nothing was recovered, the
+   Welcome dialog follows.
 """
 
 from __future__ import annotations
@@ -77,10 +79,13 @@ def _build_main_window(*, gl_reported: bool = False, compat_failed: bool = False
     if compat_failed:
         window.disable_compatibility_offer()
     window.show()
-    # After show(), so the dialog is modal over a real window rather than over
-    # nothing, and so there is no second "no document yet" code path: the
-    # template applies to the live document the window already built.
-    if preferences.read_show_welcome(QSettings()):
+    # After show(), so the dialogs are modal over a real window rather than
+    # over nothing, and so there is no second "no document yet" code path: a
+    # recovered session or the template applies to the live document the
+    # window already built. Recovery comes first and never raises (M7.12,
+    # spec 4.5); recovered work replaces the Welcome dialog.
+    recovered = window.run_startup_recovery()
+    if not recovered and preferences.read_show_welcome(QSettings()):
         window.show_welcome_dialog()
     return window
 

@@ -41,10 +41,56 @@ def test_every_toolbar_id_resolves():
             A.action_by_id(action_id)  # raises KeyError if unknown
 
 
+def _menu_action_ids(entries):
+    """Every action id in a menu, descending into its submenus (M7.12)."""
+    for entry in entries:
+        if isinstance(entry, A.SubmenuSpec):
+            yield from _menu_action_ids(entry.action_ids)
+        elif entry is not None:
+            yield entry
+
+
 def test_every_menu_id_resolves():
     for menu in A.MENUS:
-        for action_id in filter(None, menu.action_ids):
+        for action_id in _menu_action_ids(menu.action_ids):
             A.action_by_id(action_id)
+
+
+def test_autosave_entries_are_declared_exactly():
+    """File > Autosave (M7.12, spec 4.4): five checkable, exclusive entries."""
+    expected = [
+        ("file_autosave_off", "Off", 0),
+        ("file_autosave_1", "Every Minute", 1),
+        ("file_autosave_5", "Every 5 Minutes", 5),
+        ("file_autosave_10", "Every 10 Minutes", 10),
+        ("file_autosave_30", "Every 30 Minutes", 30),
+    ]
+    assert A.AUTOSAVE_GROUP == "autosave"
+    grouped = [s for s in A.ACTIONS if s.group == A.AUTOSAVE_GROUP]
+    assert [(s.id, s.label, s.handler_arg) for s in grouped] == expected
+    for spec in grouped:
+        assert spec.checkable is True
+        assert spec.handler == "_set_autosave_interval"
+
+
+def test_autosave_submenu_sits_after_save_as_before_the_separator():
+    file_menu = next(m for m in A.MENUS if m.title == "File")
+    entries = list(file_menu.action_ids)
+    at = entries.index("file_save_as")
+    submenu = entries[at + 1]
+    assert submenu == A.SubmenuSpec(
+        "Autosave",
+        (
+            "file_autosave_off",
+            "file_autosave_1",
+            "file_autosave_5",
+            "file_autosave_10",
+            "file_autosave_30",
+        ),
+    )
+    # Still in the Save block: a separator comes before the import entries.
+    # (Not pinned to at + 2, because Revert to Saved joins this block next.)
+    assert None in entries[at + 2 : entries.index("file_import_obj")]
 
 
 def test_every_context_menu_id_resolves():

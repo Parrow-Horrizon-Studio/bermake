@@ -1,9 +1,8 @@
 import numpy as np
 import pytest
-from PySide6.QtWidgets import QApplication
-
 from bermake.commands.scene_commands import ClearSceneCommand
 from bermake.ui.main_window import MainWindow
+from PySide6.QtWidgets import QApplication
 
 
 @pytest.fixture(scope="module")
@@ -14,8 +13,10 @@ def app():
 
 def _draw_something(win):
     scene = win._model.active_scene
-    vids = [scene.add_vertex(np.array(p, dtype=np.float32))
-            for p in ((0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0))]
+    vids = [
+        scene.add_vertex(np.array(p, dtype=np.float32))
+        for p in ((0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0))
+    ]
     scene.add_face_from_loop(vids)
 
 
@@ -35,7 +36,7 @@ def test_save_as_writes_file_and_marks_clean(app, tmp_path, monkeypatch):
     assert win._doc_controller.dirty is True
 
     target = tmp_path / "out.berm"
-    monkeypatch.setattr(win, "_prompt_save_path", lambda: str(target))
+    monkeypatch.setattr(win, "_prompt_save_path", lambda *a, **k: str(target))
     assert win._on_file_save_as() is True
     assert target.exists()
     assert win._doc_controller.dirty is False
@@ -120,7 +121,7 @@ def test_open_success_swaps_model_and_clears_history(app, tmp_path, monkeypatch)
     saver = MainWindow()
     _draw_something(saver)
     target = tmp_path / "doc.berm"
-    saver._prompt_save_path = lambda: str(target)
+    saver._prompt_save_path = lambda *a, **k: str(target)
     assert saver._on_file_save_as() is True
 
     # Now open it in a fresh window with a dirty scratch doc.
@@ -137,22 +138,25 @@ def test_open_success_swaps_model_and_clears_history(app, tmp_path, monkeypatch)
 
 def test_open_failure_keeps_current_model(app, monkeypatch):
     from bermake.io import BermakeFormatError
+
     win = MainWindow()
     _draw_something(win)
     before_root = win._model.root
     win._prompt_open_path = lambda: "/whatever.berm"
 
     import bermake.ui.main_window as mw
-    monkeypatch.setattr(mw, "load_document",
-                        lambda p: (_ for _ in ()).throw(BermakeFormatError("bad")))
+
+    monkeypatch.setattr(
+        mw, "load_document", lambda p: (_ for _ in ()).throw(BermakeFormatError("bad"))
+    )
     # Suppress + record the error dialog.
     shown = {}
     from PySide6.QtWidgets import QMessageBox
-    monkeypatch.setattr(QMessageBox, "critical",
-                        lambda *a, **k: shown.setdefault("called", True))
+
+    monkeypatch.setattr(QMessageBox, "critical", lambda *a, **k: shown.setdefault("called", True))
     win._on_file_open()
-    assert win._model.root is before_root      # unchanged
-    assert shown.get("called") is True         # error surfaced
+    assert win._model.root is before_root  # unchanged
+    assert shown.get("called") is True  # error surfaced
 
 
 def test_open_dialog_default_filter_includes_all_files():
@@ -166,7 +170,8 @@ def test_open_dialog_default_filter_includes_all_files():
     """
     import inspect
 
-    default_filter = inspect.signature(MainWindow._prompt_open_path).parameters["file_filter"].default
+    parameters = inspect.signature(MainWindow._prompt_open_path).parameters
+    default_filter = parameters["file_filter"].default
     filters = [f.strip() for f in default_filter.split(";;")]
     assert any(f.endswith("(*.berm)") for f in filters)
     assert any(f.endswith("(*)") for f in filters)

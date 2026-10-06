@@ -259,6 +259,17 @@ class EraserTool(Tool):
         )
 
     @property
+    def holds_uncommitted_changes(self) -> bool:
+        """True while a stroke has erased something the undo stack does not
+        yet know about.
+
+        Each removal executes at once and is collected in `_stroke`, which is
+        pushed on release and rolled back by `deactivate`. A stroke that has
+        hit nothing yet has no children and holds nothing.
+        """
+        return self._stroke is not None and bool(self._stroke.children)
+
+    @property
     def has_active_gesture(self) -> bool:
         return self._stroke is not None
 
