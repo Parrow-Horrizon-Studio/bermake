@@ -292,3 +292,79 @@ def test_line_tool_enter_with_only_seed_discards():
     assert len(list(scene.vertices_iter())) == 0
     # Nothing pushed to undo stack.
     assert stack.can_undo is False
+
+
+def _two_segment_chain():
+    """A Line tool mid-chain: three clicks, two edges, nothing on the stack yet."""
+    from bermake.commands import CommandStack
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.line_tool import LineTool
+
+    scene = Scene()
+    stack = CommandStack()
+    tool = LineTool()
+    tool.activate(ToolContext(scene=scene, command_stack=stack))
+    tool.on_mouse_press(None, _grid_snap((0.0, 0.0, 0.0)))  # type: ignore[arg-type]
+    tool.on_mouse_press(None, _grid_snap((2.0, 0.0, 0.0)))  # type: ignore[arg-type]
+    tool.on_mouse_press(None, _grid_snap((2.0, 2.0, 0.0)))  # type: ignore[arg-type]
+    assert stack.can_undo is False
+    return tool, scene, stack
+
+
+def test_line_tool_deactivate_mid_chain_commits_one_undo_step():
+    """#144: switching tools keeps the drawn edges, as one undoable step."""
+    tool, scene, stack = _two_segment_chain()
+
+    tool.deactivate()
+
+    assert tool.has_active_gesture is False
+    assert len(list(scene.edges_iter())) == 2
+    assert stack.can_undo
+    stack.undo()
+    assert len(list(scene.vertices_iter())) == 0
+    assert len(list(scene.edges_iter())) == 0
+
+
+def test_line_tool_deactivate_with_only_seed_discards():
+    from bermake.commands import CommandStack
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.line_tool import LineTool
+
+    scene = Scene()
+    stack = CommandStack()
+    tool = LineTool()
+    tool.activate(ToolContext(scene=scene, command_stack=stack))
+    tool.on_mouse_press(None, _grid_snap((0.0, 0.0, 0.0)))  # type: ignore[arg-type]
+
+    tool.deactivate()
+
+    assert len(list(scene.vertices_iter())) == 0
+    assert stack.can_undo is False
+
+
+def test_line_tool_commit_pending_changes_commits_and_ends_the_chain():
+    tool, scene, stack = _two_segment_chain()
+
+    tool.commit_pending_changes()
+
+    assert tool.has_active_gesture is False
+    assert stack.can_undo
+    stack.undo()
+    assert len(list(scene.edges_iter())) == 0
+
+
+def test_line_tool_commit_pending_changes_when_idle_does_nothing():
+    from bermake.commands import CommandStack
+    from bermake.scene import Scene
+    from bermake.tools import ToolContext
+    from bermake.tools.line_tool import LineTool
+
+    stack = CommandStack()
+    tool = LineTool()
+    tool.activate(ToolContext(scene=Scene(), command_stack=stack))
+
+    tool.commit_pending_changes()
+
+    assert stack.can_undo is False

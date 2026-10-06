@@ -1910,12 +1910,25 @@ class MainWindow(QMainWindow):
         from_state = CameraState.from_camera(self._viewport.camera)
         self._view_animator.start(from_state, view.camera)
 
+    def _commit_pending_tool_changes(self) -> None:
+        """Put an unfinished gesture's model edits on the undo stack (#144).
+
+        Runs before anything that reads the undo stack or the dirty flag, so
+        a Line chain left open is undoable, prompts to save, and is saved
+        with an undo entry to match.
+        """
+        active = self._tool_manager.active
+        if active is not None:
+            active.commit_pending_changes()
+
     def _on_undo(self) -> None:
+        self._commit_pending_tool_changes()
         if self._command_stack.undo():
             self._refresh_status_text()
             self._viewport.update()
 
     def _on_redo(self) -> None:
+        self._commit_pending_tool_changes()
         if self._command_stack.redo():
             self._refresh_status_text()
             self._viewport.update()
@@ -2303,6 +2316,7 @@ class MainWindow(QMainWindow):
         return data or None
 
     def _save_to(self, path) -> bool:
+        self._commit_pending_tool_changes()
         path = str(path)
         if not path.endswith(".berm"):
             path += ".berm"
@@ -2372,6 +2386,7 @@ class MainWindow(QMainWindow):
 
     def _confirm_discard_if_dirty(self) -> bool:
         """True if it's safe to proceed (discard a New/Open/close)."""
+        self._commit_pending_tool_changes()
         if not self._doc_controller.dirty:
             return True
         choice = self._prompt_discard()
@@ -2414,6 +2429,10 @@ class MainWindow(QMainWindow):
         """
         from dataclasses import replace
 
+        # Before load_from replaces the model in place: an open Line chain
+        # must go onto the outgoing stack (cleared below), never be pushed
+        # onto the new document's when the tool is re-activated (#144).
+        self._commit_pending_tool_changes()
         # M7.5b Task 9: the incoming Model's TextureLibrary restarts id
         # numbering from 1, same as every other document's -- so without
         # this, the renderer's GL texture cache (keyed by that same int)
@@ -2520,6 +2539,7 @@ class MainWindow(QMainWindow):
         new autosave session replaces the old one. A file that can no longer be
         read leaves the current document, with its changes, untouched.
         """
+        self._commit_pending_tool_changes()
         path = self._doc_controller.current_path
         if path is None or not self._doc_controller.dirty:
             return

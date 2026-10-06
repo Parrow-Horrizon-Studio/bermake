@@ -147,6 +147,17 @@ class Tool(ABC):
         """
         return False
 
+    def commit_pending_changes(self) -> None:
+        """Push any model change this tool made but has not yet put on the undo
+        stack, and end the gesture that made it (#144).
+
+        MainWindow calls this before anything that reads the undo stack or the
+        dirty flag: Undo, Redo, Save, Revert and the unsaved-changes prompt.
+        The default does nothing: most tools push their command when the
+        gesture ends, and Eraser and Paint roll a cut-short stroke back.
+        """
+        return None
+
     @property
     def consumes_arrow_keys(self) -> bool:
         """True if this tool binds Up/Down itself during a gesture.

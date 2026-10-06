@@ -6,8 +6,10 @@ Snapping onto some other existing vertex extends the polyline to it.
 Otherwise, a new vertex is created at the snapped position.
 
 Each click changes the scene at once, but the chain reaches the undo stack as one
-command only on Enter, a double-click or loop closure. ESC rolls the unfinished
-chain back. It still reports no uncommitted changes, by ruling (see the property).
+command only on Enter, a double-click, loop closure, or commit_pending_changes
+(leaving the tool, or MainWindow before Undo, Redo, Save, Revert and the
+unsaved-changes prompt; #144). ESC rolls the unfinished chain back. It still
+reports no uncommitted changes, by ruling (see the property).
 """
 
 from __future__ import annotations
@@ -76,7 +78,14 @@ class LineTool(Tool):
         return self._model.active_world_transform if self._model is not None else None
 
     def deactivate(self) -> None:
+        # Leaving the tool keeps what was drawn, as SketchUp does (#144).
+        self.commit_pending_changes()
         self._reset_gesture()
+
+    def commit_pending_changes(self) -> None:
+        """Finish an unfinished chain exactly as Enter would (#144)."""
+        if self._state == _State.DRAWING and self._composite is not None:
+            self._finish_open_polyline()
 
     def on_mouse_move(self, event: QMouseEvent, snap) -> None:
         from bermake.viewport.snap_engine import SnapKind
@@ -310,8 +319,8 @@ class LineTool(Tool):
         """Always False, by controller ruling (M7.12, #77), though not for lack of changes.
 
         Mid-chain, the clicks have already put vertices and edges into the scene
-        through a private composite that reaches the undo stack only on Enter,
-        a double-click or loop closure, and Escape undoes it. They are real,
+        through a private composite that reaches the undo stack only when the
+        chain finishes (see the module docstring), and Escape undoes it. They are real,
         visible edges the user drew, so an autosave that includes them is safe;
         the worst case is a recovered file with segments the user later
         cancelled. Returning True would block every autosave, the forced one
